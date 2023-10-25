@@ -9,14 +9,14 @@ import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
-        password: '',
+        user_login: '',
+        pass_login: '',
         remember: false,
     });
 
     useEffect(() => {
         return () => {
-            reset('password');
+            reset('pass_login');
         };
     }, []);
 
@@ -34,36 +34,35 @@ export default function Login({ status, canResetPassword }) {
 
             <form onSubmit={submit}>
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="user_login" value="User Name" />
 
                     <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
+                        id="user_login"
+                        name="user_login"
+                        value={data.user_login}
                         className="mt-1 block w-full"
-                        autoComplete="username"
+                        autoComplete="user_login"
                         isFocused={true}
-                        onChange={(e) => setData('email', e.target.value)}
+                        onChange={(e) => setData('user_login', e.target.value)}
                     />
 
-                    <InputError message={errors.email} className="mt-2" />
+                    <InputError message={errors.user_login} className="mt-2" />
                 </div>
 
                 <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                    <InputLabel htmlFor="pass_login" value="Password" />
 
                     <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
+                        id="pass_login"
+                        type="pass_login"
+                        name="pass_login"
+                        value={data.pass_login}
                         className="mt-1 block w-full"
-                        autoComplete="current-password"
-                        onChange={(e) => setData('password', e.target.value)}
+                        autoComplete="current-pass_login"
+                        onChange={(e) => setData('pass_login', e.target.value)}
                     />
 
-                    <InputError message={errors.password} className="mt-2" />
+                    <InputError message={errors.pass_login} className="mt-2" />
                 </div>
 
                 <div className="block mt-4">
@@ -87,10 +86,10 @@ export default function Login({ status, canResetPassword }) {
                     <div className="w-full flex items-center justify-end">
                         {canResetPassword && (
                             <Link
-                                href={route('password.request')}
+                                href={route('pass_login.request')}
                                 className="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
-                                Forgot your password?
+                                Forgot your pass_login?
                             </Link>
                         )}
 
