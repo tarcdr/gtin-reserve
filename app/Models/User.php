@@ -13,6 +13,9 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'proj1_login';
+    protected $primaryKey = 'user_login';
+
+    public $incrementing = false;
     const CREATED_AT = 'CREATE_DATE';
     const UPDATED_AT = null;
 
