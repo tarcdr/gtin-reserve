@@ -86,7 +86,7 @@ export default function Login({ status, canResetPassword }) {
                     <div className="w-full flex items-center justify-end">
                         {canResetPassword && (
                             <Link
-                                href={route('pass_login.request')}
+                                href={route('password.request')}
                                 className="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
                                 Forgot your pass_login?
