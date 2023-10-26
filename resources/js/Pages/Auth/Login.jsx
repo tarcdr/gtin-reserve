@@ -54,7 +54,7 @@ export default function Login({ status, canResetPassword }) {
 
                     <TextInput
                         id="pass_login"
-                        type="pass_login"
+                        type="password"
                         name="pass_login"
                         value={data.pass_login}
                         className="mt-1 block w-full"
