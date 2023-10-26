@@ -13,6 +13,8 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'proj1_login';
+    const CREATED_AT = 'CREATE_DATE';
+    const UPDATED_AT = null;
 
     /**
      * The attributes that are mass assignable.
