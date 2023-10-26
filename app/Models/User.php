@@ -14,6 +14,10 @@ class User extends Authenticatable
 
     protected $table = 'proj1_login';
 
+    public function getAuthPassword() {
+        return $this->pass_login;
+     }
+
     /**
      * The attributes that are mass assignable.
      *
