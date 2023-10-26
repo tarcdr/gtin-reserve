@@ -10,13 +10,13 @@ import { Head, Link, useForm } from '@inertiajs/react';
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         user_login: '',
-        pass_login: '',
+        password: '',
         remember: false,
     });
 
     useEffect(() => {
         return () => {
-            reset('pass_login');
+            reset('password');
         };
     }, []);
 
@@ -50,19 +50,19 @@ export default function Login({ status, canResetPassword }) {
                 </div>
 
                 <div className="mt-4">
-                    <InputLabel htmlFor="pass_login" value="Password" />
+                    <InputLabel htmlFor="password" value="Password" />
 
                     <TextInput
-                        id="pass_login"
+                        id="password"
                         type="password"
-                        name="pass_login"
-                        value={data.pass_login}
+                        name="password"
+                        value={data.password}
                         className="mt-1 block w-full"
-                        autoComplete="current-pass_login"
-                        onChange={(e) => setData('pass_login', e.target.value)}
+                        autoComplete="current-password"
+                        onChange={(e) => setData('password', e.target.value)}
                     />
 
-                    <InputError message={errors.pass_login} className="mt-2" />
+                    <InputError message={errors.password} className="mt-2" />
                 </div>
 
                 <div className="block mt-4">
@@ -89,7 +89,7 @@ export default function Login({ status, canResetPassword }) {
                                 href={route('password.request')}
                                 className="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
-                                Forgot your pass_login?
+                                Forgot your password?
                             </Link>
                         )}
 

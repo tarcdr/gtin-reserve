@@ -22,7 +22,7 @@ class User extends Authenticatable
     protected $fillable = [
         'emp_name',
         'user_login',
-        'pass_login',
+        'password',
     ];
 
     /**
@@ -31,7 +31,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $hidden = [
-        'pass_login',
+        'password',
         'remember_token',
     ];
 
@@ -42,6 +42,6 @@ class User extends Authenticatable
      */
     protected $casts = [
         'create_date' => 'datetime',
-        'pass_login' => 'hashed',
+        'password' => 'hashed',
     ];
 }
