@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Facades\DB;
 use App\Models\Brand;
 use App\Models\Mattype;
 
@@ -74,22 +73,28 @@ class RequestFormController extends Controller
      */
     public function update(FormUpdateRequest $request): RedirectResponse
     {
-        $pdo = DB::getPdo();
-        $p_brand_code = 8;
-        $p_mattype_code = 8;
+        $p_brand_code   = $request->brand;
+        $p_mattype_code = $request->mattype;
+        $p_brand_name   = "";
+        $p_mattype_name = "";
+        $p_brand_abb    = "";
+        $l_product_code = "";
+        $s_product_code = "";
+        $p_gtin_13      = "";
+        $p_msg          = "";
 
         $procedureName = 'proj1_gen_mattype';
  
         $bindings = [
-            'p_brand_code'  => $p_brand_code,
-            'p_mattype_code'  => $p_mattype_code,
-            'p_brand_name'  => $p_brand_name,
-            'p_mattype_name'  => $p_mattype_name,
-            'p_brand_abb'  => $p_brand_abb,
-            'l_product_code'  => $l_product_code,
-            's_product_code'  => $s_product_code,
-            'p_gtin_13'  => $p_gtin_13,
-            'p_msg'  => $p_msg,
+            'p_brand_code'   => $p_brand_code,
+            'p_mattype_code' => $p_mattype_code,
+            'p_brand_name'   => $p_brand_name,
+            'p_mattype_name' => $p_mattype_name,
+            'p_brand_abb'    => $p_brand_abb,
+            'l_product_code' => $l_product_code,
+            's_product_code' => $s_product_code,
+            'p_gtin_13'      => $p_gtin_13,
+            'p_msg'          => $p_msg,
         ];
         
         $result = DB::executeProcedure($procedureName, $bindings);
