@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\Brand;
 
 class RequestFormController extends Controller
 {
@@ -16,6 +17,14 @@ class RequestFormController extends Controller
      */
     public function view(Request $request): Response
     {
+        $brand = [];
+        foreach (Brand::all() as $b) {
+          array_push($brand, [
+            "code" => $b->BRAND_ABB,
+            "name" => $b->BRAND_NAME,
+          ]);
+        }
+
         return Inertia::render('Request', [
           'InputData' => [
             'brand' => '',
@@ -26,79 +35,7 @@ class RequestFormController extends Controller
             'gtinForPcs' => '',
             'gtinForInnerOrPack' => '',
           ],
-          'brand' => [[
-              "code" => "HO",
-              "name" => "AT HOME"
-            ], [
-              "code" => "BR",
-              "name" => "BEAR"
-            ], [
-              "code" => "BS",
-              "name" => "BISSELL"
-            ], [
-              "code" => "EJ",
-              "name" => "EMJOI"
-            ], [
-              "code" => "FS",
-              "name" => "FLYCO"
-            ], [
-              "code" => "FF",
-              "name" => "FORFUN"
-            ], [
-              "code" => "IN",
-              "name" => "IONIE"
-            ], [
-              "code" => "JS",
-              "name" => "JASON"
-            ], [
-              "code" => "KR",
-              "name" => "KURON"
-            ], [
-              "code" => "LS",
-              "name" => "LESASHA"
-            ], [
-              "code" => "NP",
-              "name" => "N LifePlus"
-            ], [
-              "code" => "NL",
-              "name" => "NAMU LIFE"
-            ], [
-              "code" => "SW",
-              "name" => "NAMU LIFE SNAILWHITE"
-            ], [
-              "code" => "NN",
-              "name" => "NAMULIFE NATURALS"
-            ], [
-              "code" => "OX",
-              "name" => "OXE'CURE"
-            ], [
-              "code" => "PF",
-              "name" => "PRETTIIFACE"
-            ], [
-              "code" => "SS",
-              "name" => "SMOOTH SKIN-IPL"
-            ], [
-              "code" => "SO",
-              "name" => "SOS"
-            ], [
-              "code" => "SK",
-              "name" => "SPARKLE"
-            ], [
-              "code" => "UP",
-              "name" => "UP 5"
-            ], [
-              "code" => "VT",
-              "name" => "VITAINNO"
-            ], [
-              "code" => "YR",
-              "name" => "YOURS"
-            ], [
-              "code" => "IL",
-              "name" => "I-Life"
-            ], [
-              "code" => "MV",
-              "name" => "Makavelic"
-          ]],
+          'brand' => $brand,
           "mattype" => [[
               "code" => "10",
               "name" => "FG (Own brand)"

@@ -15,7 +15,13 @@ class User extends Authenticatable
     protected $table = 'proj1_login';
     protected $primaryKey = 'user_login';
 
+    /**
+     * Indicates if the model's ID is auto-incrementing.
+     *
+     * @var bool
+     */
     public $incrementing = false;
+
     const CREATED_AT = 'CREATE_DATE';
     const UPDATED_AT = null;
 
