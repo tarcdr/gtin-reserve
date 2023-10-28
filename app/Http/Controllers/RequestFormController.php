@@ -20,8 +20,8 @@ class RequestFormController extends Controller
         $brand = [];
         foreach (Brand::all() as $b) {
           array_push($brand, [
-            "code" => $b->BRAND_ABB,
-            "name" => $b->BRAND_NAME,
+            "code" => $b->brand_abb,
+            "name" => $b->brand_name,
           ]);
         }
 
