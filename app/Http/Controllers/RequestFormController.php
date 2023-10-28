@@ -35,8 +35,8 @@ class RequestFormController extends Controller
 
         return Inertia::render('Request', [
           'InputData' => [
-            'brand' => '',
-            'mattype' => '',
+            'brand' => $request->brand,
+            'mattype' => $request->mattype,
             'gtinExist' => false,
             'company' => '',
             'gtinCode' => '',
