@@ -81,23 +81,16 @@ class RequestFormController extends Controller
         $p_brand_abb    = null;
         $l_product_code = null;
         $s_product_code = null;
-        $p_gtin_13      = null;
         $p_msg          = null;
 
-        $procedureName = 'proj1_gen_mattype';
-
-        $bindings = [
-            'p_brand_code'   => $p_brand_code,
-            'p_mattype_code' => $p_mattype_code,
-            'p_brand_name'   => $p_brand_name,
-            'p_mattype_name' => $p_mattype_name,
-            'p_brand_abb'    => $p_brand_abb,
-            'l_product_code' => $l_product_code,
-            's_product_code' => $s_product_code,
-            'p_msg'          => $p_msg,
-        ];
-
-        $result = DB::executeProcedure($procedureName, $bindings);
+        $result = DB::select('exec proj1_gen_mattype(?,?,?,?,?,?,?,?)', array($p_brand_code,
+          $p_mattype_code,
+          $p_brand_name,
+          $p_mattype_name,
+          $p_brand_abb,
+          $l_product_code,
+          $s_product_code,
+          $p_msg));
 
         $inputData = [
           'brand' => $p_brand_code,
@@ -108,7 +101,7 @@ class RequestFormController extends Controller
           'gtinForPcs' => '',
           'gtinForInnerOrPack' => '',
         ];
-        dd($bindings);
+
         return Redirect::route('request', [$inputData]);
     }
 }
