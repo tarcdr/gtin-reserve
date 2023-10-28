@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Brand;
+use App\Models\Mattype;
 
 class RequestFormController extends Controller
 {
@@ -24,6 +25,13 @@ class RequestFormController extends Controller
             "name" => $b->brand_name,
           ]);
         }
+        $mattype = [];
+        foreach (Mattype::all() as $b) {
+          array_push($brand, [
+            "code" => $b->mattype_code,
+            "name" => $b->mattype_name,
+          ]);
+        }
 
         return Inertia::render('Request', [
           'InputData' => [
@@ -36,34 +44,7 @@ class RequestFormController extends Controller
             'gtinForInnerOrPack' => '',
           ],
           'brand' => $brand,
-          "mattype" => [[
-              "code" => "10",
-              "name" => "FG (Own brand)"
-            ], [
-              "code" => "11",
-              "name" => "FG (OEM)"
-            ], [
-              "code" => "12",
-              "name" => "FG (Set)"
-            ], [
-              "code" => "13",
-              "name" => "FG (FOC)"
-            ], [
-              "code" => "20",
-              "name" => "Semi FG Lv2 (ผลิตเอง)"
-            ], [
-              "code" => "21",
-              "name" => "Semi FG Lv2 (ซื้อในประเทศ)"
-            ], [
-              "code" => "22",
-              "name" => "Semi FG Lv2 (ซื้อต่างประเทศ)"
-            ], [
-              "code" => "30",
-              "name" => "Semi FG Lv1 (ผลิตเอง)"
-            ], [
-              "code" => "31",
-              "name" => "Semi FG Lv1 (ซื้อในประเทศ)"
-          ]],
+          "mattype" => $mattype,
           "company" => [[
               "code" => "8859082",
               "name" => "DDD & NLP"
