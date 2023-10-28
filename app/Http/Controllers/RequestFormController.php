@@ -73,6 +73,40 @@ class RequestFormController extends Controller
      */
     public function update(FormUpdateRequest $request): RedirectResponse
     {
-        return Redirect::route('request');
+        $pdo = DB::getPdo();
+        $p_brand_code = 8;
+        $p_mattype_code = 8;
+        
+        $stmt = $pdo->prepare("begin proj1_gen_mattype(
+          :p_brand_code,
+          :p_mattype_code,
+          :p_brand_name,
+          :p_mattype_name,
+          :p_brand_abb,
+          :l_product_code,
+          :s_product_code,
+          :p_gtin_13,
+          :p_msg);
+        end;");
+        $stmt->bindParam(':p_brand_code', $p_brand_code, PDO::PARAM_STR);
+        $stmt->bindParam(':p_mattype_code', $p_mattype_code, PDO::PARAM_STR);
+        $stmt->bindParam(':p_brand_name', $p_brand_name, PDO::PARAM_STR);
+        $stmt->bindParam(':p_mattype_name', $p_mattype_name, PDO::PARAM_STR);
+        $stmt->bindParam(':p_brand_abb', $p_brand_abb, PDO::PARAM_STR);
+        $stmt->bindParam(':l_product_code', $l_product_code, PDO::PARAM_STR);
+        $stmt->bindParam(':s_product_code', $s_product_code, PDO::PARAM_STR);
+        $stmt->bindParam(':p_gtin_13', $p_gtin_13, PDO::PARAM_STR);
+        $stmt->bindParam(':p_msg', $p_msg, PDO::PARAM_STR);
+        $stmt->execute();
+        $inputData = [
+          'brand' => $p_brand_code,
+          'mattype' => $p_mattype_code,
+          'gtinExist' => false,
+          'company' => '',
+          'gtinCode' => '',
+          'gtinForPcs' => '',
+          'gtinForInnerOrPack' => '',
+        ];
+        return Redirect::route('request', $inputData);
     }
 }
