@@ -107,6 +107,6 @@ class RequestFormController extends Controller
           'gtinForPcs' => '',
           'gtinForInnerOrPack' => '',
         ];
-        return Redirect::route('request', $inputData);
+        return view($request);
     }
 }
