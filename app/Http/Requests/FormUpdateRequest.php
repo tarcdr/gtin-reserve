@@ -18,7 +18,6 @@ class FormUpdateRequest extends FormRequest
         return [
             'brand' => ['required'],
             'mattype' => ['required'],
-            'gtinExist' => ['required', Rule::in(['Y', 'N'])],
             'gtinCode' => ['required_if:gtinExist,Y']
         ];
     }

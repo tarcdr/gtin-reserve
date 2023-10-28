@@ -37,7 +37,7 @@ class RequestFormController extends Controller
           'InputData' => [
             'brand' => $request->brand,
             'mattype' => $request->mattype,
-            'gtinExist' => false,
+            'gtinExist' => '',
             'company' => '',
             'gtinCode' => '',
             'gtinForPcs' => '',
@@ -107,6 +107,7 @@ class RequestFormController extends Controller
           'gtinForPcs' => '',
           'gtinForInnerOrPack' => '',
         ];
-        return view($request);
+        dd($inputData);
+        return Redirect::route('request', [$inputData]);
     }
 }

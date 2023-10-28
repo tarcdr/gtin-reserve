@@ -13,12 +13,16 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         brand: InputData?.brand || '',
         mattype: InputData?.mattype || '',
-        gtinExist: InputData?.gtinExist || false,
+        gtinExist: InputData?.gtinExist || undefined,
         company: InputData?.company || '',
         gtinCode: InputData?.gtinCode || '',
         gtinForPcs: InputData?.gtinForPcs || '',
         gtinForInnerOrPack: InputData?.gtinForInnerOrPack || ''
     });
+
+    const handdleChange = (name, value) => {
+        setData(name, value);
+    };
 
     const submit = (e) => {
         e.preventDefault();
@@ -43,7 +47,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <select
                                     id="brand"
                                     className="mt-1 block w-full"
-                                    onChange={(e) => setData('brand', e.target.value)}
+                                    onChange={(e) => handdleChange('brand', e.target.value)}
                                     defaultValue={data?.brand}
                                 >
                                     <option>---- Select Brand ----</option>
@@ -59,7 +63,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <select
                                     id="mattype"
                                     className="mt-1 block w-full"
-                                    onChange={(e) => setData('mattype', e.target.value)}
+                                    onChange={(e) => handdleChange('mattype', e.target.value)}
                                     defaultValue={data?.mattype}
                                 >
                                     <option>---- Select MATTYPE ----</option>
@@ -110,6 +114,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <Checkbox
                                     name="gtinExist"
                                     checked={data?.gtinExist}
+                                    value="Y"
                                     onChange={(e) => setData('gtinExist', e.target.checked)}
                                 />
                                 <span className="ml-2">GTIN Existing</span>
@@ -130,7 +135,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 </div>
                             )}
                           </div>
-                          {!data?.gtinExist && (
+                          {typeof data?.gtinExist === 'boolean' && !data?.gtinExist && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div>
                                     <InputLabel htmlFor="company" value="Company Code" />
