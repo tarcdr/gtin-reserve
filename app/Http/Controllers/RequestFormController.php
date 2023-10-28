@@ -94,7 +94,6 @@ class RequestFormController extends Controller
             'p_brand_abb'    => $p_brand_abb,
             'l_product_code' => $l_product_code,
             's_product_code' => $s_product_code,
-            'p_gtin_13'      => $p_gtin_13,
             'p_msg'          => $p_msg,
         ];
 
