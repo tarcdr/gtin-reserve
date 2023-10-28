@@ -26,10 +26,10 @@ class RequestFormController extends Controller
           ]);
         }
         $mattype = [];
-        foreach (Mattype::all() as $b) {
-          array_push($brand, [
-            "code" => $b->mattype_code,
-            "name" => $b->mattype_name,
+        foreach (Mattype::all() as $m) {
+          array_push($mattype, [
+            "code" => $m->mattype_code,
+            "name" => $m->mattype_name,
           ]);
         }
 
