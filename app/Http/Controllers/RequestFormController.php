@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Database\PDO;
 use Illuminate\Support\Facades\DB;
 use App\Models\Brand;
 use App\Models\Mattype;
@@ -78,28 +77,23 @@ class RequestFormController extends Controller
         $pdo = DB::getPdo();
         $p_brand_code = 8;
         $p_mattype_code = 8;
+
+        $procedureName = 'proj1_gen_mattype';
+ 
+        $bindings = [
+            'p_brand_code'  => $p_brand_code,
+            'p_mattype_code'  => $p_mattype_code,
+            'p_brand_name'  => $p_brand_name,
+            'p_mattype_name'  => $p_mattype_name,
+            'p_brand_abb'  => $p_brand_abb,
+            'l_product_code'  => $l_product_code,
+            's_product_code'  => $s_product_code,
+            'p_gtin_13'  => $p_gtin_13,
+            'p_msg'  => $p_msg,
+        ];
         
-        $stmt = $pdo->prepare("begin proj1_gen_mattype(
-          :p_brand_code,
-          :p_mattype_code,
-          :p_brand_name,
-          :p_mattype_name,
-          :p_brand_abb,
-          :l_product_code,
-          :s_product_code,
-          :p_gtin_13,
-          :p_msg);
-        end;");
-        $stmt->bindParam(':p_brand_code', $p_brand_code, PDO::PARAM_STR);
-        $stmt->bindParam(':p_mattype_code', $p_mattype_code, PDO::PARAM_STR);
-        $stmt->bindParam(':p_brand_name', $p_brand_name, PDO::PARAM_STR);
-        $stmt->bindParam(':p_mattype_name', $p_mattype_name, PDO::PARAM_STR);
-        $stmt->bindParam(':p_brand_abb', $p_brand_abb, PDO::PARAM_STR);
-        $stmt->bindParam(':l_product_code', $l_product_code, PDO::PARAM_STR);
-        $stmt->bindParam(':s_product_code', $s_product_code, PDO::PARAM_STR);
-        $stmt->bindParam(':p_gtin_13', $p_gtin_13, PDO::PARAM_STR);
-        $stmt->bindParam(':p_msg', $p_msg, PDO::PARAM_STR);
-        $stmt->execute();
+        $result = DB::executeProcedure($procedureName, $bindings);
+      
         $inputData = [
           'brand' => $p_brand_code,
           'mattype' => $p_mattype_code,
@@ -109,7 +103,7 @@ class RequestFormController extends Controller
           'gtinForPcs' => '',
           'gtinForInnerOrPack' => '',
         ];
-        dd($inputData);
+        dd($bindings);
         return Redirect::route('request', [$inputData]);
     }
 }
