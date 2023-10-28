@@ -76,16 +76,16 @@ class RequestFormController extends Controller
     {
         $p_brand_code   = $request->brand;
         $p_mattype_code = $request->mattype;
-        $p_brand_name   = "";
-        $p_mattype_name = "";
-        $p_brand_abb    = "";
-        $l_product_code = "";
-        $s_product_code = "";
-        $p_gtin_13      = "";
-        $p_msg          = "";
+        $p_brand_name   = null;
+        $p_mattype_name = null;
+        $p_brand_abb    = null;
+        $l_product_code = null;
+        $s_product_code = null;
+        $p_gtin_13      = null;
+        $p_msg          = null;
 
         $procedureName = 'proj1_gen_mattype';
- 
+
         $bindings = [
             'p_brand_code'   => $p_brand_code,
             'p_mattype_code' => $p_mattype_code,
@@ -97,9 +97,9 @@ class RequestFormController extends Controller
             'p_gtin_13'      => $p_gtin_13,
             'p_msg'          => $p_msg,
         ];
-        
+
         $result = DB::executeProcedure($procedureName, $bindings);
-      
+
         $inputData = [
           'brand' => $p_brand_code,
           'mattype' => $p_mattype_code,
