@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Database\PDO;
 use Illuminate\Support\Facades\DB;
 use App\Models\Brand;
 use App\Models\Mattype;
