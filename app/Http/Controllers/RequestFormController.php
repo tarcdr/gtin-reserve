@@ -108,6 +108,6 @@ class RequestFormController extends Controller
           'msg' => $p_msg,
         ];
 
-        return Redirect::route('request', [$inputData]);
+        return Redirect::route('request');
     }
 }
