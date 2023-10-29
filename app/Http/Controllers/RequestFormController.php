@@ -98,7 +98,7 @@ class RequestFormController extends Controller
         // $result = DB::executeProcedure($procedureName, $bindings);
         $procedureName = 'program1';
 
-        DB::select("exec program1(:p1)", array ('p1' => ''));
+        DB::select("exec program1(:p1)", array ('p1' => 'p1'));
 
         $inputData = [
           'brand' => $p_brand_code,
