@@ -11,6 +11,7 @@ use Inertia\Response;
 use Illuminate\Support\Facades\DB;
 use App\Models\Brand;
 use App\Models\Mattype;
+use PDO;
 
 class RequestFormController extends Controller
 {
@@ -97,13 +98,13 @@ class RequestFormController extends Controller
         // ];
 
         // $result = DB::executeProcedure($procedureName, $bindings);
-        $procedureName = 'program1';
+        $pdo = DB::getPdo();
+        $p1 = 8;
 
-        $bindings = [
-            'p_msg'          => $p_msg,
-        ];
-
-        $result = DB::executeProcedure($procedureName, $bindings);
+        $stmt = $pdo->prepare("begin program2(:p1, :p2); end;");
+        $stmt->bindParam(':p1', $p1, PDO::PARAM_INT);
+        $stmt->bindParam(':p2', $p2, PDO::PARAM_INT);
+        $stmt->execute();
 
         $inputData = [
           'brand' => $p_brand_code,
