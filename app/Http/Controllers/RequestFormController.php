@@ -83,16 +83,23 @@ class RequestFormController extends Controller
         $s_product_code = 'NULL';
         $p_msg          = 'NULL';
 
-        $procedureName = 'proj1_gen_mattype';
+        // $procedureName = 'proj1_gen_mattype';
+
+        // $bindings = [
+        //     'p_brand_code'   => $p_brand_code,
+        //     'p_mattype_code' => $p_mattype_code,
+        //     'p_brand_name'   => $p_brand_name,
+        //     'p_mattype_name' => $p_mattype_name,
+        //     'p_brand_abb'    => $p_brand_abb,
+        //     'l_product_code' => $l_product_code,
+        //     's_product_code' => $s_product_code,
+        //     'p_msg'          => $p_msg,
+        // ];
+
+        // $result = DB::executeProcedure($procedureName, $bindings);
+        $procedureName = 'program1';
 
         $bindings = [
-            'p_brand_code'   => $p_brand_code,
-            'p_mattype_code' => $p_mattype_code,
-            'p_brand_name'   => $p_brand_name,
-            'p_mattype_name' => $p_mattype_name,
-            'p_brand_abb'    => $p_brand_abb,
-            'l_product_code' => $l_product_code,
-            's_product_code' => $s_product_code,
             'p_msg'          => $p_msg,
         ];
 
@@ -106,6 +113,7 @@ class RequestFormController extends Controller
           'gtinCode' => '',
           'gtinForPcs' => '',
           'gtinForInnerOrPack' => '',
+          'msg' => $p_msg,
         ];
 
         return Redirect::route('request', [$inputData]);
