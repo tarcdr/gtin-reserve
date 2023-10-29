@@ -84,7 +84,7 @@ class RequestFormController extends Controller
         $s_product_code = 'NULL';
         $p_msg          = '""';
 
-        $connection = $this->getConnection();
+        $connection = DB::getPdo();
         $input = 20;
         $output = 0;
         $procedureName = 'program2';
