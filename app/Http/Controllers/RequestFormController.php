@@ -81,6 +81,7 @@ class RequestFormController extends Controller
         $p_brand_abb    = 'NULL';
         $l_product_code = 'NULL';
         $s_product_code = 'NULL';
+        $p_msg          = ':p_msg';
 
         // $procedureName = 'proj1_gen_mattype';
 
@@ -98,7 +99,11 @@ class RequestFormController extends Controller
         // $result = DB::executeProcedure($procedureName, $bindings);
         $procedureName = 'program1';
 
-        DB::select("exec program1(:p1)", array ('p1' => 'p1'));
+        $bindings = [
+            'p_msg'          => $p_msg,
+        ];
+
+        $result = DB::executeProcedure($procedureName, $bindings);
 
         $inputData = [
           'brand' => $p_brand_code,
