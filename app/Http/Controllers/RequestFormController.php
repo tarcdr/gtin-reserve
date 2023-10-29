@@ -76,12 +76,27 @@ class RequestFormController extends Controller
     {
         $p_brand_code   = $request->brand;
         $p_mattype_code = $request->mattype;
-        $p_brand_name   = null;
-        $p_mattype_name = null;
-        $p_brand_abb    = null;
-        $l_product_code = null;
-        $s_product_code = null;
-        $p_msg          = null;
+        $p_brand_name   = 'NULL';
+        $p_mattype_name = 'NULL';
+        $p_brand_abb    = 'NULL';
+        $l_product_code = 'NULL';
+        $s_product_code = 'NULL';
+        $p_msg          = 'NULL';
+
+        $procedureName = 'proj1_gen_mattype';
+
+        $bindings = [
+            'p_brand_code'   => $p_brand_code,
+            'p_mattype_code' => $p_mattype_code,
+            'p_brand_name'   => $p_brand_name,
+            'p_mattype_name' => $p_mattype_name,
+            'p_brand_abb'    => $p_brand_abb,
+            'l_product_code' => $l_product_code,
+            's_product_code' => $s_product_code,
+            'p_msg'          => $p_msg,
+        ];
+
+        $result = DB::executeProcedure($procedureName, $bindings);
 
         $inputData = [
           'brand' => $p_brand_code,
@@ -92,19 +107,6 @@ class RequestFormController extends Controller
           'gtinForPcs' => '',
           'gtinForInnerOrPack' => '',
         ];
-
-        $pdo = DB::getPdo();
-
-        $stmt = $pdo->prepare("begin proj1_gen_mattype(:p_brand_code, :p_mattype_code, :p_brand_name, :p_mattype_name, :p_brand_abb, :l_product_code, :s_product_code, :p_msg); end;");
-        $stmt->bindParam(':p_brand_code', $p_brand_code, \PDO::PARAM_STR);
-        $stmt->bindParam(':p_mattype_code', $p_mattype_code, \PDO::PARAM_STR);
-        $stmt->bindParam(':p_brand_name', $p_brand_name, \PDO::PARAM_STR);
-        $stmt->bindParam(':p_mattype_name', $p_mattype_name, \PDO::PARAM_STR);
-        $stmt->bindParam(':p_brand_abb', $p_brand_abb, \PDO::PARAM_STR);
-        $stmt->bindParam(':l_product_code', $l_product_code, \PDO::PARAM_STR);
-        $stmt->bindParam(':s_product_code', $s_product_code, \PDO::PARAM_STR);
-        $stmt->bindParam(':p_msg', $p_msg, \PDO::PARAM_STR);
-        $stmt->execute();
 
         return Redirect::route('request', [$inputData]);
     }
