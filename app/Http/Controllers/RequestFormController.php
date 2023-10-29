@@ -77,14 +77,13 @@ class RequestFormController extends Controller
     {
         $p_brand_code   = $request->brand;
         $p_mattype_code = $request->mattype;
-        $p_brand_name   = 'NULL';
-        $p_mattype_name = 'NULL';
-        $p_brand_abb    = 'NULL';
-        $l_product_code = 'NULL';
-        $s_product_code = 'NULL';
-        $p_msg          = '""';
+        $p_brand_name   = '';
+        $p_mattype_name = '';
+        $p_brand_abb    = '';
+        $l_product_code = '';
+        $s_product_code = '';
+        $p_msg          = '';
 
-        $input = 20;
         $output = '';
         $procedureName = 'get_install';
 
@@ -108,6 +107,6 @@ class RequestFormController extends Controller
           'msg' => $p_msg,
         ];
 
-        return Redirect::route('request');
+        return view($inputData);
     }
 }
