@@ -81,7 +81,7 @@ class RequestFormController extends Controller
         $p_brand_abb    = 'NULL';
         $l_product_code = 'NULL';
         $s_product_code = 'NULL';
-        $p_msg          = ':p_msg';
+        $p_msg          = '""';
 
         // $procedureName = 'proj1_gen_mattype';
 
