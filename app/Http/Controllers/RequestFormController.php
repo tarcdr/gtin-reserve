@@ -84,7 +84,6 @@ class RequestFormController extends Controller
         $s_product_code = 'NULL';
         $p_msg          = '""';
 
-        $connection = DB::getPdo();
         $input = 20;
         $output = 0;
         $procedureName = 'program2';
@@ -97,7 +96,7 @@ class RequestFormController extends Controller
             ],
         ];
 
-        $connection->executeProcedure($procedureName, $bindings);
+        DB::executeProcedure($procedureName, $bindings);
 
         $this->assertSame($input * 2, $output);
 
