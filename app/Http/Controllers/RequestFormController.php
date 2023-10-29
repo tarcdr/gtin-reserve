@@ -85,20 +85,17 @@ class RequestFormController extends Controller
         $p_msg          = '""';
 
         $input = 20;
-        $output = 0;
-        $procedureName = 'program2';
+        $output = '';
+        $procedureName = 'get_install';
 
         $bindings = [
-            'p1' => $input,
-            'p2' => [
+            'p_out' => [
                 'value' => &$output,
-                'type'  => PDO::PARAM_INT | PDO::PARAM_INPUT_OUTPUT,
+                'type'  => PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT,
             ],
         ];
 
         DB::executeProcedure($procedureName, $bindings);
-
-        $this->assertSame($input * 2, $output);
 
         $inputData = [
           'brand' => $p_brand_code,
