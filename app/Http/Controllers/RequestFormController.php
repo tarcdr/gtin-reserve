@@ -84,27 +84,22 @@ class RequestFormController extends Controller
         $s_product_code = 'NULL';
         $p_msg          = '""';
 
-        // $procedureName = 'proj1_gen_mattype';
+        $connection = $this->getConnection();
+        $input = 20;
+        $output = 0;
+        $procedureName = 'program2';
 
-        // $bindings = [
-        //     'p_brand_code'   => $p_brand_code,
-        //     'p_mattype_code' => $p_mattype_code,
-        //     'p_brand_name'   => $p_brand_name,
-        //     'p_mattype_name' => $p_mattype_name,
-        //     'p_brand_abb'    => $p_brand_abb,
-        //     'l_product_code' => $l_product_code,
-        //     's_product_code' => $s_product_code,
-        //     'p_msg'          => $p_msg,
-        // ];
+        $bindings = [
+            'p1' => $input,
+            'p2' => [
+                'value' => &$output,
+                'type'  => PDO::PARAM_INT | PDO::PARAM_INPUT_OUTPUT,
+            ],
+        ];
 
-        // $result = DB::executeProcedure($procedureName, $bindings);
-        $pdo = DB::getPdo();
-        $p0 = 8;
+        $connection->executeProcedure($procedureName, $bindings);
 
-        $stmt = $pdo->prepare("begin program2(:p0, :p1); end;");
-        $stmt->bindParam(':p0', $p0, PDO::PARAM_INT);
-        $stmt->bindParam(':p1', $p1, PDO::PARAM_INT);
-        $stmt->execute();
+        $this->assertSame($input * 2, $output);
 
         $inputData = [
           'brand' => $p_brand_code,
