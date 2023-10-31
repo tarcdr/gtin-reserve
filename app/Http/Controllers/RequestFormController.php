@@ -50,10 +50,18 @@ class RequestFormController extends Controller
         
         oci_execute($stid);
 
+        $pdo = DB::getPdo();
+
+        $stmt = $pdo->prepare("begin program2(:p1, :p2); end;");
+        $stmt->bindParam(':p1', $p1);
+        $stmt->bindParam(':p2', $p3);
+        $stmt->execute();
+
         return Inertia::render('Request', [
           'database' => [
             'name' => $databaseName,
             'output' => $p2,
+            'output2' => $p3,
           ],
           'InputData' => [
             'brand' => $request->brand,
@@ -103,14 +111,6 @@ class RequestFormController extends Controller
         $s_product_code = '';
         $p_msg          = '';
 
-        $pdo = DB::getPdo();
-        $p1 = 8;
-
-        $stmt = $pdo->prepare("begin program2(:p1, :p2); end;");
-        $stmt->bindParam(':p1', $p1, PDO::PARAM_INT);
-        $stmt->bindParam(':p2', $p2, 40);
-        $stmt->execute();
-
         $inputData = [
           'brand' => $p_brand_code,
           'mattype' => $p_mattype_code,
@@ -119,7 +119,7 @@ class RequestFormController extends Controller
           'gtinCode' => '',
           'gtinForPcs' => '',
           'gtinForInnerOrPack' => '',
-          'msg' => $p2,
+          'msg' => $p_msg,
         ];
 
         return Redirect::route('request', $inputData);
