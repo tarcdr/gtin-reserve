@@ -53,7 +53,7 @@ class RequestFormController extends Controller
         $pdo = DB::getPdo();
 
         $stmt = $pdo->prepare("begin get_install(:p3); end;");
-        $stmt->bindParam(':p3', $p3, PDO::PARAM_STR);
+        $stmt->bindParam(':p3', $p3, PDO::PARAM_STR, 100);
         $stmt->execute();
 
         return Inertia::render('Request', [
