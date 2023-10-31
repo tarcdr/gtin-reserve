@@ -20,6 +20,7 @@ class RequestFormController extends Controller
      */
     public function view(Request $request): Response
     {
+        $databaseName = DB::getDatabaseName();
         $brand = [];
         foreach (Brand::all() as $b) {
           array_push($brand, [
@@ -36,6 +37,9 @@ class RequestFormController extends Controller
         }
 
         return Inertia::render('Request', [
+          'database' => [
+            'name' => $databaseName,
+          ],
           'InputData' => [
             'brand' => $request->brand,
             'mattype' => $request->mattype,
