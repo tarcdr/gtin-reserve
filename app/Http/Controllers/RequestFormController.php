@@ -108,7 +108,7 @@ class RequestFormController extends Controller
 
         $stmt = $pdo->prepare("begin program2(:p1, :p2); end;");
         $stmt->bindParam(':p1', $p1, PDO::PARAM_INT);
-        $stmt->bindParam(':p2', $p2, PDO::PARAM_INT, 40);
+        $stmt->bindParam(':p2', $p2, 40);
         $stmt->execute();
 
         $inputData = [
