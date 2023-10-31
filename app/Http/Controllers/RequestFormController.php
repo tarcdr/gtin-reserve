@@ -36,9 +36,24 @@ class RequestFormController extends Controller
           ]);
         }
 
+        $conn = oci_connect('apps', 'apps', '131.107.2.77/ERPPROD');
+        if (!$conn) {
+            $e = oci_error();
+            trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+        }
+        
+        $p1 = 8;
+        
+        $stid = oci_parse($conn, 'begin progrm2(:p1, :p2); end;');
+        oci_bind_by_name($stid, ':p1', $p1);
+        oci_bind_by_name($stid, ':p2', $p2, 40);
+        
+        oci_execute($stid);
+
         return Inertia::render('Request', [
           'database' => [
             'name' => $databaseName,
+            'output' => $p2,
           ],
           'InputData' => [
             'brand' => $request->brand,
