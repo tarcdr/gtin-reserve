@@ -51,11 +51,10 @@ class RequestFormController extends Controller
         oci_execute($stid);
 
         $pdo = DB::getPdo();
-        $p4 = 99;
 
         $stmt = $pdo->prepare("begin program2(:p3, :p4); end;");
-        $stmt->bindValue(':p3', $p1, PDO::PARAM_INT);
-        $stmt->bindParam(':p4', $p4, PDO::PARAM_INT);
+        $stmt->bindParam(':p3', $p1, PDO::PARAM_INT);
+        $stmt->bindParam(':p4', $p4, PDO::PARAM_INT|PDO::PARAM_INPUT_OUTPUT, 40);
         $stmt->execute();
 
         return Inertia::render('Request', [
