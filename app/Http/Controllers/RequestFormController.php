@@ -103,19 +103,13 @@ class RequestFormController extends Controller
         $s_product_code = '';
         $p_msg          = '';
 
-        $input = 8;
-        $output = '';
-        $procedureName = 'program2';
+        $pdo = DB::getPdo();
+        $p1 = 8;
 
-        $bindings = [
-            'p_in' => $input,
-            'p_out' => [
-                'value' => &$output,
-                'type'  => PDO::PARAM_INT | PDO::PARAM_INPUT_OUTPUT,
-            ],
-        ];
-
-        DB::executeProcedure($procedureName, $bindings);
+        $stmt = $pdo->prepare("begin program2(:p1, :p2); end;");
+        $stmt->bindParam(':p1', $p1, PDO::PARAM_INT);
+        $stmt->bindParam(':p2', $p2, PDO::PARAM_INT);
+        $stmt->execute();
 
         $inputData = [
           'brand' => $p_brand_code,
@@ -125,7 +119,7 @@ class RequestFormController extends Controller
           'gtinCode' => '',
           'gtinForPcs' => '',
           'gtinForInnerOrPack' => '',
-          'msg' => $output,
+          'msg' => $p2,
         ];
 
         return Redirect::route('request', $inputData);
