@@ -103,13 +103,15 @@ class RequestFormController extends Controller
         $s_product_code = '';
         $p_msg          = '';
 
+        $input = 8;
         $output = '';
-        $procedureName = 'get_install';
+        $procedureName = 'program2';
 
         $bindings = [
+            'p_in' => $input,
             'p_out' => [
                 'value' => &$output,
-                'type'  => PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT,
+                'type'  => PDO::PARAM_INT | PDO::PARAM_INPUT_OUTPUT,
             ],
         ];
 
