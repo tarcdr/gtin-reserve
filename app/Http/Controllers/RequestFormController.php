@@ -46,7 +46,7 @@ class RequestFormController extends Controller
         
         $stid = oci_parse($conn, 'begin program2(:p1, :p2); end;');
         oci_bind_by_name($stid, ':p1', $p1);
-        oci_bind_by_name($stid, ':p2', $p2);
+        oci_bind_by_name($stid, ':p2', $p2, 40);
         
         oci_execute($stid);
 
