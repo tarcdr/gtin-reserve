@@ -20,7 +20,10 @@ class RequestFormController extends Controller
      */
     public function view(Request $request): Response
     {
-        $databaseName = DB::getDatabaseName();
+        $host = env('DB_HOST', '');
+        $database = env('DB_DATABASE', '');
+        $username = env('DB_USERNAME', '');
+        $password = env('DB_PASSWORD', '');
         $brand = [];
         foreach (Brand::all() as $b) {
           array_push($brand, [
@@ -36,7 +39,7 @@ class RequestFormController extends Controller
           ]);
         }
 
-        $conn = oci_connect('apps', 'apps', '131.107.2.77/ERPPROD');
+        $conn = oci_connect($username, $password, $host || '/' || $database);
         if (!$conn) {
             $e = oci_error();
             trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
@@ -50,18 +53,9 @@ class RequestFormController extends Controller
         
         oci_execute($stid);
 
-        $pdo = DB::getPdo();
-
-        $stmt = $pdo->prepare("begin program2(:p3, :p4); end;");
-        $stmt->bindParam(':p3', $p1, PDO::PARAM_INT);
-        $stmt->bindParam(':p4', $p4, PDO::PARAM_INT|PDO::PARAM_INPUT_OUTPUT, 40);
-        $stmt->execute();
-
         return Inertia::render('Request', [
           'database' => [
-            'name' => $databaseName,
-            'output' => $p2,
-            'output2' => $p4,
+            'output' => $p4,
           ],
           'InputData' => [
             'brand' => $request->brand,
