@@ -60,7 +60,7 @@ class RequestFormController extends Controller
             'password' => $password,
             'host' => $host,
             'database' => $database,
-            'output' => $p4,
+            'output' => $p2,
           ],
           'InputData' => [
             'brand' => $request->brand,
