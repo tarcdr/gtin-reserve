@@ -58,8 +58,7 @@ class RequestFormController extends Controller
           'database' => [
             'username' => $username,
             'password' => $password,
-            'host' => $host,
-            'database' => $database,
+            'host' => $host || '/' || $database,
             'output' => $p2,
           ],
           'InputData' => [
