@@ -39,7 +39,8 @@ class RequestFormController extends Controller
           ]);
         }
 
-        $conn = oci_connect($username, $password, $host || '/' || $database);
+        // $conn = oci_connect($username, $password, $host || '/' || $database);
+        $conn = oci_connect('apps', 'apps', '131.107.2.77/ERPPROD');
         if (!$conn) {
             $e = oci_error();
             trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
@@ -55,6 +56,10 @@ class RequestFormController extends Controller
 
         return Inertia::render('Request', [
           'database' => [
+            'username' => $username,
+            'password' => $password,
+            'host' => $host,
+            'database' => $database,
             'output' => $p4,
           ],
           'InputData' => [
