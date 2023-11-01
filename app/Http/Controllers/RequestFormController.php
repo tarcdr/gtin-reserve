@@ -39,8 +39,7 @@ class RequestFormController extends Controller
           ]);
         }
 
-        // $conn = oci_connect($username, $password, $host || '/' || $database);
-        $conn = oci_connect('apps', 'apps', '131.107.2.77/ERPPROD');
+        $conn = oci_connect($username, $password, $host . '/' . $database);
         if (!$conn) {
             $e = oci_error();
             trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
