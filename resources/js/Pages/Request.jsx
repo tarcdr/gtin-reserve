@@ -92,23 +92,23 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
-                                <InputLabel htmlFor="latestProductCode" value="Latest Product code" />
+                                <InputLabel htmlFor="l_product_code" value="Latest Product code" />
 
                                 <TextInput
-                                    id="latestProductCode"
+                                    id="l_product_code"
                                     className="mt-1 block w-full bg-gray-100"
                                     value={`${data?.l_product_code}`}
-                                    disabled
+                                    readonly
                                 />
                             </div>
                             <div>
-                                <InputLabel htmlFor="suggestProductCode" value="Suggest Product code" />
+                                <InputLabel htmlFor="s_product_code" value="Suggest Product code" />
 
                                 <TextInput
-                                    id="suggestProductCode"
+                                    id="s_product_code"
                                     className="mt-1 block w-full bg-gray-100"
                                     value={`${data?.s_product_code}`}
-                                    disabled
+                                    readonly
                                 />
                             </div>
                           </div>
