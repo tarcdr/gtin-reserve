@@ -20,6 +20,8 @@ class RequestFormController extends Controller
      */
     public function view(Request $request): Response
     {
+        $p_brand_code   = $request->brand;
+        $p_mattype_code = $request->mattypede;
         $host = env('DB_HOST', '');
         $database = env('DB_DATABASE', '');
         $username = env('DB_USERNAME', '');
@@ -32,8 +34,8 @@ class RequestFormController extends Controller
         }
 
         $stid = oci_parse($conn, 'begin proj1_gen_mattype(:p_brand_code, :p_mattype_code, :p_brand_name, :p_mattype_name, :p_brand_abb, :l_product_code, :s_product_code, :p_msg); end;');
-        oci_bind_by_name($stid, ':p_brand_code',   $request->brand);
-        oci_bind_by_name($stid, ':p_mattype_code', $request->mattypede);
+        oci_bind_by_name($stid, ':p_brand_code',   $p_brand_code);
+        oci_bind_by_name($stid, ':p_mattype_code', $p_mattype_code);
         oci_bind_by_name($stid, ':p_brand_name',   $p_brand_name, 100);
         oci_bind_by_name($stid, ':p_mattype_name', $p_mattype_name, 100);
         oci_bind_by_name($stid, ':p_brand_abb',    $p_brand_abb, 100);
