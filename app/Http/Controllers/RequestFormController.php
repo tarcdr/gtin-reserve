@@ -62,9 +62,6 @@ class RequestFormController extends Controller
         }
 
         return Inertia::render('Request', [
-          'test' => [
-            'output' => $p2,
-          ],
           'InputData' => [
             'brand'              => $request->brand,
             'mattype'            => $request->mattype,
