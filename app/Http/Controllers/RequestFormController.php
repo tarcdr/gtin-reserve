@@ -117,14 +117,14 @@ class RequestFormController extends Controller
         }
         
         $stid = oci_parse($conn, 'begin proj1_gen_mattype(:p_brand_code, :p_mattype_code, :p_brand_name, :p_mattype_name, :p_brand_abb, :l_product_code, :s_product_code, :p_msg); end;');
-        oci_bind_by_name($stid, ':p_brand_code',   $p_brand_code);
-        oci_bind_by_name($stid, ':p_mattype_code', $p_mattype_code);
-        oci_bind_by_name($stid, ':p_brand_name',   $p_brand_name);
-        oci_bind_by_name($stid, ':p_mattype_name', $p_mattype_name);
-        oci_bind_by_name($stid, ':p_brand_abb',    $p_brand_abb);
-        oci_bind_by_name($stid, ':l_product_code', $l_product_code);
-        oci_bind_by_name($stid, ':s_product_code', $s_product_code);
-        oci_bind_by_name($stid, ':p_msg',          $p_msg);
+        oci_bind_by_name($stid, ':p_brand_code',   $p_brand_code, 100);
+        oci_bind_by_name($stid, ':p_mattype_code', $p_mattype_code, 100);
+        oci_bind_by_name($stid, ':p_brand_name',   $p_brand_name, 100);
+        oci_bind_by_name($stid, ':p_mattype_name', $p_mattype_name, 100);
+        oci_bind_by_name($stid, ':p_brand_abb',    $p_brand_abb, 100);
+        oci_bind_by_name($stid, ':l_product_code', $l_product_code, 100);
+        oci_bind_by_name($stid, ':s_product_code', $s_product_code, 100);
+        oci_bind_by_name($stid, ':p_msg',          $p_msg, 100);
         
         oci_execute($stid);
 
