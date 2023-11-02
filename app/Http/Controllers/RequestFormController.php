@@ -61,7 +61,6 @@ class RequestFormController extends Controller
           ],
           'InputData' => [
             'brand'              => $request->brand,
-            'brand_abb'          => $request->brand_abb,
             'mattype'            => $request->mattype,
             'gtinExist'          => $request->gtinExist,
             'company'            => '',
@@ -103,12 +102,6 @@ class RequestFormController extends Controller
     {
         $p_brand_code   = $request->brand;
         $p_mattype_code = $request->mattype;
-        $p_brand_name   = '';
-        $p_mattype_name = '';
-        $p_brand_abb    = $request->brand_abb;
-        $l_product_code = '';
-        $s_product_code = '';
-        $p_msg          = '';
 
         $host = env('DB_HOST', '');
         $database = env('DB_DATABASE', '');
@@ -135,16 +128,15 @@ class RequestFormController extends Controller
 
         $inputData = [
           'brand'              => $request->brand,
-          'brand_abb'          => $request->brand_abb,
           'mattype'            => $request->mattype,
           'gtinExist'          => $request->gtinExist,
           'company'            => '',
           'gtinCode'           => '',
           'gtinForPcs'         => '',
           'gtinForInnerOrPack' => '',
-          'l_product_code'     => '',
-          's_product_code'     => '',
-          'msg'                => '',
+          'l_product_code'     => $l_product_code,
+          's_product_code'     => $s_product_code,
+          'msg'                => $p_msg,
         ];
 
         return Redirect::route('request', $inputData);

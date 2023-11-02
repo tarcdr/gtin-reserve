@@ -12,7 +12,6 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         brand: InputData?.brand || '',
-        brand_abb: InputData?.brand_abb || '',
         mattype: InputData?.mattype || '',
         gtinExist: InputData?.gtinExist || false,
         company: InputData?.company || '',
