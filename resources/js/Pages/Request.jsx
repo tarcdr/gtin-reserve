@@ -55,7 +55,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 >
                                     <option>---- Select Brand ----</option>
                                     {brand?.map(o => (
-                                        <option key={`brand-code-${o.code}`} value={o.code}>{`${o.brand_abb} - ${o.name}`}</option>
+                                        <option key={`brand-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.name}`}</option>
                                     ))}
                                 </select>
 
