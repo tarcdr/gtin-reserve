@@ -33,7 +33,7 @@ class RequestFormController extends Controller
         
         $p1 = 8;
         
-        $stid = oci_parse($conn, 'begin program2(:p1, :p2); end;');
+        $stid = oci_parse($conn, 'begin program4(:p1, :p2); end;');
         oci_bind_by_name($stid, ':p1', $p1);
         oci_bind_by_name($stid, ':p2', $p2, 40);
         
@@ -56,6 +56,9 @@ class RequestFormController extends Controller
         }
 
         return Inertia::render('Request', [
+          'test' => [
+            'output' => $p2,
+          ],
           'InputData' => [
             'brand'              => $request->brand,
             'brand_abb'          => $request->brand_abb,
