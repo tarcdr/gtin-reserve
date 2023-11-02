@@ -14,7 +14,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
         brand: InputData?.brand || '',
         brand_abb: InputData?.brand_abb || '',
         mattype: InputData?.mattype || '',
-        gtinExist: InputData?.gtinExist || undefined,
+        gtinExist: InputData?.gtinExist || false,
         company: InputData?.company || '',
         gtinCode: InputData?.gtinCode || '',
         gtinForPcs: InputData?.gtinForPcs || '',
@@ -137,7 +137,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 </div>
                             )}
                           </div>
-                          {data?.gtinExist !== undefined && !data?.gtinExist && (
+                          {!data?.gtinExist && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div>
                                     <InputLabel htmlFor="company" value="Company Code" />
