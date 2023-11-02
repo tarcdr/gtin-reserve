@@ -65,6 +65,8 @@ class RequestFormController extends Controller
             'gtinCode'           => '',
             'gtinForPcs'         => '',
             'gtinForInnerOrPack' => '',
+            'l_product_code'     => $request->l_product_code,
+            's_product_code'     => $request->s_product_code,
           ],
           'brand' => $brand,
           "mattype" => $mattype,

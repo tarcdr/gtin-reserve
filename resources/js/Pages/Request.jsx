@@ -24,13 +24,6 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
     });
 
     const handdleChange = (name, value) => {
-        if (name === 'brand') {
-            const newBrand = brand?.find(b => b.code === value);
-            console.log(name, value, newBrand?.abb);
-            if (newBrand?.abb) {
-                setData('brand_abb', newBrand.abb);
-            }
-        }
         setData(name, value);
     };
 
@@ -92,7 +85,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <TextInput
                                     id="prefixCode"
                                     className="mt-1 block w-full bg-gray-100"
-                                    value={`${data?.brand_abb}${data?.mattype}`}
+                                    value={`${brand.filter(b => b.code === data?.brand).map(b => b.abb).join('')}${data?.mattype}`}
                                     disabled
                                 />
                             </div>
@@ -124,7 +117,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <Checkbox
                                     name="gtinExist"
                                     checked={data?.gtinExist}
-                                    value="Y"
+                                    defaultValue="Y"
                                     onChange={(e) => setData('gtinExist', e.target.checked)}
                                 />
                                 <span className="ml-2">GTIN Existing</span>
