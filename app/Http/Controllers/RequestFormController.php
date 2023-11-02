@@ -127,8 +127,8 @@ class RequestFormController extends Controller
         oci_execute($stid);
 
         $inputData = [
-          'brand'              => $request->brand,
-          'mattype'            => $request->mattype,
+          'brand'              => $p_brand_code,
+          'mattype'            => $p_mattype_code,
           'gtinExist'          => $request->gtinExist,
           'company'            => '',
           'gtinCode'           => '',
