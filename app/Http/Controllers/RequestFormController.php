@@ -21,7 +21,7 @@ class RequestFormController extends Controller
     public function view(Request $request): Response
     {
         $p_brand_code   = $request->brand;
-        $p_mattype_code = $request->mattypede;
+        $p_mattype_code = $request->mattype;
         $host = env('DB_HOST', '');
         $database = env('DB_DATABASE', '');
         $username = env('DB_USERNAME', '');
