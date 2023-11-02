@@ -24,20 +24,6 @@ class RequestFormController extends Controller
         $database = env('DB_DATABASE', '');
         $username = env('DB_USERNAME', '');
         $password = env('DB_PASSWORD', '');
-        $brand = [];
-        foreach (Brand::all() as $b) {
-          array_push($brand, [
-            "code" => $b->brand_abb,
-            "name" => $b->brand_name,
-          ]);
-        }
-        $mattype = [];
-        foreach (Mattype::all() as $m) {
-          array_push($mattype, [
-            "code" => $m->mattype_code,
-            "name" => $m->mattype_name,
-          ]);
-        }
 
         $conn = oci_connect($username, $password, $host . '/' . $database);
         if (!$conn) {
@@ -53,20 +39,31 @@ class RequestFormController extends Controller
         
         oci_execute($stid);
 
+        $brand = [];
+        foreach (Brand::all() as $b) {
+          array_push($brand, [
+            "code" => $b->brand_code,
+            "name" => $b->brand_name,
+            "abb"  => $b->brand_abb,
+          ]);
+        }
+        $mattype = [];
+        foreach (Mattype::all() as $m) {
+          array_push($mattype, [
+            "code" => $m->mattype_code,
+            "name" => $m->mattype_name,
+          ]);
+        }
+
         return Inertia::render('Request', [
-          'database' => [
-            'username' => $username,
-            'password' => $password,
-            'host' => $host . '/' . $database,
-            'output' => $p2,
-          ],
           'InputData' => [
-            'brand' => $request->brand,
-            'mattype' => $request->mattype,
-            'gtinExist' => '',
-            'company' => '',
-            'gtinCode' => '',
-            'gtinForPcs' => '',
+            'brand'              => $request->brand,
+            'brand_abb'          => $request->brand_abb,
+            'mattype'            => $request->mattype,
+            'gtinExist'          => $request->gtinExist,
+            'company'            => '',
+            'gtinCode'           => '',
+            'gtinForPcs'         => '',
             'gtinForInnerOrPack' => '',
           ],
           'brand' => $brand,
@@ -108,15 +105,41 @@ class RequestFormController extends Controller
         $s_product_code = '';
         $p_msg          = '';
 
+        $host = env('DB_HOST', '');
+        $database = env('DB_DATABASE', '');
+        $username = env('DB_USERNAME', '');
+        $password = env('DB_PASSWORD', '');
+
+        $conn = oci_connect($username, $password, $host . '/' . $database);
+        if (!$conn) {
+            $e = oci_error();
+            trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+        }
+        
+        $stid = oci_parse($conn, 'begin proj1_gen_mattype(:p_brand_code, :p_mattype_code, :p_brand_name, :p_mattype_name, :p_brand_abb, :l_product_code, :s_product_code, :p_msg); end;');
+        oci_bind_by_name($stid, ':p_brand_code',   $p_brand_code);
+        oci_bind_by_name($stid, ':p_mattype_code', $p_mattype_code);
+        oci_bind_by_name($stid, ':p_brand_name',   $p_brand_name);
+        oci_bind_by_name($stid, ':p_mattype_name', $p_mattype_name);
+        oci_bind_by_name($stid, ':p_brand_abb',    $p_brand_abb);
+        oci_bind_by_name($stid, ':l_product_code', $l_product_code);
+        oci_bind_by_name($stid, ':s_product_code', $s_product_code);
+        oci_bind_by_name($stid, ':p_msg',          $p_msg);
+        
+        oci_execute($stid);
+
         $inputData = [
-          'brand' => $p_brand_code,
-          'mattype' => $p_mattype_code,
-          'gtinExist' => false,
-          'company' => '',
-          'gtinCode' => '',
-          'gtinForPcs' => '',
+          'brand'              => $request->brand,
+          'brand_abb'          => $request->brand_abb,
+          'mattype'            => $request->mattype,
+          'gtinExist'          => $request->gtinExist,
+          'company'            => '',
+          'gtinCode'           => '',
+          'gtinForPcs'         => '',
           'gtinForInnerOrPack' => '',
-          'msg' => $p_msg,
+          'l_product_code'     => $l_product_code,
+          's_product_code'     => $s_product_code,
+          'msg'                => $p_msg,
         ];
 
         return Redirect::route('request', $inputData);

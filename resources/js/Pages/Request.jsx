@@ -12,12 +12,15 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         brand: InputData?.brand || '',
+        brand_abb: InputData?.brand_abb || '',
         mattype: InputData?.mattype || '',
         gtinExist: InputData?.gtinExist || undefined,
         company: InputData?.company || '',
         gtinCode: InputData?.gtinCode || '',
         gtinForPcs: InputData?.gtinForPcs || '',
-        gtinForInnerOrPack: InputData?.gtinForInnerOrPack || ''
+        gtinForInnerOrPack: InputData?.gtinForInnerOrPack || '',
+        l_product_code: InputData?.l_product_code || '',
+        s_product_code: InputData?.s_product_code || ''
     });
 
     const handdleChange = (name, value) => {
@@ -52,7 +55,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 >
                                     <option>---- Select Brand ----</option>
                                     {brand?.map(o => (
-                                        <option key={`brand-code-${o.code}`} value={o.code}>{`${o.code} - ${o.name}`}</option>
+                                        <option key={`brand-code-${o.code}`} value={o.code}>{`${o.brand_abb} - ${o.name}`}</option>
                                     ))}
                                 </select>
 
@@ -82,7 +85,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <TextInput
                                     id="prefixCode"
                                     className="mt-1 block w-full bg-gray-100"
-                                    value={`${data?.brand}${data?.mattype}`}
+                                    value={`${data?.brand_abb}${data?.mattype}`}
                                     disabled
                                 />
                             </div>
@@ -94,7 +97,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <TextInput
                                     id="latestProductCode"
                                     className="mt-1 block w-full bg-gray-100"
-                                    value={`${data?.brand}${data?.mattype}XXXXXX`}
+                                    value={`${data?.l_product_code}`}
                                     disabled
                                 />
                             </div>
@@ -104,7 +107,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <TextInput
                                     id="suggestProductCode"
                                     className="mt-1 block w-full bg-gray-100"
-                                    value={`${data?.brand}${data?.mattype}XXXXXX`}
+                                    value={`${data?.s_product_code}`}
                                     disabled
                                 />
                             </div>
