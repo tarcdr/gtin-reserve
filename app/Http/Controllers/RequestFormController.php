@@ -139,9 +139,9 @@ class RequestFormController extends Controller
           'gtinCode'           => '',
           'gtinForPcs'         => '',
           'gtinForInnerOrPack' => '',
-          'l_product_code'     => $l_product_code,
-          's_product_code'     => $s_product_code,
-          'msg'                => $p_msg,
+          'l_product_code'     => '',
+          's_product_code'     => '',
+          'msg'                => '',
         ];
 
         return Redirect::route('request', $inputData);

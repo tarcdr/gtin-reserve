@@ -98,7 +98,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                     id="l_product_code"
                                     className="mt-1 block w-full bg-gray-100"
                                     value={`${data?.l_product_code}`}
-                                    readonly
+                                    disabled
                                 />
                             </div>
                             <div>
@@ -108,7 +108,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                     id="s_product_code"
                                     className="mt-1 block w-full bg-gray-100"
                                     value={`${data?.s_product_code}`}
-                                    readonly
+                                    disabled
                                 />
                             </div>
                           </div>
@@ -117,7 +117,6 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <Checkbox
                                     name="gtinExist"
                                     checked={data?.gtinExist}
-                                    defaultValue="Y"
                                     onChange={(e) => setData('gtinExist', e.target.checked)}
                                 />
                                 <span className="ml-2">GTIN Existing</span>
@@ -138,7 +137,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 </div>
                             )}
                           </div>
-                          {typeof data?.gtinExist === 'boolean' && !data?.gtinExist && (
+                          {data?.gtinExist !== undefined && !data?.gtinExist && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div>
                                     <InputLabel htmlFor="company" value="Company Code" />
