@@ -13,7 +13,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         brand: InputData?.brand || '',
         mattype: InputData?.mattype || '',
-        gtinExist: InputData?.gtinExist || false,
+        gtinExist: InputData?.gtinExist === 1 || false,
         company: InputData?.company || '',
         gtinCode: InputData?.gtinCode || '',
         gtinForPcs: InputData?.gtinForPcs || '',
