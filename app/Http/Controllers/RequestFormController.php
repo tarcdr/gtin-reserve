@@ -113,7 +113,7 @@ class RequestFormController extends Controller
             $e = oci_error();
             trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
         }
-        
+
         $stid = oci_parse($conn, 'begin proj1_gen_mattype(:p_brand_code, :p_mattype_code, :p_brand_name, :p_mattype_name, :p_brand_abb, :l_product_code, :s_product_code, :p_msg); end;');
         oci_bind_by_name($stid, ':p_brand_code',   $p_brand_code);
         oci_bind_by_name($stid, ':p_mattype_code', $p_mattype_code);
@@ -123,7 +123,7 @@ class RequestFormController extends Controller
         oci_bind_by_name($stid, ':l_product_code', $l_product_code, 100);
         oci_bind_by_name($stid, ':s_product_code', $s_product_code, 100);
         oci_bind_by_name($stid, ':p_msg',          $p_msg, 100);
-        
+
         oci_execute($stid);
 
         $inputData = [
@@ -134,9 +134,9 @@ class RequestFormController extends Controller
           'gtinCode'           => '',
           'gtinForPcs'         => '',
           'gtinForInnerOrPack' => '',
-          'l_product_code'     => gettype($l_product_code),
-          's_product_code'     => gettype($s_product_code),
-          'msg'                => gettype($p_msg),
+          'l_product_code'     => $l_product_code,
+          's_product_code'     => $s_product_code,
+          'msg'                => $p_msg,
         ];
 
         return Redirect::route('request', $inputData);
