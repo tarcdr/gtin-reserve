@@ -30,13 +30,17 @@ class RequestFormController extends Controller
             $e = oci_error();
             trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
         }
-        
-        $p1 = 8;
-        
-        $stid = oci_parse($conn, 'begin program4(:p1, :p2); end;');
-        oci_bind_by_name($stid, ':p1', $p1);
-        oci_bind_by_name($stid, ':p2', $p2, 100);
-        
+
+        $stid = oci_parse($conn, 'begin proj1_gen_mattype(:p_brand_code, :p_mattype_code, :p_brand_name, :p_mattype_name, :p_brand_abb, :l_product_code, :s_product_code, :p_msg); end;');
+        oci_bind_by_name($stid, ':p_brand_code',   $request->brand);
+        oci_bind_by_name($stid, ':p_mattype_code', $request->mattypede);
+        oci_bind_by_name($stid, ':p_brand_name',   $p_brand_name, 100);
+        oci_bind_by_name($stid, ':p_mattype_name', $p_mattype_name, 100);
+        oci_bind_by_name($stid, ':p_brand_abb',    $p_brand_abb, 100);
+        oci_bind_by_name($stid, ':l_product_code', $l_product_code, 100);
+        oci_bind_by_name($stid, ':s_product_code', $s_product_code, 100);
+        oci_bind_by_name($stid, ':p_msg',          $p_msg, 100);
+
         oci_execute($stid);
 
         $brand = [];
@@ -67,8 +71,9 @@ class RequestFormController extends Controller
             'gtinCode'           => '',
             'gtinForPcs'         => '',
             'gtinForInnerOrPack' => '',
-            'l_product_code'     => $request->l_product_code,
-            's_product_code'     => $request->s_product_code,
+            'l_product_code'     => $l_product_code,
+            's_product_code'     => $s_product_code,
+            'msg'                => $p_msg,
           ],
           'brand' => $brand,
           "mattype" => $mattype,
@@ -100,45 +105,6 @@ class RequestFormController extends Controller
      */
     public function update(FormUpdateRequest $request): RedirectResponse
     {
-        $p_brand_code   = $request->brand;
-        $p_mattype_code = $request->mattype;
-
-        $host = env('DB_HOST', '');
-        $database = env('DB_DATABASE', '');
-        $username = env('DB_USERNAME', '');
-        $password = env('DB_PASSWORD', '');
-
-        $conn = oci_connect($username, $password, $host . '/' . $database);
-        if (!$conn) {
-            $e = oci_error();
-            trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-        }
-
-        $stid = oci_parse($conn, 'begin proj1_gen_mattype(:p_brand_code, :p_mattype_code, :p_brand_name, :p_mattype_name, :p_brand_abb, :l_product_code, :s_product_code, :p_msg); end;');
-        oci_bind_by_name($stid, ':p_brand_code',   $p_brand_code);
-        oci_bind_by_name($stid, ':p_mattype_code', $p_mattype_code);
-        oci_bind_by_name($stid, ':p_brand_name',   $p_brand_name, 100);
-        oci_bind_by_name($stid, ':p_mattype_name', $p_mattype_name, 100);
-        oci_bind_by_name($stid, ':p_brand_abb',    $p_brand_abb, 100);
-        oci_bind_by_name($stid, ':l_product_code', $l_product_code, 100);
-        oci_bind_by_name($stid, ':s_product_code', $s_product_code, 100);
-        oci_bind_by_name($stid, ':p_msg',          $p_msg, 100);
-
-        oci_execute($stid);
-
-        $inputData = [
-          'brand'              => $p_brand_code,
-          'mattype'            => $p_mattype_code,
-          'gtinExist'          => $request->gtinExist,
-          'company'            => '',
-          'gtinCode'           => '',
-          'gtinForPcs'         => '',
-          'gtinForInnerOrPack' => '',
-          'l_product_code'     => $l_product_code,
-          's_product_code'     => $s_product_code,
-          'msg'                => $p_msg,
-        ];
-
-        return Redirect::route('request', $inputData);
+        return Redirect::route('request', $request);
     }
 }
