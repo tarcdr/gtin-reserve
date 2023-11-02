@@ -24,6 +24,12 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
     });
 
     const handdleChange = (name, value) => {
+        if (name === 'brand') {
+            const brand = brand.find(b => b.code === value);
+            if (brand?.abb) {
+                setData('brand_abb', brand.abb);
+            }
+        }
         setData(name, value);
     };
 
