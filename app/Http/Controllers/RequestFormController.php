@@ -104,6 +104,15 @@ class RequestFormController extends Controller
      */
     public function update(FormUpdateRequest $request): RedirectResponse
     {
-        return Redirect::route('request', $request);
+        $inputData = [
+          'brand'              => $request->brand,
+          'mattype'            => $request->mattype,
+          'gtinExist'          => $request->gtinExist,
+          'company'            => '',
+          'gtinCode'           => '',
+          'gtinForPcs'         => '',
+          'gtinForInnerOrPack' => '',
+        ];
+        return Redirect::route('request', $inputData);
     }
 }
