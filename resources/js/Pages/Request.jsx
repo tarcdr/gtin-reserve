@@ -96,7 +96,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <TextInput
                                     id="l_product_code"
                                     className="mt-1 block w-full bg-gray-100"
-                                    value={`${data?.l_product_code}`}
+                                    defaultValue={`${data?.l_product_code}`}
                                     disabled
                                 />
                             </div>
@@ -106,7 +106,7 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                 <TextInput
                                     id="s_product_code"
                                     className="mt-1 block w-full bg-gray-100"
-                                    value={`${data?.s_product_code}`}
+                                    defaultValue={`${data?.s_product_code}`}
                                     disabled
                                 />
                             </div>
