@@ -35,7 +35,7 @@ class RequestFormController extends Controller
         
         $stid = oci_parse($conn, 'begin program4(:p1, :p2); end;');
         oci_bind_by_name($stid, ':p1', $p1);
-        oci_bind_by_name($stid, ':p2', $p2, 40);
+        oci_bind_by_name($stid, ':p2', $p2, 100);
         
         oci_execute($stid);
 
@@ -122,8 +122,8 @@ class RequestFormController extends Controller
         }
         
         $stid = oci_parse($conn, 'begin proj1_gen_mattype(:p_brand_code, :p_mattype_code, :p_brand_name, :p_mattype_name, :p_brand_abb, :l_product_code, :s_product_code, :p_msg); end;');
-        oci_bind_by_name($stid, ':p_brand_code',   $p_brand_code, 100);
-        oci_bind_by_name($stid, ':p_mattype_code', $p_mattype_code, 100);
+        oci_bind_by_name($stid, ':p_brand_code',   $p_brand_code);
+        oci_bind_by_name($stid, ':p_mattype_code', $p_mattype_code);
         oci_bind_by_name($stid, ':p_brand_name',   $p_brand_name, 100);
         oci_bind_by_name($stid, ':p_mattype_name', $p_mattype_name, 100);
         oci_bind_by_name($stid, ':p_brand_abb',    $p_brand_abb, 100);
