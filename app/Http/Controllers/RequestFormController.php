@@ -100,7 +100,7 @@ class RequestFormController extends Controller
         $p_mattype_code = $request->mattype;
         $p_brand_name   = '';
         $p_mattype_name = '';
-        $p_brand_abb    = '';
+        $p_brand_abb    = $request->brand_abb;
         $l_product_code = '';
         $s_product_code = '';
         $p_msg          = '';
