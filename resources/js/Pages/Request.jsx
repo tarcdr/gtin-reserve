@@ -20,8 +20,6 @@ export default function Request({ auth, InputData, brand, mattype, company }) {
         gtinCode: InputData?.gtinCode || '',
         gtinForPcs: InputData?.gtinForPcs || '',
         gtinForInnerOrPack: InputData?.gtinForInnerOrPack || '',
-        l_product_code: InputData?.l_product_code || '',
-        s_product_code: InputData?.s_product_code || '',
         product_code_choose: 'l'
     });
 
@@ -109,7 +107,7 @@ export default function Request({ auth, InputData, brand, mattype, company }) {
                                     <TextInput
                                         id="l_product_code"
                                         className="mt-1 block w-full bg-gray-100"
-                                        value={`${data?.l_product_code}`}
+                                        value={`${InputData?.l_product_code}`}
                                         disabled
                                     />
                                 </div>
@@ -130,7 +128,7 @@ export default function Request({ auth, InputData, brand, mattype, company }) {
                                     <TextInput
                                         id="s_product_code"
                                         className="mt-1 block w-full bg-gray-100"
-                                        value={`${data?.s_product_code}`}
+                                        value={`${InputData?.s_product_code}`}
                                         disabled
                                     />
                                 </div>
