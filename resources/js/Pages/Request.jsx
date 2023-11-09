@@ -93,48 +93,50 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                             </div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <InputLabel htmlFor="l_product_code" value="Latest Product code" />
+                            <div className="grid grid-cols-4 gap-2">
+                                <label className="flex items-center justify-center">
+                                    <Radio
+                                        name="product_code_choose"
+                                        checked={data?.product_code_choose === 'l'}
+                                        value="l"
+                                        onChange={(e) => handdleChange('product_code_choose', e.target.value)}
+                                    />
+                                    <span className="ml-2">Choose</span>
+                                </label>
+                                <div className="col-span-3">
+                                    <InputLabel htmlFor="l_product_code" value="Latest Product code" />
 
-                                <TextInput
-                                    id="l_product_code"
-                                    className="mt-1 block w-full bg-gray-100"
-                                    value={`${data?.l_product_code}`}
-                                    defaultValue={`${data?.l_product_code}`}
-                                    disabled
-                                />
+                                    <TextInput
+                                        id="l_product_code"
+                                        className="mt-1 block w-full bg-gray-100"
+                                        value={`${data?.l_product_code}`}
+                                        defaultValue={`${data?.l_product_code}`}
+                                        disabled
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <InputLabel htmlFor="s_product_code" value="Suggest Product code" />
+                            <div className="grid grid-cols-4 gap-2">
+                                <label className="flex items-center justify-center">
+                                    <Radio
+                                        name="product_code_choose"
+                                        checked={data?.product_code_choose === 's'}
+                                        value="s"
+                                        onChange={(e) => handdleChange('product_code_choose', e.target.value)}
+                                    />
+                                    <span className="ml-2">Choose</span>
+                                </label>
+                                <div className="col-span-3">
+                                    <InputLabel htmlFor="s_product_code" value="Suggest Product code" />
 
-                                <TextInput
-                                    id="s_product_code"
-                                    className="mt-1 block w-full bg-gray-100"
-                                    value={`${data?.s_product_code}`}
-                                    defaultValue={`${data?.s_product_code}`}
-                                    disabled
-                                />
+                                    <TextInput
+                                        id="s_product_code"
+                                        className="mt-1 block w-full bg-gray-100"
+                                        value={`${data?.s_product_code}`}
+                                        defaultValue={`${data?.s_product_code}`}
+                                        disabled
+                                    />
+                                </div>
                             </div>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <label className="flex items-center justify-center">
-                                <Radio
-                                    name="product_code_choose"
-                                    checked={data?.product_code_choose === 'l'}
-                                    value="l"
-                                    onChange={(e) => handdleChange('product_code_choose', e.target.value)}
-                                />
-                                <span className="ml-2">Choose</span>
-                            </label>
-                            <label className="flex items-center justify-center">
-                                <Radio
-                                    name="product_code_choose"
-                                    checked={data?.product_code_choose === 's'}
-                                    value="s"
-                                    onChange={(e) => handdleChange('product_code_choose', e.target.value)}
-                                />
-                                <span className="ml-2">Choose</span>
-                            </label>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                               <div>
