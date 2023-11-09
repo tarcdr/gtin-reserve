@@ -9,7 +9,7 @@ import { Transition } from '@headlessui/react';
 import Checkbox from '@/Components/Checkbox';
 import Radio from '@/Components/Radio';
 
-export default function Request({ auth, InputData, brand, mattype, company, exists }) {
+export default function Request({ auth, InputData, brand, mattype, company }) {
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         brand: InputData?.brand || '',
@@ -110,7 +110,6 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                         id="l_product_code"
                                         className="mt-1 block w-full bg-gray-100"
                                         value={`${data?.l_product_code}`}
-                                        defaultValue={`${data?.l_product_code}`}
                                         disabled
                                     />
                                 </div>
@@ -132,7 +131,6 @@ export default function Request({ auth, InputData, brand, mattype, company, exis
                                         id="s_product_code"
                                         className="mt-1 block w-full bg-gray-100"
                                         value={`${data?.s_product_code}`}
-                                        defaultValue={`${data?.s_product_code}`}
                                         disabled
                                     />
                                 </div>

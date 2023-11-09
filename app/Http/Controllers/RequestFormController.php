@@ -89,13 +89,6 @@ class RequestFormController extends Controller
               "code" => "8859533",
               "name" => "SMS"
           ]],
-          "exists" => [[
-            "code" => "Y",
-            "name" => "Yes"
-          ], [
-            "code" => "N",
-            "name" => "No"
-          ]]
         ]);
     }
 
