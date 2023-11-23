@@ -34,9 +34,9 @@ Route::get('/report', function () {
     return Inertia::render('Report');
 })->middleware(['auth', 'verified'])->name('report');
 
+Route::get('/request', [RequestFormController::class, 'view'])->name('request');
+Route::patch('/request', [RequestFormController::class, 'update'])->name('request.update');
 Route::middleware('auth')->group(function () {
-    Route::get('/request', [RequestFormController::class, 'view'])->name('request');
-    Route::patch('/request', [RequestFormController::class, 'update'])->name('request.update');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
