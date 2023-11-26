@@ -81,7 +81,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                 <InputError className="mt-2" message={errors.mattype} />
                             </div>
                           </div>
-                          {InputData?.brand && InputData?.mattype ? (
+                          {InputData?.brand && InputData?.mattype && (
                             <>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div>
@@ -102,6 +102,25 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                 <PrimaryButton type="button">Create Material</PrimaryButton>
                                 </div>
                               </div>
+                            </>
+                          )}
+                          {(!InputData?.brand || !InputData?.mattype || !InputData?.material_id) && (
+                            <div className="flex items-center justify-center gap-4">
+                                <PrimaryButton disabled={processing}>Submit</PrimaryButton>
+
+                                <Transition
+                                    show={recentlySuccessful}
+                                    enter="transition ease-in-out"
+                                    enterFrom="opacity-0"
+                                    leave="transition ease-in-out"
+                                    leaveTo="opacity-0"
+                                >
+                                    <p className="text-sm text-gray-600">Saved.</p>
+                                </Transition>
+                            </div>
+                          )}
+                          {InputData?.brand && InputData?.mattype && InputData?.material_id && (
+                            <>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="grid grid-cols-1 gap-4">
                                   {data?.gtinCodePcs ? (
@@ -297,20 +316,6 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                   </Transition>
                               </div>
                             </>
-                          ) : (
-                            <div className="flex items-center justify-center gap-4">
-                                <PrimaryButton disabled={processing}>Submit</PrimaryButton>
-
-                                <Transition
-                                    show={recentlySuccessful}
-                                    enter="transition ease-in-out"
-                                    enterFrom="opacity-0"
-                                    leave="transition ease-in-out"
-                                    leaveTo="opacity-0"
-                                >
-                                    <p className="text-sm text-gray-600">Saved.</p>
-                                </Transition>
-                            </div>
                           )}
                         </form>
                     </div>
