@@ -18,7 +18,8 @@ class FormUpdateRequest extends FormRequest
         return [
             'brand' => ['required'],
             'mattype' => ['required'],
-            'gtinCode' => ['required_if:gtinExist,true']
+            'gtinCode' => ['required_if:gtinExist,true'],
+            'material_id' => ['required_with_all:brand,mattype']
         ];
     }
 }

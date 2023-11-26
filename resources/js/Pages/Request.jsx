@@ -26,14 +26,27 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         trading_unit: ''
     });
 
-    const handdleChange = (name, value) => {
-        setData(name, value);
-    };
-
     const submit = (e) => {
         e.preventDefault();
 
         patch(route('request.update'));
+    };
+
+    const getMaterial = (brand, mattype) => {
+      if (brand !== '' && mattype !== '') {
+        submit();
+      }
+    }
+
+    const handdleChange = (name, value) => {
+      const brand = data.brand;
+      const mattype = data.mattype;
+      if (name === 'brand' && mattype !== '') {
+        getMaterial(value, mattype);
+      } else if (name === 'mattype' && brand !== '') {
+        getMaterial(brand, value);
+      }
+      setData(name, value);
     };
 
     return (
