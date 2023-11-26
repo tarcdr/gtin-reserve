@@ -9,7 +9,7 @@ import { Transition } from '@headlessui/react';
 import Checkbox from '@/Components/Checkbox';
 import Radio from '@/Components/Radio';
 
-export default function Request({ auth, InputData, brand, mattype, materials = [], tradingUnits = [] }) {
+export default function Request({ auth, InputData, brand, mattype, materials = [], tradingUnits = [], gtins = [] }) {
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         brand: InputData?.brand || '',
@@ -17,10 +17,10 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         material_id: InputData?.material_id || '',
         gtinExistPcs: InputData?.gtinExistPcs === 1 || false,
         gtinExistPack: InputData?.gtinExistPack === 1 || false,
-        gtinCodePcs: InputData?.gtinCodePcs,
+        gtinCodePcs: gtins.find(o => o.typ_gtin === '1'),
         gtinPcsCode: '',
         gtinPcsChoose: 'l',
-        gtinCodePack: InputData?.gtinCodePack,
+        gtinCodePack: gtins.filter(o => o.typ_gtin === '2'),
         gtinPackCode: '',
         gtinPackChoose: 'l',
         trading_unit: ''
@@ -123,14 +123,14 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                             <>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="grid grid-cols-1 gap-4">
-                                  {data?.gtinCodePcs ? (
+                                  {data?.gtinCodePcs?.global_trade_item_number ? (
                                     <div>
                                         <InputLabel htmlFor="gtinCodePcs" value="GTIN Code for Pcs" />
 
                                         <TextInput
                                             id="gtinCodePcs"
                                             className="mt-1 block w-full bg-gray-100"
-                                            value={data.gtinCodePcs}
+                                            value={data.gtinCodePcs.global_trade_item_number}
                                             disabled
                                         />
                                     </div>
@@ -219,86 +219,73 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                           ))}
                                       </select>
                                   </div>
-                                  {data?.gtinCodePack ? (
-                                    <div>
-                                        <InputLabel htmlFor="gtinCodePack" value="GTIN Code for Inner / Pack" />
-
-                                        <TextInput
-                                            id="gtinCodePack"
-                                            className="mt-1 block w-full bg-gray-100"
-                                            value={data.gtinCodePack}
-                                            disabled
+                                  <>
+                                    <label className="flex items-center">
+                                        <Checkbox
+                                            name="gtinExistPack"
+                                            checked={data?.gtinExistPack}
+                                            onChange={(e) => setData('gtinExistPack', e.target.checked)}
                                         />
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <label className="flex items-center">
-                                          <Checkbox
-                                              name="gtinExistPack"
-                                              checked={data?.gtinExistPack}
-                                              onChange={(e) => setData('gtinExistPack', e.target.checked)}
-                                          />
-                                          <span className="ml-2">GTIN Pack Existing</span>
-                                      </label>
-                                      {data?.gtinExistPack && (
-                                          <div>
-                                              <InputLabel htmlFor="gtinPackCode" value="GTIN Pack Code" />
-
-                                              <TextInput
-                                                  id="gtinPackCode"
-                                                  className="mt-1 block w-full"
-                                                  value={data.gtinPackCode}
-                                                  onChange={(e) => setData('gtinPackCode', e.target.value)}
-                                                  isFocused
-                                              />
-
-                                              <InputError className="mt-2" message={errors.gtinPackCode} />
-                                          </div>
-                                      )}
-                                      <div className="grid grid-cols-4 gap-2">
-                                        <label className="flex items-center">
-                                            <Radio
-                                                name="gtinPackChoose"
-                                                checked={data?.gtinPackChoose === 'l'}
-                                                value="l"
-                                                onChange={(e) => handdleChange('gtinPackChoose', e.target.value)}
-                                            />
-                                            <span className="ml-2">Choose</span>
-                                        </label>
-                                        <div className="col-span-3">
-                                            <InputLabel htmlFor="latestGTINCodeForInnerOrPack" value="Latest GTIN Code for Inner / Pack" />
+                                        <span className="ml-2">GTIN Pack Existing</span>
+                                    </label>
+                                    {data?.gtinExistPack && (
+                                        <div>
+                                            <InputLabel htmlFor="gtinPackCode" value="GTIN Pack Code" />
 
                                             <TextInput
-                                                id="latestGTINCodeForInnerOrPack"
-                                                className="mt-1 block w-full bg-gray-100"
-                                                value={`XXXXXX`}
-                                                disabled
+                                                id="gtinPackCode"
+                                                className="mt-1 block w-full"
+                                                value={data.gtinPackCode}
+                                                onChange={(e) => setData('gtinPackCode', e.target.value)}
+                                                isFocused
                                             />
+
+                                            <InputError className="mt-2" message={errors.gtinPackCode} />
                                         </div>
-                                      </div>
-                                      <div className="grid grid-cols-4 gap-2">
-                                        <label className="flex items-center">
-                                            <Radio
-                                                name="gtinPackChoose"
-                                                checked={data?.gtinPackChoose === 's'}
-                                                value="s"
-                                                onChange={(e) => handdleChange('gtinPackChoose', e.target.value)}
-                                            />
-                                            <span className="ml-2">Choose</span>
-                                        </label>
-                                        <div className="col-span-3">
-                                          <InputLabel htmlFor="suggestGTINCodeForInnerOrPack" value="Suggest GTIN Code for Inner / Pack" />
+                                    )}
+                                    <div className="grid grid-cols-4 gap-2">
+                                      <label className="flex items-center">
+                                          <Radio
+                                              name="gtinPackChoose"
+                                              checked={data?.gtinPackChoose === 'l'}
+                                              value="l"
+                                              onChange={(e) => handdleChange('gtinPackChoose', e.target.value)}
+                                          />
+                                          <span className="ml-2">Choose</span>
+                                      </label>
+                                      <div className="col-span-3">
+                                          <InputLabel htmlFor="latestGTINCodeForInnerOrPack" value="Latest GTIN Code for Inner / Pack" />
 
                                           <TextInput
-                                              id="suggestGTINCodeForInnerOrPack"
+                                              id="latestGTINCodeForInnerOrPack"
                                               className="mt-1 block w-full bg-gray-100"
                                               value={`XXXXXX`}
                                               disabled
                                           />
-                                        </div>
                                       </div>
-                                    </>
-                                  )}
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-2">
+                                      <label className="flex items-center">
+                                          <Radio
+                                              name="gtinPackChoose"
+                                              checked={data?.gtinPackChoose === 's'}
+                                              value="s"
+                                              onChange={(e) => handdleChange('gtinPackChoose', e.target.value)}
+                                          />
+                                          <span className="ml-2">Choose</span>
+                                      </label>
+                                      <div className="col-span-3">
+                                        <InputLabel htmlFor="suggestGTINCodeForInnerOrPack" value="Suggest GTIN Code for Inner / Pack" />
+
+                                        <TextInput
+                                            id="suggestGTINCodeForInnerOrPack"
+                                            className="mt-1 block w-full bg-gray-100"
+                                            value={`XXXXXX`}
+                                            disabled
+                                        />
+                                      </div>
+                                    </div>
+                                  </>
                                 </div>
                               </div>
 
