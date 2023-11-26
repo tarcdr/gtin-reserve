@@ -22,7 +22,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         gtinCodePack: gtins.filter(o => o.typ_gtin === '2'),
         gtinPackCode: '',
         gtinPackChoose: 'l',
-        trading_unit: ''
+        trading_unit: (tradingUnits?.length > 0 && tradingUnits[0]?.unit) || null
     });
 
     const submit = (e) => {
@@ -212,7 +212,6 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                           onChange={(e) => setData('trading_unit', e.target.value)}
                                           defaultValue={data?.trading_unit}
                                       >
-                                          <option value="">---- Select Trading Unit ----</option>
                                           {tradingUnits?.map(o => (
                                               <option key={`trading_unit-code-${o.unit}`} value={o.unit}>{o.unit}</option>
                                           ))}
