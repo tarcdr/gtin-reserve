@@ -19,10 +19,13 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         gtinExistPack: InputData?.gtinExistPack === 1 || false,
         gtinPcsCode: '',
         gtinPcsChoose: 'l',
-        gtinCodePack: gtins.filter(o => o.typ_gtin === '2'),
         gtinPackCode: '',
         gtinPackChoose: 'l',
-        trading_unit: (tradingUnits?.length > 0 && tradingUnits[0]?.unit) || null
+        trading_unit: (tradingUnits?.length > 0 && tradingUnits[0]?.unit) || null,
+        p_new_last_gtin_pcs: InputData?.p_new_last_gtin_pcs,
+        p_suggest_gtin_pcs: InputData?.p_suggest_gtin_pcs,
+        p_new_last_gtin_box: InputData?.p_new_last_gtin_box,
+        p_suggest_gtin_box: InputData?.p_suggest_gtin_box,
     });
 
     const submit = (e) => {
@@ -174,7 +177,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                             <TextInput
                                                 id="latestGTINCodeForPcs"
                                                 className="mt-1 block w-full bg-gray-100"
-                                                value={`XXXXXX`}
+                                                value={data?.p_new_last_gtin_pcs}
                                                 disabled
                                             />
                                         </div>
@@ -195,7 +198,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                             <TextInput
                                                 id="suggestGTINCodeForPcs"
                                                 className="mt-1 block w-full bg-gray-100"
-                                                value={`XXXXXX`}
+                                                value={data?.p_suggest_gtin_pcs}
                                                 disabled
                                             />
                                         </div>
@@ -270,7 +273,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                             <TextInput
                                                 id="latestGTINCodeForInnerOrPack"
                                                 className="mt-1 block w-full bg-gray-100"
-                                                value={`XXXXXX`}
+                                                value={data?.p_new_last_gtin_box}
                                                 disabled
                                             />
                                         </div>
@@ -291,7 +294,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                           <TextInput
                                               id="suggestGTINCodeForInnerOrPack"
                                               className="mt-1 block w-full bg-gray-100"
-                                              value={`XXXXXX`}
+                                              value={data?.p_suggest_gtin_box}
                                               disabled
                                           />
                                         </div>

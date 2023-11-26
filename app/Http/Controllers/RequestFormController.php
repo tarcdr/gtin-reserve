@@ -32,6 +32,11 @@ class RequestFormController extends Controller
         $tradingUnits = [];
         $gtins = [];
 
+        $p_new_last_gtin_pcs = '';
+        $p_suggest_gtin_pcs  = '';
+        $p_new_last_gtin_box = '';
+        $p_suggest_gtin_box  = '';
+
         foreach (Material::select('brand')->whereNotNull('brand')->groupBy('brand')->orderBy('brand')->get() as $b) {
           array_push($brand, [
             "code" => $b->brand
@@ -55,21 +60,38 @@ class RequestFormController extends Controller
             "type" => $m->type_gtin_unit,
           ]);
         }
-        foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
-          array_push($gtins, $m);
+        if ($request->material_id) {
+          foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
+            array_push($gtins, $m);
+          }
+          $conn = oci_connect($username, $password, $host . '/' . $database);
+          if (!$conn) {
+              $e = oci_error();
+              trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+          }
+
+          $stid = oci_parse($conn, 'begin proj1_find_newgtin(:p_new_last_gtin_pcs, :p_suggest_gtin_pcs, :p_new_last_gtin_box, :p_suggest_gtin_box); end;');
+          oci_bind_by_name($stid, ':p_new_last_gtin_pcs', $p_new_last_gtin_pcs, 100);
+          oci_bind_by_name($stid, ':p_suggest_gtin_pcs',  $p_suggest_gtin_pcs,  100);
+          oci_bind_by_name($stid, ':p_new_last_gtin_box', $p_new_last_gtin_box, 100);
+          oci_bind_by_name($stid, ':p_suggest_gtin_box',  $p_suggest_gtin_box,  100);
+  
+          oci_execute($stid);
         }
 
         return Inertia::render('Request', [
           'InputData' => [
-            'brand'         => $request->brand,
-            'mattype'       => $request->mattype,
-            'material_id'   => $request->material_id,
-            'gtinExistPcs'  => $request->gtinExistPcs,
-            'gtinExistPack' => $request->gtinExistPack,
-            'gtinCodePcs'   => $request->gtinCodePcs,
-            'gtinPcsCode'   => $request->gtinPcsCode,
-            'gtinCodePack'  => $request->gtinCodePack,
-            'gtinPackCode'  => $request->gtinPackCode,
+            'brand'               => $request->brand,
+            'mattype'             => $request->mattype,
+            'material_id'         => $request->material_id,
+            'gtinExistPcs'        => $request->gtinExistPcs,
+            'gtinExistPack'       => $request->gtinExistPack,
+            'gtinPcsCode'         => $request->gtinPcsCode,
+            'gtinPackCode'        => $request->gtinPackCode,
+            "p_new_last_gtin_pcs" => $p_new_last_gtin_pcs,
+            "p_suggest_gtin_pcs"  => $p_suggest_gtin_pcs,
+            "p_new_last_gtin_box" => $p_new_last_gtin_box,
+            "p_suggest_gtin_box"  => $p_suggest_gtin_box,
           ],
           'brand'        => $brand,
           "mattype"      => $mattype,
@@ -90,9 +112,7 @@ class RequestFormController extends Controller
           'material_id'   => $request->material_id,
           'gtinExistPcs'  => $request->gtinExistPcs,
           'gtinExistPack' => $request->gtinExistPack,
-          'gtinCodePcs'   => $request->gtinCodePcs,
           'gtinPcsCode'   => $request->gtinPcsCode,
-          'gtinCodePack'  => $request->gtinCodePack,
           'gtinPackCode'  => $request->gtinPackCode,
         ];
         return Redirect::route('request', $inputData);
