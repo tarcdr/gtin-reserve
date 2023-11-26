@@ -32,12 +32,12 @@ class RequestFormController extends Controller
         $materials = [];
 
         if (!$isMock) {
-          foreach (Material::select('brand')->groupBy('brand')->get() as $b) {
+          foreach (Material::select('brand')->whereNotNull('brand')->groupBy('brand')->get() as $b) {
             array_push($brand, [
               "code" => $b->brand
             ]);
           }
-          foreach (Material::select('mat_type')->groupBy('mat_type')->get() as $m) {
+          foreach (Material::select('mat_type')->whereNotNull('mat_type')->groupBy('mat_type')->get() as $m) {
             array_push($mattype, [
               "code" => $m->mat_type
             ]);
