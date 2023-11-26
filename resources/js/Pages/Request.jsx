@@ -82,16 +82,6 @@ export default function Request({ auth, InputData, brand, mattype, company, prod
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
-                                <InputLabel htmlFor="prefixCode" value="Product Code Prefix" />
-
-                                <TextInput
-                                    id="prefixCode"
-                                    className="mt-1 block w-full bg-gray-100"
-                                    value={`${brand.filter(b => b.code === data?.brand).map(b => b.abb).join('')}${data?.mattype}`}
-                                    disabled
-                                />
-                            </div>
-                            <div>
                                 <InputLabel htmlFor="product_code" value="Product Code" />
                                 <select
                                     id="product_code"
@@ -104,6 +94,9 @@ export default function Request({ auth, InputData, brand, mattype, company, prod
                                         <option key={`product_code-code-${o.code}`} value={o.code}>{`${o.code} - ${o.name}`}</option>
                                     ))}
                                 </select>
+                            </div>
+                            <div className="mt-auto">
+                            <PrimaryButton type="button">Create product code</PrimaryButton>
                             </div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

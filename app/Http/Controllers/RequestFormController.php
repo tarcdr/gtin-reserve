@@ -20,7 +20,7 @@ class RequestFormController extends Controller
      */
     public function view(Request $request): Response
     {
-        $isMock = true;
+        $isMock = false;
         $p_brand_code   = $request->brand;
         $p_mattype_code = $request->mattype;
         $host = env('DB_HOST', '');
@@ -73,98 +73,98 @@ class RequestFormController extends Controller
             "abb" => "HO",
             "code" => "HO",
             "name" => "AT HOME"
-          ], [
-            "abb" => "BR",
-            "code" => "BR",
-            "name" => "BEAR"
-          ], [
-            "abb" => "BS",
-            "code" => "BS",
-            "name" => "BISSELL"
-          ], [
-            "abb" => "EJ",
-            "code" => "EJ",
-            "name" => "EMJOI"
-          ], [
-            "abb" => "FS",
-            "code" => "FS",
-            "name" => "FLYCO"
-          ], [
-            "abb" => "FF",
-            "code" => "FF",
-            "name" => "FORFUN"
-          ], [
-            "abb" => "IN",
-            "code" => "IN",
-            "name" => "IONIE"
-          ], [
-            "abb" => "JS",
-            "code" => "JS",
-            "name" => "JASON"
-          ], [
-            "abb" => "KR",
-            "code" => "KR",
-            "name" => "KURON"
-          ], [
-            "abb" => "LS",
-            "code" => "LS",
-            "name" => "LESASHA"
-          ], [
-            "abb" => "NP",
-            "code" => "NP",
-            "name" => "N LifePlus"
-          ], [
-            "abb" => "NL",
-            "code" => "NL",
-            "name" => "NAMU LIFE"
-          ], [
-            "abb" => "SW",
-            "code" => "SW",
-            "name" => "NAMU LIFE SNAILWHITE"
-          ], [
-            "abb" => "NN",
-            "code" => "NN",
-            "name" => "NAMULIFE NATURALS"
-          ], [
-            "abb" => "OX",
-            "code" => "OX",
-            "name" => "OXE'CURE"
-          ], [
-            "abb" => "PF",
-            "code" => "PF",
-            "name" => "PRETTIIFACE"
-          ], [
-            "abb" => "SS",
-            "code" => "SS",
-            "name" => "SMOOTH SKIN-IPL"
-          ], [
-            "abb" => "SO",
-            "code" => "SO",
-            "name" => "SOS"
-          ], [
-            "abb" => "SK",
-            "code" => "SK",
-            "name" => "SPARKLE"
-          ], [
-            "abb" => "UP",
-            "code" => "UP",
-            "name" => "UP 5"
-          ], [
-            "abb" => "VT",
-            "code" => "VT",
-            "name" => "VITAINNO"
-          ], [
-            "abb" => "YR",
-            "code" => "YR",
-            "name" => "YOURS"
-          ], [
-            "abb" => "IL",
-            "code" => "IL",
-            "name" => "I-Life"
-          ], [
-            "abb" => "MV",
-            "code" => "MV",
-            "name" => "Makavelic"
+            ], [
+              "abb" => "BR",
+              "code" => "BR",
+              "name" => "BEAR"
+            ], [
+              "abb" => "BS",
+              "code" => "BS",
+              "name" => "BISSELL"
+            ], [
+              "abb" => "EJ",
+              "code" => "EJ",
+              "name" => "EMJOI"
+            ], [
+              "abb" => "FS",
+              "code" => "FS",
+              "name" => "FLYCO"
+            ], [
+              "abb" => "FF",
+              "code" => "FF",
+              "name" => "FORFUN"
+            ], [
+              "abb" => "IN",
+              "code" => "IN",
+              "name" => "IONIE"
+            ], [
+              "abb" => "JS",
+              "code" => "JS",
+              "name" => "JASON"
+            ], [
+              "abb" => "KR",
+              "code" => "KR",
+              "name" => "KURON"
+            ], [
+              "abb" => "LS",
+              "code" => "LS",
+              "name" => "LESASHA"
+            ], [
+              "abb" => "NP",
+              "code" => "NP",
+              "name" => "N LifePlus"
+            ], [
+              "abb" => "NL",
+              "code" => "NL",
+              "name" => "NAMU LIFE"
+            ], [
+              "abb" => "SW",
+              "code" => "SW",
+              "name" => "NAMU LIFE SNAILWHITE"
+            ], [
+              "abb" => "NN",
+              "code" => "NN",
+              "name" => "NAMULIFE NATURALS"
+            ], [
+              "abb" => "OX",
+              "code" => "OX",
+              "name" => "OXE'CURE"
+            ], [
+              "abb" => "PF",
+              "code" => "PF",
+              "name" => "PRETTIIFACE"
+            ], [
+              "abb" => "SS",
+              "code" => "SS",
+              "name" => "SMOOTH SKIN-IPL"
+            ], [
+              "abb" => "SO",
+              "code" => "SO",
+              "name" => "SOS"
+            ], [
+              "abb" => "SK",
+              "code" => "SK",
+              "name" => "SPARKLE"
+            ], [
+              "abb" => "UP",
+              "code" => "UP",
+              "name" => "UP 5"
+            ], [
+              "abb" => "VT",
+              "code" => "VT",
+              "name" => "VITAINNO"
+            ], [
+              "abb" => "YR",
+              "code" => "YR",
+              "name" => "YOURS"
+            ], [
+              "abb" => "IL",
+              "code" => "IL",
+              "name" => "I-Life"
+            ], [
+              "abb" => "MV",
+              "code" => "MV",
+              "name" => "Makavelic"
           ]];
           $mattype = [[
               "code" => "10",
