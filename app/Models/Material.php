@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Mattype extends Model
+class Material extends Model
 {
     use HasFactory;
 
@@ -14,7 +14,7 @@ class Mattype extends Model
      *
      * @var string
      */
-    protected $table = 'proj1_mattype_v';
+    protected $table = 'proj1_material_id_v';
     /**
      * Indicates if the model's ID is auto-incrementing.
      *

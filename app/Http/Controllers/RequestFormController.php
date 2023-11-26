@@ -11,6 +11,7 @@ use Inertia\Response;
 use Illuminate\Support\Facades\DB;
 use App\Models\Brand;
 use App\Models\Mattype;
+use App\Models\Material;
 use PDO;
 
 class RequestFormController extends Controller
@@ -30,45 +31,27 @@ class RequestFormController extends Controller
 
         $brand = [];
         $mattype = [];
-        $products = [];
+        $materials = [];
 
         if (!$isMock) {
-          $conn = oci_connect($username, $password, $host . '/' . $database);
-          if (!$conn) {
-              $e = oci_error();
-              trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-          }
-  
-          $stid = oci_parse($conn, 'begin proj1_gen_mattype(:p_brand_code, :p_mattype_code, :p_brand_name, :p_mattype_name, :p_brand_abb, :l_product_code, :s_product_code, :p_msg); end;');
-          oci_bind_by_name($stid, ':p_brand_code',   $p_brand_code);
-          oci_bind_by_name($stid, ':p_mattype_code', $p_mattype_code);
-          oci_bind_by_name($stid, ':p_brand_name',   $p_brand_name, 100);
-          oci_bind_by_name($stid, ':p_mattype_name', $p_mattype_name, 100);
-          oci_bind_by_name($stid, ':p_brand_abb',    $p_brand_abb, 100);
-          oci_bind_by_name($stid, ':l_product_code', $l_product_code, 100);
-          oci_bind_by_name($stid, ':s_product_code', $s_product_code, 100);
-          oci_bind_by_name($stid, ':p_msg',          $p_msg, 100);
-  
-          oci_execute($stid);
-
           foreach (Brand::all() as $b) {
             array_push($brand, [
-              "code" => $b->brand_code,
-              "name" => $b->brand_name,
-              "abb"  => $b->brand_abb,
+              "code" => $b->brand
             ]);
           }
           foreach (Mattype::all() as $m) {
             array_push($mattype, [
-              "code" => $m->mattype_code,
-              "name" => $m->mattype_name,
+              "code" => $m->mat_type
+            ]);
+          }
+          foreach (Material::all() as $m) {
+            array_push($materials, [
+              "brand"       => $m->brand,
+              "mat_type"    => $m->mat_type,
+              "material_id" => $m->material_id,
             ]);
           }
         } else {
-          $l_product_code = '';
-          $s_product_code = '';
-          $p_msg = '';
-
           $brand = [[
             "abb" => "HO",
             "code" => "HO",
@@ -194,19 +177,6 @@ class RequestFormController extends Controller
               "code" => "31",
               "name" => "Semi FG Lv1 (ซื้อในประเทศ)"
           ]];
-          $company = [[
-              "code" => "8859082",
-              "name" => "DDD & NLP"
-            ], [
-              "code" => "8858690",
-              "name" => "KUR"
-            ], [
-              "code" => "8859510",
-              "name" => "DDM"
-            ], [
-              "code" => "8859533",
-              "name" => "SMS"
-          ]];
         }
 
         return Inertia::render('Request', [
@@ -214,19 +184,14 @@ class RequestFormController extends Controller
             'brand'              => $request->brand,
             'mattype'            => $request->mattype,
             'gtinExist'          => $request->gtinExist,
-            'company'            => '',
             'gtinCode'           => '',
             'gtinForPcs'         => '',
             'gtinForInnerOrPack' => '',
-            'l_product_code'     => $l_product_code,
-            's_product_code'     => $s_product_code,
-            'msg'                => $p_msg,
             'gtinCodePcs'        => 'XXXXXXX'
           ],
           'brand' => $brand,
           "mattype" => $mattype,
-          "company" => $company,
-          "products" => $products,
+          "materials" => $materials,
         ]);
     }
 
@@ -239,7 +204,6 @@ class RequestFormController extends Controller
           'brand'              => $request->brand,
           'mattype'            => $request->mattype,
           'gtinExist'          => $request->gtinExist,
-          'company'            => $request->company,
           'gtinCode'           => $request->gtinCode,
           'gtinForPcs'         => $request->gtinForPcs,
           'gtinForInnerOrPack' => $request->gtinForInnerOrPack,

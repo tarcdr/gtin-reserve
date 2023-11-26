@@ -9,19 +9,17 @@ import { Transition } from '@headlessui/react';
 import Checkbox from '@/Components/Checkbox';
 import Radio from '@/Components/Radio';
 
-export default function Request({ auth, InputData, brand, mattype, company, products = [] }) {
+export default function Request({ auth, InputData, brand, mattype, materials = [] }) {
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         brand: InputData?.brand || '',
         mattype: InputData?.mattype || '',
         gtinExistPcs: InputData?.gtinExistPcs === 1 || false,
         gtinExistPack: InputData?.gtinExistPack === 1 || false,
-        company: InputData?.company || '',
         gtinCode: InputData?.gtinCode || '',
         gtinForPcs: InputData?.gtinForPcs || '',
         gtinForInnerOrPack: InputData?.gtinForInnerOrPack || '',
-        product_code_choose: 'l',
-        product_code: InputData?.product_code || '',
+        material_id: InputData?.material_id || '',
         gtinCodePcs: InputData?.gtinCodePcs
     });
 
@@ -57,7 +55,7 @@ export default function Request({ auth, InputData, brand, mattype, company, prod
                                 >
                                     <option>---- Select Brand ----</option>
                                     {brand?.map(o => (
-                                        <option key={`brand-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.name}`}</option>
+                                        <option key={`brand-code-${o.code}`} value={o.code}>{o.code}</option>
                                     ))}
                                 </select>
 
@@ -73,7 +71,7 @@ export default function Request({ auth, InputData, brand, mattype, company, prod
                                 >
                                     <option>---- Select MATTYPE ----</option>
                                     {mattype?.map(o => (
-                                        <option key={`mattype-code-${o.code}`} value={o.code}>{`${o.code} - ${o.name}`}</option>
+                                        <option key={`mattype-code-${o.code}`} value={o.code}>{o.code}</option>
                                     ))}
                                 </select>
 
@@ -82,48 +80,22 @@ export default function Request({ auth, InputData, brand, mattype, company, prod
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
-                                <InputLabel htmlFor="product_code" value="Product Code" />
+                                <InputLabel htmlFor="material_id" value="Material ID" />
                                 <select
-                                    id="product_code"
+                                    id="material_id"
                                     className="mt-1 block w-full"
-                                    onChange={(e) => setData('product_code', e.target.value)}
-                                    defaultValue={data?.product_code}
+                                    onChange={(e) => setData('material_id', e.target.value)}
+                                    defaultValue={data?.material_id}
                                 >
-                                    <option>---- Select Product Code ----</option>
-                                    {products?.map(o => (
-                                        <option key={`product_code-code-${o.code}`} value={o.code}>{`${o.code} - ${o.name}`}</option>
+                                    <option>---- Select Material ID ----</option>
+                                    {materials?.map(o => (
+                                        <option key={`material_id-code-${o.material_id}`} value={o.material_id}>{o.material_id}</option>
                                     ))}
                                 </select>
                             </div>
                             <div className="mt-auto">
-                            <PrimaryButton type="button">Create product code</PrimaryButton>
+                            <PrimaryButton type="button">Create Material</PrimaryButton>
                             </div>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              <div>
-                                  <InputLabel htmlFor="company" value="Company Code" />
-                                  <select
-                                      id="company"
-                                      className="mt-1 block w-full"
-                                      onChange={(e) => setData('company', e.target.value)}
-                                      defaultValue={data?.company}
-                                  >
-                                      <option>---- Select Company ----</option>
-                                      {company?.map(o => (
-                                          <option key={`company-code-${o.code}`} value={o.code}>{`${o.code} - ${o.name}`}</option>
-                                      ))}
-                                  </select>
-                              </div>
-                              <div>
-                                  <InputLabel htmlFor="gtinPrefix" value="GTIN Prefix" />
-
-                                  <TextInput
-                                      id="gtinPrefix"
-                                      className="mt-1 block w-full bg-gray-100"
-                                      value={data.company}
-                                      disabled
-                                  />
-                              </div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="grid grid-cols-1 gap-4">
@@ -179,7 +151,7 @@ export default function Request({ auth, InputData, brand, mattype, company, prod
                                         <TextInput
                                             id="latestGTINCodeForPcs"
                                             className="mt-1 block w-full bg-gray-100"
-                                            value={`${data?.company}XXXXXX`}
+                                            value={`XXXXXX`}
                                             disabled
                                         />
                                     </div>
@@ -200,7 +172,7 @@ export default function Request({ auth, InputData, brand, mattype, company, prod
                                         <TextInput
                                             id="suggestGTINCodeForPcs"
                                             className="mt-1 block w-full bg-gray-100"
-                                            value={`${data?.company}XXXXXX`}
+                                            value={`XXXXXX`}
                                             disabled
                                         />
                                     </div>
@@ -261,7 +233,7 @@ export default function Request({ auth, InputData, brand, mattype, company, prod
                                         <TextInput
                                             id="latestGTINCodeForInnerOrPack"
                                             className="mt-1 block w-full bg-gray-100"
-                                            value={`${data?.company}XXXXXX`}
+                                            value={`XXXXXX`}
                                             disabled
                                         />
                                     </div>
@@ -282,7 +254,7 @@ export default function Request({ auth, InputData, brand, mattype, company, prod
                                       <TextInput
                                           id="suggestGTINCodeForInnerOrPack"
                                           className="mt-1 block w-full bg-gray-100"
-                                          value={`${data?.company}XXXXXX`}
+                                          value={`XXXXXX`}
                                           disabled
                                       />
                                     </div>

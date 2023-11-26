@@ -12,7 +12,7 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $table = 'proj1_login';
+    protected $table = 'proj1_user';
     protected $primaryKey = 'user_login';
 
     /**
@@ -22,7 +22,7 @@ class User extends Authenticatable
      */
     public $incrementing = false;
 
-    const CREATED_AT = 'CREATE_DATE';
+    const CREATED_AT = 'DATE_CREATE';
     const UPDATED_AT = null;
 
     /**
@@ -31,7 +31,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'emp_name',
+        'employee_name',
         'user_login',
         'password',
     ];

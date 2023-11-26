@@ -14,7 +14,7 @@ class Brand extends Model
      *
      * @var string
      */
-    protected $table = 'proj1_brand';
+    protected $table = 'proj1_brand_v';
     /**
      * Indicates if the model's ID is auto-incrementing.
      *
