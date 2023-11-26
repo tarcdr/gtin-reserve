@@ -14,7 +14,7 @@ class Material extends Model
      *
      * @var string
      */
-    protected $table = 'proj1_material_id_v';
+    protected $table = 'proj1_material';
     /**
      * Indicates if the model's ID is auto-incrementing.
      *
