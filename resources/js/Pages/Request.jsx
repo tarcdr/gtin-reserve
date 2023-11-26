@@ -32,12 +32,6 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         patch(route('request.update'));
     };
 
-    const getMaterial = (brand, mattype) => {
-      if (brand !== '' && mattype !== '') {
-        submit();
-      }
-    }
-
     const handdleChange = (name, value) => {
       setData(name, value);
     };
