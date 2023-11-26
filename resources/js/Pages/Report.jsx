@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 
-export default function Report({ auth }) {
+export default function Report({ auth, gtins = [] }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -12,7 +12,55 @@ export default function Report({ auth }) {
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">You're logged in!</div>
+                      <table class="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
+                        <thead class="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">
+                                    Material ID
+                                </th>
+                                <th scope="col" class="px-6 py-3">
+                                    Trading Unit
+                                </th>
+                                <th scope="col" class="px-6 py-3">
+                                    Global Trade item number
+                                </th>
+                                <th scope="col" class="px-6 py-3">
+                                    Last User Update
+                                </th>
+                                <th scope="col" class="px-6 py-3">
+                                    Last Update
+                                </th>
+                                <th scope="col" class="px-6 py-3">
+                                    Action
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                          {gtins.map(o => (
+                            <tr key={`report-gtin-${o.global_trade_item_number}`}>
+                                <th scope="row" class="px-6 py-4">
+                                    {o.material_id}
+                                </th>
+                                <td class="px-6 py-4">
+                                    {o.trading_unit}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {o.global_trade_item_number}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {o.user_last_update}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {o.last_update}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Active</a>
+                                </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                    </table>
+
                     </div>
                 </div>
             </div>

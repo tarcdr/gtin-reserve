@@ -117,4 +117,13 @@ class RequestFormController extends Controller
         ];
         return Redirect::route('request', $inputData);
     }
+
+    public function report(Request $request): Response
+    {
+      $gtins = [];
+      foreach (Gtin::orderBy('material_id')->orderBy('typ_gtin')->orderBy('global_trade_item_number')->get() as $m) {
+        array_push($gtins, $m);
+      }
+      return Inertia::render('Report', [ "gtins" => $gtins ]);
+    }
 }

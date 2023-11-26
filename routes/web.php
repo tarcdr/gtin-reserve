@@ -30,11 +30,8 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/report', function () {
-    return Inertia::render('Report');
-})->middleware(['auth', 'verified'])->name('report');
-
 Route::middleware('auth')->group(function () {
+    Route::get('/report', [RequestFormController::class, 'report'])->name('report');
     Route::get('/request', [RequestFormController::class, 'view'])->name('request');
     Route::patch('/request', [RequestFormController::class, 'update'])->name('request.update');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
