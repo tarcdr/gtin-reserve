@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\DB;
-use App\Models\Brand;
-use App\Models\Mattype;
 use App\Models\Material;
 use PDO;
 
@@ -34,22 +32,24 @@ class RequestFormController extends Controller
         $materials = [];
 
         if (!$isMock) {
-          foreach (Brand::all() as $b) {
+          foreach (Material::select('brand')->groupBy('brand')->all() as $b) {
             array_push($brand, [
               "code" => $b->brand
             ]);
           }
-          foreach (Mattype::all() as $m) {
+          foreach (Material::select('mat_type')->groupBy('mat_type')->all() as $m) {
             array_push($mattype, [
               "code" => $m->mat_type
             ]);
           }
-          foreach (Material::all() as $m) {
-            array_push($materials, [
-              "brand"       => $m->brand,
-              "mat_type"    => $m->mat_type,
-              "material_id" => $m->material_id,
-            ]);
+          if ($request->brand && $request->mattype) {
+            foreach (Material::where('brand', $request->brand)->where('mat_type', $request->mattype)->all() as $m) {
+              array_push($materials, [
+                "brand"       => $m->brand,
+                "mat_type"    => $m->mat_type,
+                "material_id" => $m->material_id,
+              ]);
+            }
           }
         } else {
           $brand = [[
