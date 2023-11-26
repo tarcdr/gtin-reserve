@@ -11,6 +11,7 @@ use Inertia\Response;
 use Illuminate\Support\Facades\DB;
 use App\Models\Material;
 use App\Models\TradingUnit;
+use App\Models\Gtin;
 use PDO;
 
 class RequestFormController extends Controller
@@ -29,6 +30,7 @@ class RequestFormController extends Controller
         $mattype = [];
         $materials = [];
         $tradingUnits = [];
+        $gtins = [];
 
         foreach (Material::select('brand')->whereNotNull('brand')->groupBy('brand')->orderBy('brand')->get() as $b) {
           array_push($brand, [
@@ -53,6 +55,11 @@ class RequestFormController extends Controller
             "type" => $m->type_gtin_unit,
           ]);
         }
+        if ($request->material_id) {
+          foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
+            array_push($tradingUnits, $m);
+          }
+        }
 
         return Inertia::render('Request', [
           'InputData' => [
@@ -70,6 +77,7 @@ class RequestFormController extends Controller
           "mattype"      => $mattype,
           "materials"    => $materials,
           "tradingUnits" => $tradingUnits,
+          "gtins"        => $gtins,
         ]);
     }
 
