@@ -10,6 +10,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\DB;
 use App\Models\Material;
+use App\Models\TradingUnit;
 use PDO;
 
 class RequestFormController extends Controller
@@ -19,9 +20,6 @@ class RequestFormController extends Controller
      */
     public function view(Request $request): Response
     {
-        $isMock = false;
-        $p_brand_code   = $request->brand;
-        $p_mattype_code = $request->mattype;
         $host = env('DB_HOST', '');
         $database = env('DB_DATABASE', '');
         $username = env('DB_USERNAME', '');
@@ -30,166 +28,48 @@ class RequestFormController extends Controller
         $brand = [];
         $mattype = [];
         $materials = [];
+        $tradingUnits = [];
 
-        if (!$isMock) {
-          foreach (Material::select('brand')->whereNotNull('brand')->groupBy('brand')->orderBy('brand')->get() as $b) {
-            array_push($brand, [
-              "code" => $b->brand
-            ]);
-          }
-          foreach (Material::select('mat_type')->whereNotNull('mat_type')->groupBy('mat_type')->orderBy('mat_type')->get() as $m) {
-            array_push($mattype, [
-              "code" => $m->mat_type
-            ]);
-          }
-          foreach (Material::where('brand', $request->brand)->where('mat_type', $request->mattype)->orderBy('material_id')->get() as $m) {
-            array_push($materials, [
-              "brand"       => $m->brand,
-              "mat_type"    => $m->mat_type,
-              "material_id" => $m->material_id,
-            ]);
-          }
-        } else {
-          $brand = [[
-            "abb" => "HO",
-            "code" => "HO",
-            "name" => "AT HOME"
-            ], [
-              "abb" => "BR",
-              "code" => "BR",
-              "name" => "BEAR"
-            ], [
-              "abb" => "BS",
-              "code" => "BS",
-              "name" => "BISSELL"
-            ], [
-              "abb" => "EJ",
-              "code" => "EJ",
-              "name" => "EMJOI"
-            ], [
-              "abb" => "FS",
-              "code" => "FS",
-              "name" => "FLYCO"
-            ], [
-              "abb" => "FF",
-              "code" => "FF",
-              "name" => "FORFUN"
-            ], [
-              "abb" => "IN",
-              "code" => "IN",
-              "name" => "IONIE"
-            ], [
-              "abb" => "JS",
-              "code" => "JS",
-              "name" => "JASON"
-            ], [
-              "abb" => "KR",
-              "code" => "KR",
-              "name" => "KURON"
-            ], [
-              "abb" => "LS",
-              "code" => "LS",
-              "name" => "LESASHA"
-            ], [
-              "abb" => "NP",
-              "code" => "NP",
-              "name" => "N LifePlus"
-            ], [
-              "abb" => "NL",
-              "code" => "NL",
-              "name" => "NAMU LIFE"
-            ], [
-              "abb" => "SW",
-              "code" => "SW",
-              "name" => "NAMU LIFE SNAILWHITE"
-            ], [
-              "abb" => "NN",
-              "code" => "NN",
-              "name" => "NAMULIFE NATURALS"
-            ], [
-              "abb" => "OX",
-              "code" => "OX",
-              "name" => "OXE'CURE"
-            ], [
-              "abb" => "PF",
-              "code" => "PF",
-              "name" => "PRETTIIFACE"
-            ], [
-              "abb" => "SS",
-              "code" => "SS",
-              "name" => "SMOOTH SKIN-IPL"
-            ], [
-              "abb" => "SO",
-              "code" => "SO",
-              "name" => "SOS"
-            ], [
-              "abb" => "SK",
-              "code" => "SK",
-              "name" => "SPARKLE"
-            ], [
-              "abb" => "UP",
-              "code" => "UP",
-              "name" => "UP 5"
-            ], [
-              "abb" => "VT",
-              "code" => "VT",
-              "name" => "VITAINNO"
-            ], [
-              "abb" => "YR",
-              "code" => "YR",
-              "name" => "YOURS"
-            ], [
-              "abb" => "IL",
-              "code" => "IL",
-              "name" => "I-Life"
-            ], [
-              "abb" => "MV",
-              "code" => "MV",
-              "name" => "Makavelic"
-          ]];
-          $mattype = [[
-              "code" => "10",
-              "name" => "FG (Own brand)"
-            ], [
-              "code" => "11",
-              "name" => "FG (OEM)"
-            ], [
-              "code" => "12",
-              "name" => "FG (Set)"
-            ], [
-              "code" => "13",
-              "name" => "FG (FOC)"
-            ], [
-              "code" => "20",
-              "name" => "Semi FG Lv2 (ผลิตเอง)"
-            ], [
-              "code" => "21",
-              "name" => "Semi FG Lv2 (ซื้อในประเทศ)"
-            ], [
-              "code" => "22",
-              "name" => "Semi FG Lv2 (ซื้อต่างประเทศ)"
-            ], [
-              "code" => "30",
-              "name" => "Semi FG Lv1 (ผลิตเอง)"
-            ], [
-              "code" => "31",
-              "name" => "Semi FG Lv1 (ซื้อในประเทศ)"
-          ]];
+        foreach (Material::select('brand')->whereNotNull('brand')->groupBy('brand')->orderBy('brand')->get() as $b) {
+          array_push($brand, [
+            "code" => $b->brand
+          ]);
+        }
+        foreach (Material::select('mat_type')->whereNotNull('mat_type')->groupBy('mat_type')->orderBy('mat_type')->get() as $m) {
+          array_push($mattype, [
+            "code" => $m->mat_type
+          ]);
+        }
+        foreach (Material::where('brand', $request->brand)->where('mat_type', $request->mattype)->orderBy('material_id')->get() as $m) {
+          array_push($materials, [
+            "brand"       => $m->brand,
+            "mat_type"    => $m->mat_type,
+            "material_id" => $m->material_id,
+          ]);
+        }
+        foreach (TradingUnit::where('type_gtin_unit', 2)->orderBy('trading_unit')->get() as $m) {
+          array_push($tradingUnits, [
+            "unit" => $m->trading_unit,
+            "type" => $m->type_gtin_unit,
+          ]);
         }
 
         return Inertia::render('Request', [
           'InputData' => [
-            'brand'              => $request->brand,
-            'mattype'            => $request->mattype,
-            'gtinExist'          => $request->gtinExist,
-            'gtinCode'           => '',
-            'gtinForPcs'         => '',
-            'gtinForInnerOrPack' => '',
-            'gtinCodePcs'        => 'XXXXXXX'
+            'brand'         => $request->brand,
+            'mattype'       => $request->mattype,
+            'material_id'   => $request->material_id,
+            'gtinExistPcs'  => $request->gtinExistPcs,
+            'gtinExistPack' => $request->gtinExistPack,
+            'gtinCodePcs'   => $request->gtinCodePcs,
+            'gtinPcsCode'   => $request->gtinPcsCode,
+            'gtinCodePack'  => $request->gtinCodePack,
+            'gtinPackCode'  => $request->gtinPackCode,
           ],
-          'brand' => $brand,
-          "mattype" => $mattype,
-          "materials" => $materials,
+          'brand'        => $brand,
+          "mattype"      => $mattype,
+          "materials"    => $materials,
+          "tradingUnits" => $tradingUnits,
         ]);
     }
 
@@ -199,12 +79,15 @@ class RequestFormController extends Controller
     public function update(FormUpdateRequest $request): RedirectResponse
     {
         $inputData = [
-          'brand'              => $request->brand,
-          'mattype'            => $request->mattype,
-          'gtinExist'          => $request->gtinExist,
-          'gtinCode'           => $request->gtinCode,
-          'gtinForPcs'         => $request->gtinForPcs,
-          'gtinForInnerOrPack' => $request->gtinForInnerOrPack,
+          'brand'         => $request->brand,
+          'mattype'       => $request->mattype,
+          'material_id'   => $request->material_id,
+          'gtinExistPcs'  => $request->gtinExistPcs,
+          'gtinExistPack' => $request->gtinExistPack,
+          'gtinCodePcs'   => $request->gtinCodePcs,
+          'gtinPcsCode'   => $request->gtinPcsCode,
+          'gtinCodePack'  => $request->gtinCodePack,
+          'gtinPackCode'  => $request->gtinPackCode,
         ];
         return Redirect::route('request', $inputData);
     }

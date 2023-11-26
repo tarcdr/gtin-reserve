@@ -9,18 +9,21 @@ import { Transition } from '@headlessui/react';
 import Checkbox from '@/Components/Checkbox';
 import Radio from '@/Components/Radio';
 
-export default function Request({ auth, InputData, brand, mattype, materials = [] }) {
+export default function Request({ auth, InputData, brand, mattype, materials = [], tradingUnits = [] }) {
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         brand: InputData?.brand || '',
         mattype: InputData?.mattype || '',
+        material_id: InputData?.material_id || '',
         gtinExistPcs: InputData?.gtinExistPcs === 1 || false,
         gtinExistPack: InputData?.gtinExistPack === 1 || false,
-        gtinCode: InputData?.gtinCode || '',
-        gtinForPcs: InputData?.gtinForPcs || '',
-        gtinForInnerOrPack: InputData?.gtinForInnerOrPack || '',
-        material_id: InputData?.material_id || '',
-        gtinCodePcs: InputData?.gtinCodePcs
+        gtinCodePcs: InputData?.gtinCodePcs,
+        gtinPcsCode: '',
+        gtinPcsChoose: 'l',
+        gtinCodePack: InputData?.gtinCodePack,
+        gtinPackCode: '',
+        gtinPackChoose: 'l',
+        trading_unit: ''
     });
 
     const handdleChange = (name, value) => {
@@ -181,6 +184,20 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                               )}
                             </div>
                             <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <InputLabel htmlFor="trading_unit" value="Trading Unit" />
+                                    <select
+                                        id="trading_unit"
+                                        className="mt-1 block w-full"
+                                        onChange={(e) => setData('trading_unit', e.target.value)}
+                                        defaultValue={data?.trading_unit}
+                                    >
+                                        <option>---- Select Trading Unit ----</option>
+                                        {tradingUnits?.map(o => (
+                                            <option key={`trading_unit-code-${o.unit}`} value={o.unit}>{o.unit}</option>
+                                        ))}
+                                    </select>
+                                </div>
                               {data?.gtinCodePack ? (
                                 <div>
                                     <InputLabel htmlFor="gtinCodePack" value="GTIN Code for Inner / Pack" />
