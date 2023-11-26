@@ -55,10 +55,8 @@ class RequestFormController extends Controller
             "type" => $m->type_gtin_unit,
           ]);
         }
-        if ($request->material_id) {
-          foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
-            array_push($tradingUnits, $m);
-          }
+        foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
+          array_push($tradingUnits, $m);
         }
 
         return Inertia::render('Request', [
