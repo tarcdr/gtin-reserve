@@ -32,18 +32,18 @@ class RequestFormController extends Controller
         $materials = [];
 
         if (!$isMock) {
-          foreach (Material::select('brand')->groupBy('brand')->all() as $b) {
+          foreach (Material::select('brand')->groupBy('brand')->get() as $b) {
             array_push($brand, [
               "code" => $b->brand
             ]);
           }
-          foreach (Material::select('mat_type')->groupBy('mat_type')->all() as $m) {
+          foreach (Material::select('mat_type')->groupBy('mat_type')->get() as $m) {
             array_push($mattype, [
               "code" => $m->mat_type
             ]);
           }
           if ($request->brand && $request->mattype) {
-            foreach (Material::where('brand', $request->brand)->where('mat_type', $request->mattype)->all() as $m) {
+            foreach (Material::where('brand', $request->brand)->where('mat_type', $request->mattype)->get() as $m) {
               array_push($materials, [
                 "brand"       => $m->brand,
                 "mat_type"    => $m->mat_type,
