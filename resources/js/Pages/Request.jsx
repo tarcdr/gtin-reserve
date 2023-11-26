@@ -56,7 +56,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                     onChange={(e) => handdleChange('brand', e.target.value)}
                                     defaultValue={data?.brand}
                                 >
-                                    <option>---- Select Brand ----</option>
+                                    <option value={null}>---- Select Brand ----</option>
                                     {brand?.map(o => (
                                         <option key={`brand-code-${o.code}`} value={o.code}>{o.code}</option>
                                     ))}
@@ -72,7 +72,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                     onChange={(e) => handdleChange('mattype', e.target.value)}
                                     defaultValue={data?.mattype}
                                 >
-                                    <option>---- Select MATTYPE ----</option>
+                                    <option value={null}>---- Select MATTYPE ----</option>
                                     {mattype?.map(o => (
                                         <option key={`mattype-code-${o.code}`} value={o.code}>{o.code}</option>
                                     ))}
@@ -92,7 +92,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                         onChange={(e) => setData('material_id', e.target.value)}
                                         defaultValue={data?.material_id}
                                     >
-                                        <option>---- Select Material ID ----</option>
+                                        <option value={null}>---- Select Material ID ----</option>
                                         {materials?.map(o => (
                                             <option key={`material_id-code-${o.material_id}`} value={o.material_id}>{o.material_id}</option>
                                         ))}
@@ -213,7 +213,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                           onChange={(e) => setData('trading_unit', e.target.value)}
                                           defaultValue={data?.trading_unit}
                                       >
-                                          <option>---- Select Trading Unit ----</option>
+                                          <option value={null}>---- Select Trading Unit ----</option>
                                           {tradingUnits?.map(o => (
                                               <option key={`trading_unit-code-${o.unit}`} value={o.unit}>{o.unit}</option>
                                           ))}
