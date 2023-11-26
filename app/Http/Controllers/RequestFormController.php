@@ -42,7 +42,7 @@ class RequestFormController extends Controller
               "code" => $m->mat_type
             ]);
           }
-          if ($request->brand && $request->mattype) {
+          if ($request->brand !== '' && $request->mattype !== '') {
             foreach (Material::where('brand', $request->brand)->where('mat_type', $request->mattype)->get() as $m) {
               array_push($materials, [
                 "brand"       => $m->brand,
