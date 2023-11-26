@@ -218,7 +218,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                           ))}
                                       </select>
                                   </div>
-                                  {gtins.filter(o => o.typ_gtin === '2' && o.trading_unit === data?.trading_unit).length > 0 ? (
+                                  {gtins.filter(o => o.typ_gtin === '2' && o.trading_unit === data?.trading_unit).length > 0 && (
                                     <div>
                                         <InputLabel htmlFor="gtinCodePack" value="GTIN Code for Pcs" />
 
@@ -229,7 +229,8 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                             disabled
                                         />
                                     </div>
-                                  ) : (
+                                  )}
+                                  {gtins.filter(o => o.typ_gtin === '2' && o.trading_unit === data?.trading_unit).length === 0 && data?.trading_unit !== '' && (
                                     <>
                                       <label className="flex items-center">
                                           <Checkbox
