@@ -17,7 +17,6 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         material_id: InputData?.material_id || '',
         gtinExistPcs: InputData?.gtinExistPcs === 1 || false,
         gtinExistPack: InputData?.gtinExistPack === 1 || false,
-        gtinCodePcs: gtins.find(o => o.typ_gtin === '1'),
         gtinPcsCode: '',
         gtinPcsChoose: 'l',
         gtinCodePack: gtins.filter(o => o.typ_gtin === '2'),
@@ -123,14 +122,14 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                             <>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="grid grid-cols-1 gap-4">
-                                  {data?.gtinCodePcs?.global_trade_item_number ? (
+                                  {gtins.filter(o => o.typ_gtin === '1').length > 0 ? (
                                     <div>
                                         <InputLabel htmlFor="gtinCodePcs" value="GTIN Code for Pcs" />
 
                                         <TextInput
                                             id="gtinCodePcs"
                                             className="mt-1 block w-full bg-gray-100"
-                                            value={data.gtinCodePcs.global_trade_item_number}
+                                            value={gtins.find(o => o.typ_gtin === '1')?.global_trade_item_number}
                                             disabled
                                         />
                                     </div>
