@@ -39,13 +39,6 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
     }
 
     const handdleChange = (name, value) => {
-      const brand = data.brand;
-      const mattype = data.mattype;
-      if (name === 'brand' && mattype !== '') {
-        getMaterial(value, mattype);
-      } else if (name === 'mattype' && brand !== '') {
-        getMaterial(brand, value);
-      }
       setData(name, value);
     };
 
