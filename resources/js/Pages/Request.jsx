@@ -43,7 +43,11 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
     };
 
     useEffect(() => {
-      console.log('input data', InputData);
+      setTimeout(() => {
+        Object.keys(InputData).forEach(v => {
+          setData(v, InputData[v]);
+        })
+      }, 500);
     }, [InputData]);
 
     return (
