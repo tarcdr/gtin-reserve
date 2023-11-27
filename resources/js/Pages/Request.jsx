@@ -12,7 +12,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 
 export default function Request({ auth, InputData, brand, mattype, materials = [], tradingUnits = [], gtins = [] }) {
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
+    const { data, setData, patch, errors, processing, recentlySuccessful, transform } = useForm({
         brand: InputData?.brand || '',
         mattype: InputData?.mattype || '',
         material_id: InputData?.material_id || '',
@@ -22,25 +22,24 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         gtinPcsChoose: 'l',
         gtinPackCode: '',
         gtinPackChoose: 'l',
-        trading_unit: (tradingUnits?.length > 0 && tradingUnits[0]?.unit) || null,
+        trading_unit: null,
         p_new_last_gtin_pcs: InputData?.p_new_last_gtin_pcs,
         p_suggest_gtin_pcs: InputData?.p_suggest_gtin_pcs,
         p_new_last_gtin_box: InputData?.p_new_last_gtin_box,
         p_suggest_gtin_box: InputData?.p_suggest_gtin_box,
     });
 
+    transform(dataSet => ({
+      ...dataSet,
+      trading_unit: (tradingUnits?.length > 0 && tradingUnits[0]?.unit) || null
+    }));
+
     const isDisabled = () => InputData?.brand && InputData?.mattype && InputData?.material_id;
 
     const submit = (e) => {
-      if (!isDisabled()) {
         e.preventDefault();
-      }
 
-      patch(route('request.update'));
-    };
-
-    const handdleChange = (name, value) => {
-      setData(name, value);
+        patch(route('request.update'));
     };
 
     return (
@@ -60,7 +59,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                 <select
                                     id="brand"
                                     className="mt-1 block w-full"
-                                    onChange={(e) => handdleChange('brand', e.target.value)}
+                                    onChange={(e) => setData('brand', e.target.value)}
                                     defaultValue={data?.brand}
                                     disabled={isDisabled()}
                                 >
@@ -77,7 +76,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                 <select
                                     id="mattype"
                                     className="mt-1 block w-full"
-                                    onChange={(e) => handdleChange('mattype', e.target.value)}
+                                    onChange={(e) => setData('mattype', e.target.value)}
                                     defaultValue={data?.mattype}
                                     disabled={isDisabled()}
                                 >
@@ -176,7 +175,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                                     name="gtinPcsChoose"
                                                     checked={data?.gtinPcsChoose === 'l'}
                                                     value="l"
-                                                    onChange={(e) => handdleChange('gtinPcsChoose', e.target.value)}
+                                                    onChange={(e) => setData('gtinPcsChoose', e.target.value)}
                                                 />
                                                 <span className="ml-2">Choose</span>
                                             </label>
@@ -197,7 +196,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                                     name="gtinPcsChoose"
                                                     checked={data?.gtinPcsChoose === 's'}
                                                     value="s"
-                                                    onChange={(e) => handdleChange('gtinPcsChoose', e.target.value)}
+                                                    onChange={(e) => setData('gtinPcsChoose', e.target.value)}
                                                 />
                                                 <span className="ml-2">Choose</span>
                                             </label>
@@ -275,7 +274,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                                     name="gtinPackChoose"
                                                     checked={data?.gtinPackChoose === 'l'}
                                                     value="l"
-                                                    onChange={(e) => handdleChange('gtinPackChoose', e.target.value)}
+                                                    onChange={(e) => setData('gtinPackChoose', e.target.value)}
                                                 />
                                                 <span className="ml-2">Choose</span>
                                             </label>
@@ -296,7 +295,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                                     name="gtinPackChoose"
                                                     checked={data?.gtinPackChoose === 's'}
                                                     value="s"
-                                                    onChange={(e) => handdleChange('gtinPackChoose', e.target.value)}
+                                                    onChange={(e) => setData('gtinPackChoose', e.target.value)}
                                                 />
                                                 <span className="ml-2">Choose</span>
                                             </label>
