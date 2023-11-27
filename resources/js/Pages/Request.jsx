@@ -12,7 +12,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 
 export default function Request({ auth, InputData, brand, mattype, materials = [], tradingUnits = [], gtins = [] }) {
 
-    const { data, setData, patch, errors, processing, recentlySuccessful, reset } = useForm({
+    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         brand: InputData?.brand || '',
         mattype: InputData?.mattype || '',
         material_id: InputData?.material_id || '',
@@ -152,7 +152,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                           />
                                           <span className="ml-2">GTIN Pcs Existing</span>
                                       </label>
-                                      {data?.gtinExistPcs && (
+                                      {data?.gtinExistPcs ? (
                                           <div>
                                               <InputLabel htmlFor="gtinPcsCode" value="GTIN Pcs Code" />
 
@@ -166,49 +166,52 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
 
                                               <InputError className="mt-2" message={errors.gtinPcsCode} />
                                           </div>
+                                      ) : (
+                                        <>
+                                          <div className="grid grid-cols-4 gap-2">
+                                            <label className="flex items-center">
+                                                <Radio
+                                                    name="gtinPcsChoose"
+                                                    checked={data?.gtinPcsChoose === 'l'}
+                                                    value="l"
+                                                    onChange={(e) => handdleChange('gtinPcsChoose', e.target.value)}
+                                                />
+                                                <span className="ml-2">Choose</span>
+                                            </label>
+                                            <div className="col-span-3">
+                                                <InputLabel htmlFor="latestGTINCodeForPcs" value="Latest GTIN Code for Pcs" />
+
+                                                <TextInput
+                                                    id="latestGTINCodeForPcs"
+                                                    className="mt-1 block w-full bg-gray-100"
+                                                    value={data?.p_new_last_gtin_pcs}
+                                                    disabled
+                                                />
+                                            </div>
+                                          </div>
+                                          <div className="grid grid-cols-4 gap-2">
+                                            <label className="flex items-center">
+                                                <Radio
+                                                    name="gtinPcsChoose"
+                                                    checked={data?.gtinPcsChoose === 's'}
+                                                    value="s"
+                                                    onChange={(e) => handdleChange('gtinPcsChoose', e.target.value)}
+                                                />
+                                                <span className="ml-2">Choose</span>
+                                            </label>
+                                            <div className="col-span-3">
+                                                <InputLabel htmlFor="suggestGTINCodeForPcs" value="Suggest GTIN Code for Pcs" />
+
+                                                <TextInput
+                                                    id="suggestGTINCodeForPcs"
+                                                    className="mt-1 block w-full bg-gray-100"
+                                                    value={data?.p_suggest_gtin_pcs}
+                                                    disabled
+                                                />
+                                            </div>
+                                          </div>
+                                        </>
                                       )}
-                                      <div className="grid grid-cols-4 gap-2">
-                                        <label className="flex items-center">
-                                            <Radio
-                                                name="gtinPcsChoose"
-                                                checked={data?.gtinPcsChoose === 'l'}
-                                                value="l"
-                                                onChange={(e) => handdleChange('gtinPcsChoose', e.target.value)}
-                                            />
-                                            <span className="ml-2">Choose</span>
-                                        </label>
-                                        <div className="col-span-3">
-                                            <InputLabel htmlFor="latestGTINCodeForPcs" value="Latest GTIN Code for Pcs" />
-
-                                            <TextInput
-                                                id="latestGTINCodeForPcs"
-                                                className="mt-1 block w-full bg-gray-100"
-                                                value={data?.p_new_last_gtin_pcs}
-                                                disabled
-                                            />
-                                        </div>
-                                      </div>
-                                      <div className="grid grid-cols-4 gap-2">
-                                        <label className="flex items-center">
-                                            <Radio
-                                                name="gtinPcsChoose"
-                                                checked={data?.gtinPcsChoose === 's'}
-                                                value="s"
-                                                onChange={(e) => handdleChange('gtinPcsChoose', e.target.value)}
-                                            />
-                                            <span className="ml-2">Choose</span>
-                                        </label>
-                                        <div className="col-span-3">
-                                            <InputLabel htmlFor="suggestGTINCodeForPcs" value="Suggest GTIN Code for Pcs" />
-
-                                            <TextInput
-                                                id="suggestGTINCodeForPcs"
-                                                className="mt-1 block w-full bg-gray-100"
-                                                value={data?.p_suggest_gtin_pcs}
-                                                disabled
-                                            />
-                                        </div>
-                                      </div>
                                     </>
                                   )}
                                 </div>
@@ -248,7 +251,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                           />
                                           <span className="ml-2">GTIN Pack Existing</span>
                                       </label>
-                                      {data?.gtinExistPack && (
+                                      {data?.gtinExistPack ? (
                                           <div>
                                               <InputLabel htmlFor="gtinPackCode" value="GTIN Pack Code" />
 
@@ -262,56 +265,59 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
 
                                               <InputError className="mt-2" message={errors.gtinPackCode} />
                                           </div>
+                                      ) : (
+                                        <>
+                                          <div className="grid grid-cols-4 gap-2">
+                                            <label className="flex items-center">
+                                                <Radio
+                                                    name="gtinPackChoose"
+                                                    checked={data?.gtinPackChoose === 'l'}
+                                                    value="l"
+                                                    onChange={(e) => handdleChange('gtinPackChoose', e.target.value)}
+                                                />
+                                                <span className="ml-2">Choose</span>
+                                            </label>
+                                            <div className="col-span-3">
+                                                <InputLabel htmlFor="latestGTINCodeForInnerOrPack" value="Latest GTIN Code for Inner / Pack" />
+
+                                                <TextInput
+                                                    id="latestGTINCodeForInnerOrPack"
+                                                    className="mt-1 block w-full bg-gray-100"
+                                                    value={data?.p_new_last_gtin_box}
+                                                    disabled
+                                                />
+                                            </div>
+                                          </div>
+                                          <div className="grid grid-cols-4 gap-2">
+                                            <label className="flex items-center">
+                                                <Radio
+                                                    name="gtinPackChoose"
+                                                    checked={data?.gtinPackChoose === 's'}
+                                                    value="s"
+                                                    onChange={(e) => handdleChange('gtinPackChoose', e.target.value)}
+                                                />
+                                                <span className="ml-2">Choose</span>
+                                            </label>
+                                            <div className="col-span-3">
+                                              <InputLabel htmlFor="suggestGTINCodeForInnerOrPack" value="Suggest GTIN Code for Inner / Pack" />
+
+                                              <TextInput
+                                                  id="suggestGTINCodeForInnerOrPack"
+                                                  className="mt-1 block w-full bg-gray-100"
+                                                  value={data?.p_suggest_gtin_box}
+                                                  disabled
+                                              />
+                                            </div>
+                                          </div>
+                                        </>
                                       )}
-                                      <div className="grid grid-cols-4 gap-2">
-                                        <label className="flex items-center">
-                                            <Radio
-                                                name="gtinPackChoose"
-                                                checked={data?.gtinPackChoose === 'l'}
-                                                value="l"
-                                                onChange={(e) => handdleChange('gtinPackChoose', e.target.value)}
-                                            />
-                                            <span className="ml-2">Choose</span>
-                                        </label>
-                                        <div className="col-span-3">
-                                            <InputLabel htmlFor="latestGTINCodeForInnerOrPack" value="Latest GTIN Code for Inner / Pack" />
-
-                                            <TextInput
-                                                id="latestGTINCodeForInnerOrPack"
-                                                className="mt-1 block w-full bg-gray-100"
-                                                value={data?.p_new_last_gtin_box}
-                                                disabled
-                                            />
-                                        </div>
-                                      </div>
-                                      <div className="grid grid-cols-4 gap-2">
-                                        <label className="flex items-center">
-                                            <Radio
-                                                name="gtinPackChoose"
-                                                checked={data?.gtinPackChoose === 's'}
-                                                value="s"
-                                                onChange={(e) => handdleChange('gtinPackChoose', e.target.value)}
-                                            />
-                                            <span className="ml-2">Choose</span>
-                                        </label>
-                                        <div className="col-span-3">
-                                          <InputLabel htmlFor="suggestGTINCodeForInnerOrPack" value="Suggest GTIN Code for Inner / Pack" />
-
-                                          <TextInput
-                                              id="suggestGTINCodeForInnerOrPack"
-                                              className="mt-1 block w-full bg-gray-100"
-                                              value={data?.p_suggest_gtin_box}
-                                              disabled
-                                          />
-                                        </div>
-                                      </div>
                                     </>
                                   )}
                                 </div>
                               </div>
 
                               <div className="flex items-center justify-center gap-4">
-                                  <SecondaryButton onClick={reset}>Reset</SecondaryButton>
+                                  <SecondaryButton onClick={() => window.open('/request', '_self')}>Reset</SecondaryButton>
                                   <PrimaryButton disabled={processing}>Reserve</PrimaryButton>
 
                                   <Transition
