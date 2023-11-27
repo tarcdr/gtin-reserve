@@ -28,6 +28,8 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         p_suggest_gtin_box: InputData?.p_suggest_gtin_box,
     });
 
+    const isDisabled = () => InputData?.brand && InputData?.mattype && InputData?.material_id;
+
     const submit = (e) => {
         e.preventDefault();
 
@@ -57,6 +59,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                     className="mt-1 block w-full"
                                     onChange={(e) => handdleChange('brand', e.target.value)}
                                     defaultValue={data?.brand}
+                                    disabled={isDisabled()}
                                 >
                                     <option value="">---- Select Brand ----</option>
                                     {brand?.map(o => (
@@ -73,6 +76,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                     className="mt-1 block w-full"
                                     onChange={(e) => handdleChange('mattype', e.target.value)}
                                     defaultValue={data?.mattype}
+                                    disabled={isDisabled()}
                                 >
                                     <option value="">---- Select MATTYPE ----</option>
                                     {mattype?.map(o => (
@@ -93,6 +97,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                         className="mt-1 block w-full"
                                         onChange={(e) => setData('material_id', e.target.value)}
                                         defaultValue={data?.material_id}
+                                        disabled={isDisabled()}
                                     >
                                         <option value="">---- Select Material ID ----</option>
                                         {materials?.map(o => (
