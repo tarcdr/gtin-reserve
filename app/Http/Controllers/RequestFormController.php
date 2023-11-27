@@ -42,6 +42,7 @@ class RequestFormController extends Controller
           $db = '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=' . $host . ')(PORT=' . $port . '))(CONNECT_DATA=(SERVICE_NAME = ' . $database . ')))';
           $conn = oci_connect($username, $password, $db);
 
+          $p_material_id      = $request->material_id;
           $p_trading_unit_pcs = 'Pcs';
           $p_trading_unit_box = $request->trading_unit;
           $p_gtin_pcs         = NULL;
@@ -68,7 +69,7 @@ class RequestFormController extends Controller
             }
   
             $stid0 = oci_parse($conn, 'begin proj1_find_newgtin(:p_material_id, :p_trading_unit_pcs, :p_trading_unit_box, :p_gtin_pcs, :p_gtin_box, :p_user_login); end;');
-            oci_bind_by_name($stid0, ':p_material_id',      $request->material_id);
+            oci_bind_by_name($stid0, ':p_material_id',      $p_material_id);
             oci_bind_by_name($stid0, ':p_trading_unit_pcs', $p_trading_unit_pcs);
             oci_bind_by_name($stid0, ':p_trading_unit_box', $p_trading_unit_box);
             oci_bind_by_name($stid0, ':p_gtin_pcs',         $p_gtin_pcs);
