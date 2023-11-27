@@ -20,8 +20,8 @@ class FormUpdateRequest extends FormRequest
             'mattype' => ['required'],
             'gtinPcsCode'    => ['required_if:gtinExistPcs,true'],
             'gtinPackCode'   => ['required_if:gtinExistPack,true'],
-            'gtinPcsChoose'  => ['required_with_all:brand,mattype,material_id'],
-            'gtinPackChoose' => ['required_with_all:brand,mattype,material_id'],
+            // 'gtinPcsChoose'  => ['required_with_all:brand,mattype,material_id'],
+            // 'gtinPackChoose' => ['required_with_all:brand,mattype,material_id'],
         ];
     }
 }
