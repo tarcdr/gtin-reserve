@@ -21,7 +21,8 @@ class RequestFormController extends Controller
      */
     public function view(Request $request): Response
     {
-        $host = env('DB_HOST', '');
+        $host     = env('DB_HOST', '');
+        $port     = env('DB_PORT', '');
         $database = env('DB_DATABASE', '');
         $username = env('DB_USERNAME', '');
         $password = env('DB_PASSWORD', '');
@@ -64,7 +65,7 @@ class RequestFormController extends Controller
           foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
             array_push($gtins, $m);
           }
-          $conn = oci_connect($username, $password, $host . '/' . $database);
+          $conn = oci_connect($username, $password, $host . ':' . $port . '/' . $database);
           if (!$conn) {
               $e = oci_error();
               trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
