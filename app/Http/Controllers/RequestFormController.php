@@ -112,16 +112,20 @@ class RequestFormController extends Controller
     public function update(FormUpdateRequest $request): RedirectResponse
     {
         $inputData = [
-          'brand'          => $request->brand,
-          'mattype'        => $request->mattype,
-          'material_id'    => $request->material_id,
-          'gtinExistPcs'   => $request->gtinExistPcs,
-          'gtinExistPack'  => $request->gtinExistPack,
-          'gtinPcsCode'    => $request->gtinPcsCode,
-          'gtinPcsChoose'  => $request->gtinPcsChoose,
-          'gtinPackCode'   => $request->gtinPackCode,
-          'gtinPackChoose' => $request->gtinPackChoose,
-          'trading_unit'   => $request->trading_unit,
+          'brand'               => $request->brand,
+          'mattype'             => $request->mattype,
+          'material_id'         => $request->material_id,
+          'gtinExistPcs'        => $request->gtinExistPcs,
+          'gtinExistPack'       => $request->gtinExistPack,
+          'gtinPcsCode'         => $request->gtinPcsCode,
+          'gtinPcsChoose'       => $request->gtinPcsChoose,
+          'gtinPackCode'        => $request->gtinPackCode,
+          'gtinPackChoose'      => $request->gtinPackChoose,
+          'trading_unit'        => $request->trading_unit,
+          "p_new_last_gtin_pcs" => $request->p_new_last_gtin_pcs,
+          "p_suggest_gtin_pcs"  => $request->p_suggest_gtin_pcs,
+          "p_new_last_gtin_box" => $request->p_new_last_gtin_box,
+          "p_suggest_gtin_box"  => $request->p_suggest_gtin_box,
         ];
         return Redirect::route('request', $inputData);
     }
