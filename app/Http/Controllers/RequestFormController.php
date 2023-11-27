@@ -89,7 +89,9 @@ class RequestFormController extends Controller
             'gtinExistPcs'        => $request->gtinExistPcs,
             'gtinExistPack'       => $request->gtinExistPack,
             'gtinPcsCode'         => $request->gtinPcsCode,
+            'gtinPcsChoose'       => $request->gtinPcsChoose,
             'gtinPackCode'        => $request->gtinPackCode,
+            'gtinPackChoose'      => $request->gtinPackChoose,
             "p_new_last_gtin_pcs" => $p_new_last_gtin_pcs,
             "p_suggest_gtin_pcs"  => $p_suggest_gtin_pcs,
             "p_new_last_gtin_box" => $p_new_last_gtin_box,
@@ -109,13 +111,15 @@ class RequestFormController extends Controller
     public function update(FormUpdateRequest $request): RedirectResponse
     {
         $inputData = [
-          'brand'         => $request->brand,
-          'mattype'       => $request->mattype,
-          'material_id'   => $request->material_id,
-          'gtinExistPcs'  => $request->gtinExistPcs,
-          'gtinExistPack' => $request->gtinExistPack,
-          'gtinPcsCode'   => $request->gtinPcsCode,
-          'gtinPackCode'  => $request->gtinPackCode,
+          'brand'          => $request->brand,
+          'mattype'        => $request->mattype,
+          'material_id'    => $request->material_id,
+          'gtinExistPcs'   => $request->gtinExistPcs,
+          'gtinExistPack'  => $request->gtinExistPack,
+          'gtinPcsCode'    => $request->gtinPcsCode,
+          'gtinPcsChoose'  => $request->gtinPcsChoose,
+          'gtinPackCode'   => $request->gtinPackCode,
+          'gtinPackChoose' => $request->gtinPackChoose,
         ];
         return Redirect::route('request', $inputData);
     }
