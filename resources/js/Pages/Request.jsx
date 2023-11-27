@@ -36,6 +36,12 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         patch(route('request.update'));
     };
 
+    const reset = e => {
+      e.preventDefault();
+
+      route('request');
+    };
+
     const handdleChange = (name, value) => {
       setData(name, value);
     };
@@ -310,7 +316,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                               </div>
 
                               <div className="flex items-center justify-center gap-4">
-                                  <button type="button" onClick={() => route('request')} className="inline-flex items-center px-4 py-2 bg-white border border-gray-900 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none">
+                                  <button type="button" onClick={reset} className="inline-flex items-center px-4 py-2 bg-white border border-gray-900 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none">
                                     Reset
                                   </button>
                                   <PrimaryButton disabled={processing}>Reserve</PrimaryButton>
