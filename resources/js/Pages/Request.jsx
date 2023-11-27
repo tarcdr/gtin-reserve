@@ -31,10 +31,12 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
 
     const isDisabled = () => InputData?.brand && InputData?.mattype && InputData?.material_id;
 
-    const submit = () => {
-        // e.preventDefault();
+    const submit = (e) => {
+      if (!isDisabled()) {
+        e.preventDefault();
+      }
 
-        patch(route('request.update'));
+      patch(route('request.update'));
     };
 
     const handdleChange = (name, value) => {
