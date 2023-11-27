@@ -9,6 +9,7 @@ import { Transition } from '@headlessui/react';
 import Checkbox from '@/Components/Checkbox';
 import Radio from '@/Components/Radio';
 import SecondaryButton from '@/Components/SecondaryButton';
+import { useEffect } from 'react';
 
 export default function Request({ auth, InputData, brand, mattype, materials = [], tradingUnits = [], gtins = [] }) {
 
@@ -40,6 +41,10 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
     const handdleChange = (name, value) => {
       setData(name, value);
     };
+
+    useEffect(() => {
+      console.log('input data', InputData);
+    }, [InputData]);
 
     return (
         <AuthenticatedLayout
