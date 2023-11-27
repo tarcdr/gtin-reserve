@@ -68,7 +68,7 @@ class RequestFormController extends Controller
                 trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
             }
   
-            $stid0 = oci_parse($conn, 'begin proj1_find_newgtin(:p_material_id, :p_trading_unit_pcs, :p_trading_unit_box, :p_gtin_pcs, :p_gtin_box, :p_user_login); end;');
+            $stid0 = oci_parse($conn, 'begin proj1_button_reserve(:p_material_id, :p_trading_unit_pcs, :p_trading_unit_box, :p_gtin_pcs, :p_gtin_box, :p_user_login); end;');
             oci_bind_by_name($stid0, ':p_material_id',      $p_material_id);
             oci_bind_by_name($stid0, ':p_trading_unit_pcs', $p_trading_unit_pcs);
             oci_bind_by_name($stid0, ':p_trading_unit_box', $p_trading_unit_box);
