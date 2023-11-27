@@ -92,6 +92,7 @@ class RequestFormController extends Controller
             'gtinPcsChoose'       => $request->gtinPcsChoose,
             'gtinPackCode'        => $request->gtinPackCode,
             'gtinPackChoose'      => $request->gtinPackChoose,
+            'trading_unit'        => $request->trading_unit,
             "p_new_last_gtin_pcs" => $p_new_last_gtin_pcs,
             "p_suggest_gtin_pcs"  => $p_suggest_gtin_pcs,
             "p_new_last_gtin_box" => $p_new_last_gtin_box,
@@ -120,6 +121,7 @@ class RequestFormController extends Controller
           'gtinPcsChoose'  => $request->gtinPcsChoose,
           'gtinPackCode'   => $request->gtinPackCode,
           'gtinPackChoose' => $request->gtinPackChoose,
+          'trading_unit'   => $request->trading_unit,
         ];
         return Redirect::route('request', $inputData);
     }
