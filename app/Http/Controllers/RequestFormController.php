@@ -65,7 +65,8 @@ class RequestFormController extends Controller
           foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
             array_push($gtins, $m);
           }
-          $conn = oci_connect($username, $password, $host . ':' . $port . '/' . $database);
+          $db = '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=131.107.2.75)(PORT=1531))(CONNECT_DATA=(SERVICE_NAME = PRODTEST)))';
+          $conn = oci_connect($username, $password, $db);
           if (!$conn) {
               $e = oci_error();
               trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
