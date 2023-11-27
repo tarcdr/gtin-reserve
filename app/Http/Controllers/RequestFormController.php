@@ -33,10 +33,10 @@ class RequestFormController extends Controller
         $tradingUnits = [];
         $gtins = [];
 
-        $p_new_last_gtin_pcs = '';
-        $p_suggest_gtin_pcs  = '';
-        $p_new_last_gtin_box = '';
-        $p_suggest_gtin_box  = '';
+        $p_new_last_gtin_pcs = $request->p_new_last_gtin_pcs;
+        $p_suggest_gtin_pcs  = $request->p_suggest_gtin_pcs;
+        $p_new_last_gtin_box = $request->p_new_last_gtin_box;
+        $p_suggest_gtin_box  = $request->p_suggest_gtin_box;
 
         foreach (Material::select('brand')->whereNotNull('brand')->groupBy('brand')->orderBy('brand')->get() as $b) {
           array_push($brand, [
