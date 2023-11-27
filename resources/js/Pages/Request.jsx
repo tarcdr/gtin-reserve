@@ -8,10 +8,11 @@ import { useForm } from '@inertiajs/react';
 import { Transition } from '@headlessui/react';
 import Checkbox from '@/Components/Checkbox';
 import Radio from '@/Components/Radio';
+import SecondaryButton from '@/Components/SecondaryButton';
 
 export default function Request({ auth, InputData, brand, mattype, materials = [], tradingUnits = [], gtins = [] }) {
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
+    const { data, setData, patch, errors, processing, recentlySuccessful, reset } = useForm({
         brand: InputData?.brand || '',
         mattype: InputData?.mattype || '',
         material_id: InputData?.material_id || '',
@@ -34,12 +35,6 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         e.preventDefault();
 
         patch(route('request.update'));
-    };
-
-    const reset = e => {
-      e.preventDefault();
-
-      route('request');
     };
 
     const handdleChange = (name, value) => {
@@ -316,9 +311,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                               </div>
 
                               <div className="flex items-center justify-center gap-4">
-                                  <button type="button" onClick={reset} className="inline-flex items-center px-4 py-2 bg-white border border-gray-900 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none">
-                                    Reset
-                                  </button>
+                                  <SecondaryButton onClick={reset}>Reset</SecondaryButton>
                                   <PrimaryButton disabled={processing}>Reserve</PrimaryButton>
 
                                   <Transition
