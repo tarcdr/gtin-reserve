@@ -22,7 +22,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         gtinPcsChoose: InputData?.gtinPcsChoose,
         gtinPackCode: '',
         gtinPackChoose: InputData?.gtinPackChoose,
-        trading_unit: null,
+        trading_unit: (tradingUnits?.length > 0 && tradingUnits[0]?.unit) || null,
         p_new_last_gtin_pcs: InputData?.p_new_last_gtin_pcs,
         p_suggest_gtin_pcs: InputData?.p_suggest_gtin_pcs,
         p_new_last_gtin_box: InputData?.p_new_last_gtin_box,
