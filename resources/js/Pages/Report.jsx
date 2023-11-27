@@ -16,6 +16,9 @@ export default function Report({ auth, gtins = [] }) {
                         <thead class="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
                             <tr>
                                 <th scope="col" class="px-6 py-3">
+                                    #
+                                </th>
+                                <th scope="col" class="px-6 py-3">
                                     Material ID
                                 </th>
                                 <th scope="col" class="px-6 py-3">
@@ -36,8 +39,11 @@ export default function Report({ auth, gtins = [] }) {
                             </tr>
                         </thead>
                         <tbody>
-                          {gtins.map(o => (
+                          {gtins.map((o, index) => (
                             <tr key={`report-gtin-${o.global_trade_item_number}`}>
+                                <th scope="row" class="px-6 py-4">
+                                    {index + 1}
+                                </th>
                                 <th scope="row" class="px-6 py-4">
                                     {o.material_id}
                                 </th>
