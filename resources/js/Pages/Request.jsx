@@ -24,10 +24,10 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         gtinPackCode: '',
         gtinPackChoose: 'l',
         trading_unit: (tradingUnits?.length > 0 && tradingUnits[0]?.unit) || null,
-        p_new_last_gtin_pcs: InputData?.p_new_last_gtin_pcs,
-        p_suggest_gtin_pcs: InputData?.p_suggest_gtin_pcs,
-        p_new_last_gtin_box: InputData?.p_new_last_gtin_box,
-        p_suggest_gtin_box: InputData?.p_suggest_gtin_box,
+        p_new_last_gtin_pcs: InputData?.p_new_last_gtin_pcs || '',
+        p_suggest_gtin_pcs: InputData?.p_suggest_gtin_pcs || '',
+        p_new_last_gtin_box: InputData?.p_new_last_gtin_box || '',
+        p_suggest_gtin_box: InputData?.p_suggest_gtin_box || '',
     });
 
     const isDisabled = () => InputData?.brand && InputData?.mattype && InputData?.material_id;
