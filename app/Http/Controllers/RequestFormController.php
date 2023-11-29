@@ -14,6 +14,7 @@ use App\Models\Mattype;
 use App\Models\TradingUnit;
 use App\Models\Gtin;
 use PDO;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RequestFormController extends Controller
 {
