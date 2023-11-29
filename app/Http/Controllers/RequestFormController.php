@@ -179,4 +179,9 @@ class RequestFormController extends Controller
       }
       return Inertia::render('Report', [ "gtins" => $gtins ]);
     }
+
+    public function export()
+    {
+        return Excel::download(Gtin::all(), 'export.xlsx');
+    }
 }
