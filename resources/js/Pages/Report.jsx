@@ -13,7 +13,7 @@ export default function Report({ auth, gtins = [] }) {
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="flex items-center justify-end gap-4 mb-2">
-                        <PrimaryButton onClick={() => window.open(route('report'))}>Download</PrimaryButton>
+                        <PrimaryButton onClick={() => window.open(route('export'))}>Download</PrimaryButton>
                     </div>
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                       <table class="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
