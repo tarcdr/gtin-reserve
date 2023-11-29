@@ -10,6 +10,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\DB;
 use App\Models\Material;
+use App\Models\Mattype;
 use App\Models\TradingUnit;
 use App\Models\Gtin;
 use PDO;
@@ -101,9 +102,10 @@ class RequestFormController extends Controller
             "code" => $b->brand
           ]);
         }
-        foreach (Material::select('mat_type')->whereNotNull('mat_type')->groupBy('mat_type')->orderBy('mat_type')->get() as $m) {
+        foreach (Mattype::all() as $m) {
           array_push($mattype, [
-            "code" => $m->mat_type
+            "code" => $m->group_mat_type,
+            "name" => $m->mat_type . ' ' . $m->mat_type_description,
           ]);
         }
         foreach (Material::where('brand', $request->brand)->where('mat_type', $request->mattype)->orderBy('material_id')->get() as $m) {

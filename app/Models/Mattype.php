@@ -14,7 +14,7 @@ class Mattype extends Model
      *
      * @var string
      */
-    protected $table = 'proj1_mattype_v';
+    protected $table = 'proj1_mattype';
     /**
      * Indicates if the model's ID is auto-incrementing.
      *

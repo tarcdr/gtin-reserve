@@ -85,7 +85,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                 >
                                     <option value="">---- Select MATTYPE ----</option>
                                     {mattype?.map(o => (
-                                        <option key={`mattype-code-${o.code}`} value={o.code}>{o.code}</option>
+                                        <option key={`mattype-code-${o.code}`} value={o.code}>{o.name}</option>
                                     ))}
                                 </select>
 
