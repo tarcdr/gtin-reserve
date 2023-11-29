@@ -14,6 +14,7 @@ use App\Models\Mattype;
 use App\Models\TradingUnit;
 use App\Models\Gtin;
 use PDO;
+use App\Exports\GtinExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class RequestFormController extends Controller
@@ -183,6 +184,6 @@ class RequestFormController extends Controller
 
     public function export()
     {
-        return Excel::download(Gtin::all(), 'export.xlsx');
+        return Excel::download(new GtinExport, 'export.xlsx');
     }
 }
