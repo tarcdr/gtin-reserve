@@ -105,7 +105,7 @@ class RequestFormController extends Controller
         foreach (Mattype::all() as $m) {
           array_push($mattype, [
             "code" => $m->group_mat_type,
-            "name" => $m->mat_type . ' ' . $m->mat_type_description,
+            "name" => $m->mat_type . ' - ' . $m->mat_type_description,
           ]);
         }
         foreach (Material::where('brand', $request->brand)->where('mat_type', $request->mattype)->orderBy('material_id')->get() as $m) {
