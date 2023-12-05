@@ -176,12 +176,12 @@ class RequestFormController extends Controller
     public function report(Request $request): Response
     {
       $gtins = [];
-      foreach (Gtin::select('material_id')
-        ->select('trading_unit')
-        ->select('global_trade_item_number')
-        ->select('user_last_update')
-        ->select('last_update')
-        ->select('status_gtin')
+      foreach (Gtin::addSelect('material_id')
+        ->addSelect('trading_unit')
+        ->addSelect('global_trade_item_number')
+        ->addSelect('user_last_update')
+        ->addSelect('last_update')
+        ->addSelect('status_gtin')
         ->addSelect(DB::raw('case when status_gtin = \'RESERVE\' then 0 else 1 end as sort_1'))
         ->orderBy('sort_1')
         ->orderBy('material_id')->get() as $m) {
