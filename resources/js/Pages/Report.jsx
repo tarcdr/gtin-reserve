@@ -64,7 +64,11 @@ export default function Report({ auth, gtins = [] }) {
                                     {o.last_update}
                                 </td>
                                 <td class="px-6 py-4">
-                                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">{o.status_gtin}</a>
+                                    {o.status_gtin?.toLowerCase() === 'active' ? (
+                                        o.status_gtin
+                                    ) : (
+                                        <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">{o.status_gtin}</a>
+                                    )}
                                 </td>
                             </tr>
                           ))}
