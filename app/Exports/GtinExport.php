@@ -9,6 +9,13 @@ class GtinExport implements FromCollection
 {
     public function collection()
     {
-        return Gtin::all();
+        return Gtin::addSelect('material_id')
+                ->addSelect('trading_unit')
+                ->addSelect('global_trade_item_number')
+                ->addSelect('user_last_update')
+                ->addSelect('last_update')
+                ->addSelect('status_gtin')
+                ->orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')
+                ->orderBy('material_id')->get();
     }
 }
