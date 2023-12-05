@@ -24,7 +24,9 @@ export default function Report({ auth, gtins = [] }) {
     const setActive = (e) => {
         e.preventDefault();
 
-        patch(route('report.confirm'));
+        patch(route('report.confirm'), {
+            onSuccess: () => closeModal()
+        });
     };
 
     return (
