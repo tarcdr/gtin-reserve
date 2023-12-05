@@ -19,17 +19,21 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class RequestFormController extends Controller
 {
+    public function __construct()
+    {
+        $this->host     = env('DB_HOST', '');
+        $this->port     = env('DB_PORT', '');
+        $this->database = env('DB_DATABASE', '');
+        $this->username = env('DB_USERNAME', '');
+        $this->password = env('DB_PASSWORD', '');
+
+        $this->db = '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=' . $this->host . ')(PORT=' . $this->port . '))(CONNECT_DATA=(SERVICE_NAME = ' . $this->database . ')))';
+    }
     /**
      * Display the user's profile form.
      */
     public function view(Request $request): Response
     {
-        $host     = env('DB_HOST', '');
-        $port     = env('DB_PORT', '');
-        $database = env('DB_DATABASE', '');
-        $username = env('DB_USERNAME', '');
-        $password = env('DB_PASSWORD', '');
-
         $brand = [];
         $mattype = [];
         $materials = [];
@@ -42,8 +46,7 @@ class RequestFormController extends Controller
         $p_suggest_gtin_box  = $request->p_suggest_gtin_box;
 
         if ($request->material_id) {
-          $db = '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=' . $host . ')(PORT=' . $port . '))(CONNECT_DATA=(SERVICE_NAME = ' . $database . ')))';
-          $conn = oci_connect($username, $password, $db);
+          $conn = oci_connect($this->username, $this->password, $this->db);
 
           $p_material_id      = $request->material_id;
           $p_trading_unit_pcs = 'Pcs';
@@ -173,9 +176,39 @@ class RequestFormController extends Controller
         return Redirect::route('request', $inputData);
     }
 
+    /**
+     * Update the user's profile information.
+     */
+    public function confirm(Request $request): RedirectResponse
+    {
+        $p_gtin       = $request->gtin;
+        $p_user_login = $request->user()->user_login;
+        $conn = oci_connect($this->username, $this->password, $this->db);
+        if (!$conn) {
+            $e = oci_error();
+            trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+        }
+
+        $stid0 = oci_parse($conn, 'begin proj1_button_confirm(:p_gtin, :p_user_login); end;');
+        oci_bind_by_name($stid0, ':p_gtin',       $p_gtin);
+        oci_bind_by_name($stid0, ':p_user_login', $p_user_login);
+
+        oci_execute($stid0);
+
+        return Redirect::route('report');
+    }
+
     public function report(Request $request): Response
     {
       $gtins = [];
+      // array_push($gtins, [
+      //   "material_id" => '10HO00001',
+      //   "trading_unit" => 'Pcs',
+      //   "global_trade_item_number" => '8859533401487',
+      //   "user_last_update" => '',
+      //   "last_update" => '',
+      //   "status_gtin" => 'RESERVE',
+      // ]);
       foreach (Gtin::orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
         array_push($gtins, $m);
       }
