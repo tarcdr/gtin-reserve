@@ -176,7 +176,7 @@ class RequestFormController extends Controller
     public function report(Request $request): Response
     {
       $gtins = [];
-      foreach (Gtin::addSelect(DB::raw('case when status_gtin = \'RESERVE\' then 0 else 1 end as sort_1'))->orderBy('sort_1')->orderBy('material_id')->get() as $m) {
+      foreach (Gtin::select('*')->addSelect(DB::raw('case when status_gtin = \'RESERVE\' then 0 else 1 end as sort_1'))->orderBy('sort_1')->orderBy('material_id')->get() as $m) {
         array_push($gtins, $m);
       }
       return Inertia::render('Report', [ "gtins" => $gtins ]);
