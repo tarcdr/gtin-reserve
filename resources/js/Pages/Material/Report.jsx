@@ -95,10 +95,10 @@ export default function Report({ auth, materials = [] }) {
                                     {o.last_update}
                                 </td>
                                 <td className="px-6 py-4">
-                                    {o.status?.toLowerCase() === 'active' ? (
-                                        o.status
+                                    {o.status?.toLowerCase() === 'reserve' ? (
+                                      <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline" onClick={() => confirmActiveGtin(o.material_id)}>{o.status}</a>
                                     ) : (
-                                        <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline" onClick={() => confirmActiveGtin(o.material_id)}>{o.status}</a>
+                                      o.status
                                     )}
                                 </td>
                             </tr>

@@ -41,6 +41,19 @@ class MaterialController extends Controller
         $p_last_id    = $request->p_last_id;
         $p_suggest_id = $request->p_suggest_id;
 
+        foreach (Brand::all() as $b) {
+          array_push($brand, [
+            "abb"  => $b->brand_abb,
+            "code" => $b->brand,
+          ]);
+        }
+        foreach (Mattype::all() as $m) {
+          array_push($mattype, [
+            "code" => $m->mat_type,
+            "name" => $m->mat_type . ' - ' . $m->mat_type_description,
+          ]);
+        }
+
         if ($request->brand && $request->mattype) {
           $conn = oci_connect($this->username, $this->password, $this->db);
 
@@ -79,20 +92,20 @@ class MaterialController extends Controller
             oci_bind_by_name($stid_exc, ':p_user_login',    $p_user_login);
 
             oci_execute($stid_exc);
-          }
-        }
 
-        foreach (Brand::all() as $b) {
-          array_push($brand, [
-            "abb"  => $b->brand_abb,
-            "code" => $b->brand,
-          ]);
-        }
-        foreach (Mattype::all() as $m) {
-          array_push($mattype, [
-            "code" => $m->mat_type,
-            "name" => $m->mat_type . ' - ' . $m->mat_type_description,
-          ]);
+            return Redirect::route('material.request', [
+              'InputData' => [
+                'brand'               => '',
+                'mattype'             => '',
+                'material_desc'       => '',
+                'p_last_id'           => '',
+                'p_suggest_id'        => '',
+                'materialChoose'      => '',
+              ],
+              'brand'        => $brand,
+              "mattype"      => $mattype,
+            ]);
+          }
         }
 
         return Inertia::render('Material/Request', [
