@@ -150,7 +150,7 @@ class MaterialController extends Controller
       foreach (MaterialTemp::orderByRaw('(case when status = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
         array_push($materials, $m);
       }
-      return Inertia::render('Report', [ "materials" => $materials ]);
+      return Inertia::render('Material/Report', [ "materials" => $materials ]);
     }
 
     public function export()
