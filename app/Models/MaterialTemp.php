@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Brand extends Model
+class MaterialTemp extends Model
 {
     use HasFactory;
 
@@ -14,7 +14,7 @@ class Brand extends Model
      *
      * @var string
      */
-    protected $table = 'proj1_brand';
+    protected $table = 'proj1_material_temp';
     /**
      * Indicates if the model's ID is auto-incrementing.
      *

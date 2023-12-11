@@ -5,14 +5,14 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Report({ auth, gtins = [] }) {
+export default function Report({ auth, materials = [] }) {
     const [confirmingActive, setConfirmingActive] = useState(false);
     const { setData, patch, processing } = useForm({
-        gtin: ''
+        material_id: ''
     });
 
-    const confirmActiveGtin = gtin => {
-        setData('gtin', gtin);
+    const confirmActiveGtin = material_id => {
+        setData('material_id', material_id);
         setConfirmingActive(true);
     };
 
@@ -23,7 +23,7 @@ export default function Report({ auth, gtins = [] }) {
     const setActive = (e) => {
         e.preventDefault();
 
-        patch(route('report.confirm'), {
+        patch(route('material.confirm'), {
             onSuccess: () => closeModal()
         });
     };
@@ -38,7 +38,7 @@ export default function Report({ auth, gtins = [] }) {
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="flex items-center justify-end gap-4 mb-2">
-                        <PrimaryButton onClick={() => window.open(route('export'))}>Download</PrimaryButton>
+                        <PrimaryButton onClick={() => window.open(route('material/export'))}>Download</PrimaryButton>
                     </div>
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                       <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
@@ -51,10 +51,13 @@ export default function Report({ auth, gtins = [] }) {
                                     Material ID
                                 </th>
                                 <th scope="col" className="px-6 py-3">
-                                    Trading Unit
+                                    Material Desc
                                 </th>
                                 <th scope="col" className="px-6 py-3">
-                                    Global Trade item number
+                                    Brand
+                                </th>
+                                <th scope="col" className="px-6 py-3">
+                                    Mat Type
                                 </th>
                                 <th scope="col" className="px-6 py-3">
                                     Last User Update
@@ -68,8 +71,8 @@ export default function Report({ auth, gtins = [] }) {
                             </tr>
                         </thead>
                         <tbody>
-                          {gtins.map((o, index) => (
-                            <tr key={`report-gtin-${o.global_trade_item_number}`}>
+                          {materials.map((o, index) => (
+                            <tr key={`report-gtin-${o.material_id}`}>
                                 <th scope="row" className="px-6 py-4">
                                     {index + 1}
                                 </th>
@@ -77,10 +80,13 @@ export default function Report({ auth, gtins = [] }) {
                                     {o.material_id}
                                 </th>
                                 <td className="px-6 py-4">
-                                    {o.trading_unit}
+                                    {o.material_desc}
                                 </td>
                                 <td className="px-6 py-4">
-                                    {o.global_trade_item_number}
+                                    {o.brand}
+                                </td>
+                                <td className="px-6 py-4">
+                                    {o.mattype}
                                 </td>
                                 <td className="px-6 py-4">
                                     {o.user_last_update}
@@ -89,10 +95,10 @@ export default function Report({ auth, gtins = [] }) {
                                     {o.last_update}
                                 </td>
                                 <td className="px-6 py-4">
-                                    {o.status_gtin?.toLowerCase() === 'active' ? (
-                                        o.status_gtin
+                                    {o.status?.toLowerCase() === 'active' ? (
+                                        o.status
                                     ) : (
-                                        <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline" onClick={() => confirmActiveGtin(o.global_trade_item_number)}>{o.status_gtin}</a>
+                                        <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline" onClick={() => confirmActiveGtin(o.material_id)}>{o.status}</a>
                                     )}
                                 </td>
                             </tr>

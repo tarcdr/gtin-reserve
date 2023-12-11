@@ -111,7 +111,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                                     </select>
                                 </div>
                                 <div className="mt-auto">
-                                <PrimaryButton type="button">Create Material</PrimaryButton>
+                                    <PrimaryButton type="button" onClick={() => window.open('/material/request', '_self')}>Create Material ID</PrimaryButton>
                                 </div>
                               </div>
                             </>
@@ -321,7 +321,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                               </div>
 
                               <div className="flex items-center justify-center gap-4">
-                                  <SecondaryButton onClick={() => window.open('/request', '_self')}>Reset</SecondaryButton>
+                                  <SecondaryButton onClick={() => window.open('/material/request', '_self')}>Reset</SecondaryButton>
                                   <PrimaryButton disabled={processing}>Reserve</PrimaryButton>
 
                                   <Transition
