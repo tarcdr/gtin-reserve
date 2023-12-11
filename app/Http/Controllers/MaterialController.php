@@ -41,7 +41,7 @@ class MaterialController extends Controller
         $p_last_id    = $request->p_last_id;
         $p_suggest_id = $request->p_suggest_id;
 
-        if ($request->brand && $request->mattype) {
+        // if ($request->brand && $request->mattype) {
           $conn = oci_connect($this->username, $this->password, $this->db);
 
           if (!$conn) {
@@ -77,7 +77,7 @@ class MaterialController extends Controller
 
             oci_execute($stid_exc);
           }
-        }
+        // }
 
         foreach (Brand::all() as $b) {
           array_push($brand, [
