@@ -113,7 +113,7 @@ export default function Report({ auth, materials = [] }) {
             <Modal show={confirmingActive} onClose={closeModal}>
                 <form onSubmit={setActive} className="p-6">
                     <h2 className="text-lg font-medium text-gray-900">
-                        Are you sure you want to Active GTIN?
+                        Are you sure you want to Active Material ID?
                     </h2>
 
                     <p className="mt-1 text-sm text-gray-600">
