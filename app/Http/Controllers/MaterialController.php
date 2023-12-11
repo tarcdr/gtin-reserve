@@ -93,7 +93,7 @@ class MaterialController extends Controller
 
             oci_execute($stid_exc);
 
-            return Redirect::route('material.request', [
+            return Inertia::render('Material/Request', [
               'InputData' => [
                 'brand'               => '',
                 'mattype'             => '',
