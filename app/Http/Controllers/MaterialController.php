@@ -36,12 +36,12 @@ class MaterialController extends Controller
         $brand = [];
         $mattype = [];
 
+        $p_brand   = $request->brand;
+        $p_mattype = $request->mattype;
         $p_last_id    = $request->p_last_id;
         $p_suggest_id = $request->p_suggest_id;
 
         if ($request->brand && $request->mattype) {
-          $p_brand   = $request->brand;
-          $p_mattype = $request->mattype;
           $conn = oci_connect($this->username, $this->password, $this->db);
 
           if (!$conn) {
@@ -94,8 +94,8 @@ class MaterialController extends Controller
 
         return Inertia::render('Material/Request', [
           'InputData' => [
-            'brand'               => $request->brand,
-            'mattype'             => $request->mattype,
+            'brand'               => $p_brand,
+            'mattype'             => $p_mattype,
             'material_desc'       => $request->material_desc,
             'p_last_id'           => $p_last_id,
             'p_suggest_id'        => $p_suggest_id,
