@@ -31,9 +31,9 @@ export default function Report({ auth, materials = [] }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Report</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Material Report</h2>}
         >
-            <Head title="Report" />
+            <Head title="Material Report" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
