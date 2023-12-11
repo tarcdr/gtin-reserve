@@ -89,7 +89,7 @@ export default function Report({ auth, materials = [] }) {
                                     {o.mattype}
                                 </td>
                                 <td className="px-6 py-4">
-                                    {o.user_last_update}
+                                    {o.last_user}
                                 </td>
                                 <td className="px-6 py-4">
                                     {o.last_update}
