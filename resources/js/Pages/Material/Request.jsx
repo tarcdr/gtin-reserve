@@ -36,7 +36,7 @@ export default function Request({ auth, InputData, brand = [], mattype = [] }) {
     };
 
     useEffect(() => {
-      if (recentlySuccessful && data.materialChoose !== '') {
+      if (recentlySuccessful && InputData?.success) {
         setTimeout(() => {
           window.open('/material/request', '_self');
         }, 500);

@@ -40,6 +40,7 @@ class MaterialController extends Controller
         $p_mattype    = $request->mattype;
         $p_last_id    = $request->p_last_id;
         $p_suggest_id = $request->p_suggest_id;
+        $success      = NULL;
 
         foreach (Brand::all() as $b) {
           array_push($brand, [
@@ -92,6 +93,8 @@ class MaterialController extends Controller
             oci_bind_by_name($stid_exc, ':p_user_login',    $p_user_login);
 
             oci_execute($stid_exc);
+
+            $success = true;
           }
         }
 
@@ -103,6 +106,7 @@ class MaterialController extends Controller
             'p_last_id'           => $p_last_id,
             'p_suggest_id'        => $p_suggest_id,
             'materialChoose'      => $request->materialChoose,
+            'success'             => $success,
           ],
           'brand'        => $brand,
           "mattype"      => $mattype,
