@@ -58,6 +58,7 @@ class MaterialController extends Controller
           oci_execute($stid);
 
           $p_material_id      = NULL;
+          $p_material_desc    = $request->material_desc;
           $p_user_login       = $request->user()->user_login;
           if ($request->materialChoose === 'l') {
             $p_material_id = $p_last_id;
@@ -72,9 +73,9 @@ class MaterialController extends Controller
   
             $stid_exc = oci_parse($conn, 'begin proj1_button_reserve_matid(:p_material_id, :p_material_desc, :p_brand, :p_mattype, :p_user_login); end;');
             oci_bind_by_name($stid_exc, ':p_material_id',   $p_material_id);
-            oci_bind_by_name($stid_exc, ':p_material_desc', $request->material_desc);
-            oci_bind_by_name($stid_exc, ':p_brand',         $request->brand);
-            oci_bind_by_name($stid_exc, ':p_mattype',       $request->mattype);
+            oci_bind_by_name($stid_exc, ':p_material_desc', $p_material_desc);
+            oci_bind_by_name($stid_exc, ':p_brand',         $p_brand);
+            oci_bind_by_name($stid_exc, ':p_mattype',       $p_mattype);
             oci_bind_by_name($stid_exc, ':p_user_login',    $p_user_login);
 
             oci_execute($stid_exc);
