@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/material/request', [MaterialController::class, 'update'])->name('material.update');
     Route::get('/material/report', [MaterialController::class, 'report'])->name('material.report');
     Route::patch('/material/report', [MaterialController::class, 'confirm'])->name('material.confirm');
+    Route::get('/material/export', [MaterialController::class, 'export'])->name('material.export');
 
     Route::get('/report', [RequestFormController::class, 'report'])->name('report');
     Route::patch('/report', [RequestFormController::class, 'confirm'])->name('report.confirm');
