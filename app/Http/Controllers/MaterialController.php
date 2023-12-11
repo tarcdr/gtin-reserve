@@ -92,19 +92,6 @@ class MaterialController extends Controller
             oci_bind_by_name($stid_exc, ':p_user_login',    $p_user_login);
 
             oci_execute($stid_exc);
-
-            return Inertia::render('Material/Request', [
-              'InputData' => [
-                'brand'               => '',
-                'mattype'             => '',
-                'material_desc'       => '',
-                'p_last_id'           => '',
-                'p_suggest_id'        => '',
-                'materialChoose'      => '',
-              ],
-              'brand'        => $brand,
-              "mattype"      => $mattype,
-            ]);
           }
         }
 

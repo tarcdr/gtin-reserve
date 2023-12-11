@@ -8,6 +8,7 @@ import { useForm } from '@inertiajs/react';
 import { Transition } from '@headlessui/react';
 import Radio from '@/Components/Radio';
 import SecondaryButton from '@/Components/SecondaryButton';
+import { useEffect } from 'react';
 
 export default function Request({ auth, InputData, brand = [], mattype = [] }) {
 
@@ -33,6 +34,14 @@ export default function Request({ auth, InputData, brand = [], mattype = [] }) {
 
         patch(route('material.update'));
     };
+
+    useEffect(() => {
+      if (recentlySuccessful && data.materialChoose !== '') {
+        setTimeout(() => {
+          window.open('/material/request', '_self');
+        }, 500);
+      }
+    }, [recentlySuccessful, data.materialChoose]);
 
     return (
         <AuthenticatedLayout
