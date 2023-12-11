@@ -40,6 +40,8 @@ class MaterialController extends Controller
         $p_suggest_id = $request->p_suggest_id;
 
         if ($request->brand && $request->mattype) {
+          $p_brand   = $request->brand;
+          $p_mattype = $request->mattype;
           $conn = oci_connect($this->username, $this->password, $this->db);
 
           if (!$conn) {
@@ -48,8 +50,8 @@ class MaterialController extends Controller
           }
 
           $stid = oci_parse($conn, 'begin proj1_gen_matid(:p_brand, :p_mattype, :p_last_id, :p_suggest_id); end;');
-          oci_bind_by_name($stid, ':p_brand',      $request->brand);
-          oci_bind_by_name($stid, ':p_mattype',    $request->mattype);
+          oci_bind_by_name($stid, ':p_brand',      $p_brand);
+          oci_bind_by_name($stid, ':p_mattype',    $p_mattype);
           oci_bind_by_name($stid, ':p_last_id',    $p_last_id,    100);
           oci_bind_by_name($stid, ':p_suggest_id', $p_suggest_id, 100);
 
