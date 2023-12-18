@@ -9,8 +9,9 @@ import { Transition } from '@headlessui/react';
 import Checkbox from '@/Components/Checkbox';
 import Radio from '@/Components/Radio';
 import SecondaryButton from '@/Components/SecondaryButton';
+import { useEffect } from 'react';
 
-export default function Request({ auth, InputData, brand, mattype, materials = [], tradingUnits = [], gtins = [] }) {
+export default function Request({ auth, InputData, brand, mattype, p_message_pcs, p_message_box, p_message, materials = [], tradingUnits = [], gtins = [] }) {
 
     const { data, setData, patch, errors, processing, recentlySuccessful, transform } = useForm({
         brand: InputData?.brand || '',
@@ -45,12 +46,18 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
         patch(route('request.update'));
     };
 
+    useEffect(() => {
+        if (p_message_pcs || p_message_box || p_message) {
+            alert(p_message_pcs || p_message_box || p_message);
+        }
+    }, [p_message_pcs, p_message_box, p_message]);
+
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Request</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">GTIN/Request</h2>}
         >
-            <Head title="Request" />
+            <Head title="GTIN/Request" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -321,7 +328,7 @@ export default function Request({ auth, InputData, brand, mattype, materials = [
                               </div>
 
                               <div className="flex items-center justify-center gap-4">
-                                  <SecondaryButton onClick={() => window.open('/material/request', '_self')}>Reset</SecondaryButton>
+                                  <SecondaryButton onClick={() => window.open('/request', '_self')}>Reset</SecondaryButton>
                                   <PrimaryButton disabled={processing}>Reserve</PrimaryButton>
 
                                   <Transition

@@ -31,9 +31,9 @@ export default function Report({ auth, gtins = [] }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Report</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">GTIN_Confirm/Report</h2>}
         >
-            <Head title="Report" />
+            <Head title="GTIN_Confirm/Report" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -89,10 +89,10 @@ export default function Report({ auth, gtins = [] }) {
                                     {o.last_update}
                                 </td>
                                 <td className="px-6 py-4">
-                                    {o.status_gtin?.toLowerCase() === 'active' ? (
-                                        o.status_gtin
-                                    ) : (
+                                    {o.status_gtin?.toLowerCase() === 'reserve' && o.user_last_update.toLowerCase() === auth.user.toLowerCase() ? (
                                         <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline" onClick={() => confirmActiveGtin(o.global_trade_item_number)}>{o.status_gtin}</a>
+                                    ) : (
+                                        o.status_gtin
                                     )}
                                 </td>
                             </tr>

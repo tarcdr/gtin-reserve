@@ -5,7 +5,7 @@ namespace App\Exports;
 use App\Models\Gtin;
 use Maatwebsite\Excel\Concerns\FromCollection;
 
-class GtinExport implements FromCollection
+class GtinExport implements FromCollection, WithHeadingRow
 {
     public function collection()
     {

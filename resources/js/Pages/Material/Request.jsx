@@ -38,7 +38,7 @@ export default function Request({ auth, InputData, brand = [], mattype = [] }) {
     useEffect(() => {
       if (recentlySuccessful && InputData?.success) {
         setTimeout(() => {
-          window.open('/material/request', '_self');
+          window.open('/material/report', '_self');
         }, 500);
       }
     }, [recentlySuccessful, data.materialChoose]);
@@ -46,9 +46,9 @@ export default function Request({ auth, InputData, brand = [], mattype = [] }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Create Material ID</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Material/Request</h2>}
         >
-            <Head title="Create Material ID" />
+            <Head title="Material/Request" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">

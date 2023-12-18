@@ -54,6 +54,9 @@ class RequestFormController extends Controller
           $p_gtin_pcs         = NULL;
           $p_gtin_box         = NULL;
           $p_user_login       = $request->user()->user_login;
+          $p_message_pcs      = NULL;
+          $p_message_box      = NULL;
+          $p_message          = NULL;
           if ($request->gtinExistPcs && $request->gtinPcsCode) {
             $p_gtin_pcs = $request->gtinPcsCode;
           } else if ($request->gtinPcsChoose === 'l') {
@@ -74,14 +77,17 @@ class RequestFormController extends Controller
                 trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
             }
   
-            $stid0 = oci_parse($conn, 'begin proj1_button_reserve(:p_material_id, :p_trading_unit_pcs, :p_trading_unit_box, :p_gtin_pcs, :p_gtin_box, :p_user_login); end;');
+            $stid0 = oci_parse($conn, 'begin proj1_button_reserve(:p_material_id, :p_trading_unit_pcs, :p_trading_unit_box, :p_gtin_pcs, :p_gtin_box, :p_user_login, :p_message_pcs, :p_message_box, :p_message); end;');
             oci_bind_by_name($stid0, ':p_material_id',      $p_material_id);
             oci_bind_by_name($stid0, ':p_trading_unit_pcs', $p_trading_unit_pcs);
             oci_bind_by_name($stid0, ':p_trading_unit_box', $p_trading_unit_box);
             oci_bind_by_name($stid0, ':p_gtin_pcs',         $p_gtin_pcs);
             oci_bind_by_name($stid0, ':p_gtin_box',         $p_gtin_box);
             oci_bind_by_name($stid0, ':p_user_login',       $p_user_login);
-    
+            oci_bind_by_name($stid0, ':p_message_pcs',      $p_message_pcs);
+            oci_bind_by_name($stid0, ':p_message_box',      $p_message_box);
+            oci_bind_by_name($stid0, ':p_message',          $p_message);
+
             oci_execute($stid0);
           }
 
@@ -144,11 +150,14 @@ class RequestFormController extends Controller
             "p_new_last_gtin_box" => $p_new_last_gtin_box,
             "p_suggest_gtin_box"  => $p_suggest_gtin_box,
           ],
-          'brand'        => $brand,
-          "mattype"      => $mattype,
-          "materials"    => $materials,
-          "tradingUnits" => $tradingUnits,
-          "gtins"        => $gtins,
+          'brand'         => $brand,
+          "mattype"       => $mattype,
+          "materials"     => $materials,
+          "tradingUnits"  => $tradingUnits,
+          "gtins"         => $gtins,
+          "p_message_pcs" => $p_message_pcs,
+          "p_message_box" => $p_message_box,
+          "p_message"     => $p_message,
         ]);
     }
 

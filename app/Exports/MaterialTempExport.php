@@ -5,7 +5,7 @@ namespace App\Exports;
 use App\Models\MaterialTemp;
 use Maatwebsite\Excel\Concerns\FromCollection;
 
-class MaterialTempExport implements FromCollection
+class MaterialTempExport implements FromCollection, WithHeadingRow
 {
     public function collection()
     {

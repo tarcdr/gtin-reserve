@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RequestFormController;
 use App\Http\Controllers\MaterialController;
 use Illuminate\Foundation\Application;
@@ -27,9 +28,7 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'view'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/material/request', [MaterialController::class, 'view'])->name('material.request');
