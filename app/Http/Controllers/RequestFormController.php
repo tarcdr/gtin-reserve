@@ -49,7 +49,7 @@ class RequestFormController extends Controller
         $p_suggest_gtin_box  = $request->p_suggest_gtin_box;
 
         if ($request->material_id) {
-          $conn = oci_connect($this->username, $this->password, $this->db);
+          $conn = oci_connect($this->username, $this->password, $this->db, 'AL32UTF8');
 
           $p_material_id      = $request->material_id;
           $p_trading_unit_pcs = 'Pcs';

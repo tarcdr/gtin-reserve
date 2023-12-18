@@ -25,16 +25,16 @@ export default function Authenticated({ user, header, children }) {
                                     Dashboard
                                 </NavLink>
                                 <NavLink href={route('request')} active={route().current('request')}>
-                                    Request
+                                    GTIN/Request
                                 </NavLink>
                                 <NavLink href={route('report')} active={route().current('report')}>
-                                    Report
+                                    GTIN_Confirm/Report
                                 </NavLink>
                                 <NavLink href={route('material.request')} active={route().current('material.request')}>
                                     Material/Request
                                 </NavLink>
                                 <NavLink href={route('material.report')} active={route().current('material.report')}>
-                                    Material/Report
+                                    Material_Confirm/Report
                                 </NavLink>
                             </div>
                         </div>
