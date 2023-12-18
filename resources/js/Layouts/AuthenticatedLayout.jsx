@@ -108,10 +108,16 @@ export default function Authenticated({ user, header, children }) {
                             Dashboard
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route('request')} active={route().current('request')}>
-                            Request
+                            GTIN/Request
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route('report')} active={route().current('report')}>
-                            Report
+                            GTIN_Confirm/Report
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('material.request')} active={route().current('material.request')}>
+                            Material/Request
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('material.report')} active={route().current('material.report')}>
+                            Material_Confirm/Report
                         </ResponsiveNavLink>
                     </div>
 

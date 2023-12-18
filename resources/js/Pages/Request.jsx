@@ -50,7 +50,7 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
         if (p_message_pcs || p_message_box || p_message) {
             alert(p_message_pcs || p_message_box || p_message);
         }
-    }, [p_message_pcs, p_message_box, p_message]);
+    }, [p_message_pcs, p_message_box, p_message, recentlySuccessful]);
 
     return (
         <AuthenticatedLayout
