@@ -2,7 +2,6 @@
 
 namespace App\Exports;
 
-use Illuminate\Support\Facades\DB;
 use App\Models\Gtin;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
@@ -34,7 +33,7 @@ class GtinExport implements FromCollection, WithHeadings, WithColumnFormatting
     {
         return Gtin::addSelect('material_id')
                 ->addSelect('trading_unit')
-                ->addSelect(DB::raw('\'\'\'\' || global_trade_item_number as global_trade_item_number'))
+                ->addSelect('global_trade_item_number')
                 ->addSelect('user_last_update')
                 ->addSelect('last_update')
                 ->addSelect('status_gtin')
