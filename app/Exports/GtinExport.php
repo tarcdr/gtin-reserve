@@ -3,10 +3,10 @@
 namespace App\Exports;
 
 use App\Models\Gtin;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class GtinExport implements FromCollection, WithHeadings
+class GtinExport implements FromQuery, WithHeadings
 {
     public function headings(): array
     {
