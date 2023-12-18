@@ -84,9 +84,9 @@ class RequestFormController extends Controller
             oci_bind_by_name($stid0, ':p_gtin_pcs',         $p_gtin_pcs);
             oci_bind_by_name($stid0, ':p_gtin_box',         $p_gtin_box);
             oci_bind_by_name($stid0, ':p_user_login',       $p_user_login);
-            oci_bind_by_name($stid0, ':p_message_pcs',      $p_message_pcs);
-            oci_bind_by_name($stid0, ':p_message_box',      $p_message_box);
-            oci_bind_by_name($stid0, ':p_message',          $p_message);
+            oci_bind_by_name($stid0, ':p_message_pcs',      $p_message_pcs, 100);
+            oci_bind_by_name($stid0, ':p_message_box',      $p_message_box, 100);
+            oci_bind_by_name($stid0, ':p_message',          $p_message, 100);
 
             oci_execute($stid0);
           }
