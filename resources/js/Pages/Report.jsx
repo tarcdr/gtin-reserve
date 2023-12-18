@@ -87,10 +87,9 @@ export default function Report({ auth, gtins = [] }) {
                                 </td>
                                 <td className="px-6 py-4">
                                     {o.last_update}
-                                    {JSON.stringify(auth)}
                                 </td>
                                 <td className="px-6 py-4">
-                                    {o.status_gtin?.toLowerCase() === 'reserve' && o.user_last_update.toLowerCase() === auth?.user_login ? (
+                                    {o.status_gtin?.toLowerCase() === 'reserve' && o.user_last_update === auth.user_login ? (
                                         <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline" onClick={() => confirmActiveGtin(o.global_trade_item_number)}>{o.status_gtin}</a>
                                     ) : (
                                         o.status_gtin
