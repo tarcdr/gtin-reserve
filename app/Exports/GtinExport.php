@@ -3,11 +3,32 @@
 namespace App\Exports;
 
 use App\Models\Gtin;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WWithHeadings;
 
-class GtinExport implements FromCollection, WithHeadingRow
+class GtinExport implements FromCollection, WWithHeadings
 {
+    public function headings(): array
+    {
+        return [
+            'Material ID',
+            'Tranding unit',
+            'GTIN',
+            'Last user',
+            'Last update',
+            'Status',
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'C' => NumberFormat::FORMAT_TEXT,
+        ];
+    }
+
     public function collection()
     {
         return Gtin::addSelect('material_id')
