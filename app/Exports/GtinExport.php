@@ -6,9 +6,9 @@ use App\Models\Gtin;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WWithHeadings;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class GtinExport implements FromCollection, WWithHeadings
+class GtinExport implements FromCollection, WithHeadings
 {
     public function headings(): array
     {
