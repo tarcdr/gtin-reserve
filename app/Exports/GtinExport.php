@@ -4,10 +4,12 @@ namespace App\Exports;
 
 use Illuminate\Support\Facades\DB;
 use App\Models\Gtin;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class GtinExport implements FromCollection, WithHeadings
+class GtinExport implements FromCollection, WithHeadings, WithColumnFormatting
 {
     public function headings(): array
     {
@@ -18,6 +20,13 @@ class GtinExport implements FromCollection, WithHeadings
             'Last user',
             'Last update',
             'Status',
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'C' => NumberFormat::FORMAT_TEXT,
         ];
     }
 
