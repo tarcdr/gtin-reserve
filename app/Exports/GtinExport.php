@@ -3,10 +3,10 @@
 namespace App\Exports;
 
 use App\Models\Gtin;
-use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class GtinExport implements FromQuery, WithHeadings
+class GtinExport implements FromCollection, WithHeadings
 {
     public function headings(): array
     {
@@ -18,15 +18,6 @@ class GtinExport implements FromQuery, WithHeadings
             'Last update',
             'Status',
         ];
-    }
-
-    public function prepareRows($rows)
-    {
-        return $rows->transform(function ($user) {
-            $user->global_trade_item_number .= '\'';
-
-            return $user;
-        });
     }
 
     public function collection()
