@@ -24,7 +24,7 @@ class GtinExport implements FromCollection, WithHeadings
     {
         return Gtin::addSelect('material_id')
                 ->addSelect('trading_unit')
-                ->addSelect('global_trade_item_number')
+                ->addSelect(DB::raw('"\'" || global_trade_item_number as global_trade_item_number'))
                 ->addSelect('user_last_update')
                 ->addSelect('last_update')
                 ->addSelect('status_gtin')
