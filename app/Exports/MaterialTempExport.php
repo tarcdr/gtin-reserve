@@ -4,10 +4,23 @@ namespace App\Exports;
 
 use App\Models\MaterialTemp;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class MaterialTempExport implements FromCollection, WithHeadingRow
+class MaterialTempExport implements FromCollection, WithHeadings
 {
+    public function headings(): array
+    {
+        return [
+            'Material ID',
+            'Material Desc',
+            'Brand',
+            'Mattype',
+            'Last user',
+            'Last update',
+            'Status',
+        ];
+    }
+
     public function collection()
     {
         return MaterialTemp::addSelect('material_id')
