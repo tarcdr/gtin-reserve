@@ -40,6 +40,9 @@ class RequestFormController extends Controller
         $tradingUnits = [];
         $gtins = [];
 
+        $p_message_pcs      = NULL;
+        $p_message_box      = NULL;
+        $p_message          = NULL;
         $p_new_last_gtin_pcs = $request->p_new_last_gtin_pcs;
         $p_suggest_gtin_pcs  = $request->p_suggest_gtin_pcs;
         $p_new_last_gtin_box = $request->p_new_last_gtin_box;
@@ -54,9 +57,6 @@ class RequestFormController extends Controller
           $p_gtin_pcs         = NULL;
           $p_gtin_box         = NULL;
           $p_user_login       = $request->user()->user_login;
-          $p_message_pcs      = NULL;
-          $p_message_box      = NULL;
-          $p_message          = NULL;
           if ($request->gtinExistPcs && $request->gtinPcsCode) {
             $p_gtin_pcs = $request->gtinPcsCode;
           } else if ($request->gtinPcsChoose === 'l') {
