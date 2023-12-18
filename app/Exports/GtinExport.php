@@ -3,12 +3,11 @@
 namespace App\Exports;
 
 use App\Models\Gtin;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class GtinExport implements FromCollection, WithHeadings, WithColumnFormatting
+class GtinExport implements FromCollection, WithHeadings, FromQuery
 {
     public function headings(): array
     {
@@ -22,11 +21,13 @@ class GtinExport implements FromCollection, WithHeadings, WithColumnFormatting
         ];
     }
 
-    public function columnFormats(): array
+    public function prepareRows($rows)
     {
-        return [
-            'C' => NumberFormat::FORMAT_TEXT,
-        ];
+        return $rows->transform(function ($user) {
+            $user->global_trade_item_number .= '\'';
+
+            return $user;
+        });
     }
 
     public function collection()
