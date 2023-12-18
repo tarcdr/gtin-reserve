@@ -3,7 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Gtin;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -25,7 +25,7 @@ class GtinExport implements FromCollection, WithHeadings
     public function columnFormats(): array
     {
         return [
-            'C' => NumberFormat::FORMAT_TEXT,
+            'C' => DataType::TYPE_STRING,
         ];
     }
 
