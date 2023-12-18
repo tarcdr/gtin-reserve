@@ -87,6 +87,7 @@ export default function Report({ auth, gtins = [] }) {
                                 </td>
                                 <td className="px-6 py-4">
                                     {o.last_update}
+                                    {JSON.stringify(auth)}
                                 </td>
                                 <td className="px-6 py-4">
                                     {o.status_gtin?.toLowerCase() === 'reserve' && o.user_last_update.toLowerCase() === auth?.user_login ? (
