@@ -47,7 +47,7 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
     };
 
     useEffect(() => {
-        if (p_message_pcs || p_message_box || p_message) {
+        if ((p_message_pcs || p_message_box || p_message) && recentlySuccessful) {
             alert(p_message_pcs || p_message_box || p_message);
         }
     }, [p_message_pcs, p_message_box, p_message, recentlySuccessful]);
