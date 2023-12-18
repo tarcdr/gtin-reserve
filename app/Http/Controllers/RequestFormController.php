@@ -119,7 +119,7 @@ class RequestFormController extends Controller
             "name" => $m->mat_type . ' - ' . $m->mat_type_description,
           ]);
         }
-        foreach (Material::where('brand', $request->brand)->where('mat_type', $request->mattype)->orderBy('material_id')->get() as $m) {
+        foreach (Material::where('brand', $request->brand)->where('mat_type', $request->mattype)->groupBy('material_id')->orderBy('material_id')->get() as $m) {
           array_push($materials, [
             "brand"       => $m->brand,
             "mat_type"    => $m->mat_type,
