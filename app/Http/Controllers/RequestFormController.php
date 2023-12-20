@@ -99,11 +99,12 @@ class RequestFormController extends Controller
               trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
           }
 
-          $stid = oci_parse($conn, 'begin proj1_find_newgtin(:p_new_last_gtin_pcs, :p_suggest_gtin_pcs, :p_new_last_gtin_box, :p_suggest_gtin_box); end;');
+          $stid = oci_parse($conn, 'begin proj1_find_newgtin(:p_new_last_gtin_pcs, :p_suggest_gtin_pcs, :p_new_last_gtin_box, :p_suggest_gtin_box, :p_material_id); end;');
           oci_bind_by_name($stid, ':p_new_last_gtin_pcs', $p_new_last_gtin_pcs, 100);
           oci_bind_by_name($stid, ':p_suggest_gtin_pcs',  $p_suggest_gtin_pcs,  100);
           oci_bind_by_name($stid, ':p_new_last_gtin_box', $p_new_last_gtin_box, 100);
           oci_bind_by_name($stid, ':p_suggest_gtin_box',  $p_suggest_gtin_box,  100);
+          oci_bind_by_name($stid, ':p_suggest_gtin_box',  $$p_material_id);
   
           oci_execute($stid);
         }
