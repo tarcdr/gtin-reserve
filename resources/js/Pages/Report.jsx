@@ -10,7 +10,7 @@ import { useState } from 'react';
 
 export default function Report({ auth, InputData, gtins = [] }) {
     const [confirmingActive, setConfirmingActive] = useState(false);
-    const { data, setData: setData2, patch: patch2, processing: processing2 } = useForm({
+    const { data, setData: setData2, patch: patch2, errors } = useForm({
         search: InputData?.search || '',
     });
     const { setData, patch, processing } = useForm({
