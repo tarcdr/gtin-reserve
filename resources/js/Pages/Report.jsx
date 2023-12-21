@@ -6,13 +6,14 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 export default function Report({ auth, InputData, gtins = [] }) {
     const [confirmingActive, setConfirmingActive] = useState(false);
     const { data, setData: setData2, patch: patch2, errors } = useForm({
         search: InputData?.search || '',
     });
+    const formRef = useRef();
     const { setData, patch, processing } = useForm({
         gtin: '',
     });
@@ -42,7 +43,7 @@ export default function Report({ auth, InputData, gtins = [] }) {
 
     const trigger = value => {
       setData2('search', value);
-      submit();
+      formRef.current.submit();
     };
 
     return (
@@ -53,89 +54,94 @@ export default function Report({ auth, InputData, gtins = [] }) {
             <Head title="GTIN_Confirm/Report" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-end gap-4 mb-2">
-                        <form onSubmit={submit} className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <InputLabel htmlFor="search" value="GTIN Pack Code" />
+              <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                  <form onSubmit={submit} className="space-y-6" ref={formRef}>
+                    <div className="grid grid-cols-1">
+                      <div>
+                          <InputLabel htmlFor="search" value="GTIN Pack Code" />
 
-                                <TextInput
-                                    id="search"
-                                    className="mt-1 block w-full"
-                                    value={data.search}
-                                    onChange={(e) => trigger('search', e.target.value)}
-                                    isFocused
-                                />
+                          <TextInput
+                              id="search"
+                              className="mt-1 block w-full"
+                              value={data.search}
+                              onChange={(e) => trigger(e.target.value)}
+                              isFocused
+                          />
 
-                                <InputError className="mt-2" message={errors.search} />
-                            </div>
-                            <PrimaryButton className="flex justify-end my-auto" type="button" onClick={() => window.open(route('export'))}>Download</PrimaryButton>
-                          </div>
-                        </form>
+                          <InputError className="mt-2" message={errors.search} />
+                      </div>
                     </div>
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                      <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
-                        <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
-                            <tr>
-                                <th scope="col" className="px-6 py-3">
-                                    #
-                                </th>
-                                <th scope="col" className="px-6 py-3">
-                                    Material ID
-                                </th>
-                                <th scope="col" className="px-6 py-3">
-                                    Trading Unit
-                                </th>
-                                <th scope="col" className="px-6 py-3">
-                                    Global Trade item number
-                                </th>
-                                <th scope="col" className="px-6 py-3">
-                                    Last User Update
-                                </th>
-                                <th scope="col" className="px-6 py-3">
-                                    Last Update
-                                </th>
-                                <th scope="col" className="px-6 py-3">
-                                    Action
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                          {gtins.map((o, index) => (
-                            <tr key={`report-gtin-${o.global_trade_item_number}`}>
-                                <th scope="row" className="px-6 py-4">
-                                    {index + 1}
-                                </th>
-                                <th scope="row" className="px-6 py-4">
-                                    {o.material_id}
-                                </th>
-                                <td className="px-6 py-4">
-                                    {o.trading_unit}
-                                </td>
-                                <td className="px-6 py-4">
-                                    {o.global_trade_item_number}
-                                </td>
-                                <td className="px-6 py-4">
-                                    {o.user_last_update}
-                                </td>
-                                <td className="px-6 py-4">
-                                    {o.last_update}
-                                </td>
-                                <td className="px-6 py-4">
-                                    {o.status_gtin?.toLowerCase() === 'reserve' && o.user_last_update === auth.user.user_login ? (
-                                        <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline" onClick={() => confirmActiveGtin(o.global_trade_item_number)}>{o.status_gtin}</a>
-                                    ) : (
-                                        o.status_gtin
-                                    )}
-                                </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                    </table>
-
-                    </div>
+                  </form>
                 </div>
+              </div>
+            </div>
+            <div className="py-12">
+              <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div className="flex items-center justify-end gap-4 mb-2">
+                    <PrimaryButton onClick={() => window.open(route('export'))}>Download</PrimaryButton>
+                </div>
+                <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                  <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
+                    <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+                        <tr>
+                            <th scope="col" className="px-6 py-3">
+                                #
+                            </th>
+                            <th scope="col" className="px-6 py-3">
+                                Material ID
+                            </th>
+                            <th scope="col" className="px-6 py-3">
+                                Trading Unit
+                            </th>
+                            <th scope="col" className="px-6 py-3">
+                                Global Trade item number
+                            </th>
+                            <th scope="col" className="px-6 py-3">
+                                Last User Update
+                            </th>
+                            <th scope="col" className="px-6 py-3">
+                                Last Update
+                            </th>
+                            <th scope="col" className="px-6 py-3">
+                                Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                      {gtins.map((o, index) => (
+                        <tr key={`report-gtin-${o.global_trade_item_number}`}>
+                            <th scope="row" className="px-6 py-4">
+                                {index + 1}
+                            </th>
+                            <th scope="row" className="px-6 py-4">
+                                {o.material_id}
+                            </th>
+                            <td className="px-6 py-4">
+                                {o.trading_unit}
+                            </td>
+                            <td className="px-6 py-4">
+                                {o.global_trade_item_number}
+                            </td>
+                            <td className="px-6 py-4">
+                                {o.user_last_update}
+                            </td>
+                            <td className="px-6 py-4">
+                                {o.last_update}
+                            </td>
+                            <td className="px-6 py-4">
+                                {o.status_gtin?.toLowerCase() === 'reserve' && o.user_last_update === auth.user.user_login ? (
+                                    <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline" onClick={() => confirmActiveGtin(o.global_trade_item_number)}>{o.status_gtin}</a>
+                                ) : (
+                                    o.status_gtin
+                                )}
+                            </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
             <Modal show={confirmingActive} onClose={closeModal}>
