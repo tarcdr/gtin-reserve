@@ -210,8 +210,14 @@ class RequestFormController extends Controller
     {
       $gtins = [];
       $search = $request->search;
-      foreach (Gtin::orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
-        array_push($gtins, $m);
+      if ($search) {
+        foreach (Gtin::where('material_id', 'like', $search . '%')->orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
+          array_push($gtins, $m);
+        }
+      } else {
+        foreach (Gtin::orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
+          array_push($gtins, $m);
+        }
       }
       return Inertia::render('Report', [ "gtins" => $gtins, "search" => $search, ]);
     }
