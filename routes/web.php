@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/report', [RequestFormController::class, 'report'])->name('report');
     Route::patch('/report', [RequestFormController::class, 'confirm'])->name('report.confirm');
+    Route::patch('/request/report', [RequestFormController::class, 'search'])->name('request.report');
     Route::get('/export', [RequestFormController::class, 'export'])->name('export');
     Route::get('/request', [RequestFormController::class, 'view'])->name('request');
     Route::patch('/request', [RequestFormController::class, 'update'])->name('request.update');

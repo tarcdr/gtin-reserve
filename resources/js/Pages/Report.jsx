@@ -5,10 +5,13 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Report({ auth, gtins = [] }) {
+export default function Report({ auth, InputData, gtins = [] }) {
     const [confirmingActive, setConfirmingActive] = useState(false);
+    const { data, setData: setData2, patch: patch2, processing: processing2 } = useForm({
+        search: InputData?.search || '',
+    });
     const { setData, patch, processing } = useForm({
-        gtin: ''
+        gtin: '',
     });
 
     const confirmActiveGtin = gtin => {
@@ -28,6 +31,17 @@ export default function Report({ auth, gtins = [] }) {
         });
     };
 
+    const submit = (e) => {
+        e.preventDefault();
+
+        patch2(route('request.report'));
+    };
+
+    const trigger = value => {
+      setData2('search', value);
+      submit();
+    };
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -38,7 +52,24 @@ export default function Report({ auth, gtins = [] }) {
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="flex items-center justify-end gap-4 mb-2">
-                        <PrimaryButton onClick={() => window.open(route('export'))}>Download</PrimaryButton>
+                        <form onSubmit={submit} className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <InputLabel htmlFor="search" value="GTIN Pack Code" />
+
+                                <TextInput
+                                    id="search"
+                                    className="mt-1 block w-full"
+                                    value={data.search}
+                                    onChange={(e) => trigger('search', e.target.value)}
+                                    isFocused
+                                />
+
+                                <InputError className="mt-2" message={errors.search} />
+                            </div>
+                            <PrimaryButton className="flex justify-end my-auto" type="button" onClick={() => window.open(route('export'))}>Download</PrimaryButton>
+                          </div>
+                        </form>
                     </div>
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                       <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">

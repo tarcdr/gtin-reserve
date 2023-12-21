@@ -209,10 +209,18 @@ class RequestFormController extends Controller
     public function report(Request $request): Response
     {
       $gtins = [];
+      $search = $request->search;
       foreach (Gtin::orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
         array_push($gtins, $m);
       }
-      return Inertia::render('Report', [ "gtins" => $gtins ]);
+      return Inertia::render('Report', [ "gtins" => $gtins, "search" => $search, ]);
+    }
+    public function search(Request $request): RedirectResponse
+    {
+        $inputData = [
+          'search' => $request->search,
+        ];
+        return Redirect::route('report', $inputData);
     }
 
     public function export()
