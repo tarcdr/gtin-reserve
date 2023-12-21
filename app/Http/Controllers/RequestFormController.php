@@ -209,14 +209,6 @@ class RequestFormController extends Controller
     public function report(Request $request): Response
     {
       $gtins = [];
-      // array_push($gtins, [
-      //   "material_id" => '10HO00001',
-      //   "trading_unit" => 'Pcs',
-      //   "global_trade_item_number" => '8859533401487',
-      //   "user_last_update" => '',
-      //   "last_update" => '',
-      //   "status_gtin" => 'RESERVE',
-      // ]);
       foreach (Gtin::orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
         array_push($gtins, $m);
       }
