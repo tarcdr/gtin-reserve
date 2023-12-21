@@ -1,7 +1,7 @@
 import { Link, Head } from '@inertiajs/react';
 import logo from '../../assets/images/logo.png';
 
-export default function Welcome({ auth, laravelVersion, phpVersion, dbname, dbpass }) {
+export default function Welcome({ auth, laravelVersion, phpVersion }) {
     return (
         <>
             <Head title="Welcome" />
@@ -64,7 +64,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion, dbname, dbpa
                         </div>
 
                         <div className="ml-4 text-center text-sm text-gray-500 dark:text-gray-400 sm:text-right sm:ml-0">
-                            Laravel v{laravelVersion} (PHP v{phpVersion}) ({dbname}/{dbpass})
+                            Laravel v{laravelVersion} (PHP v{phpVersion})
                         </div>
                     </div>
                 </div>

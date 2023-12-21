@@ -25,8 +25,6 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
-        'dbname' => env('DB_USERNAME', ''),
-        'dbpass' => env('DB_PASSWORD', ''),
     ]);
 });
 
