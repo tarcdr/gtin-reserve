@@ -1,7 +1,7 @@
 import { Link, Head } from '@inertiajs/react';
 import logo from '../../assets/images/logo.png';
 
-export default function Welcome({ auth, laravelVersion, phpVersion }) {
+export default function Welcome({ auth, laravelVersion, phpVersion, dbname, dbpass }) {
     return (
         <>
             <Head title="Welcome" />
