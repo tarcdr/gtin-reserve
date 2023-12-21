@@ -5,12 +5,13 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 
 export default function Report({ auth, InputData, gtins = [] }) {
     const [confirmingActive, setConfirmingActive] = useState(false);
-    const { data, setData: setData2, patch: patch2, errors } = useForm({
+    const { data, setData: setData2, patch: patch2, errors, processing: processing2, recentlySuccessful } = useForm({
         search: InputData?.search || '',
     });
     const formRef = useRef();
@@ -43,7 +44,6 @@ export default function Report({ auth, InputData, gtins = [] }) {
 
     const trigger = value => {
       setData2('search', value);
-      formRef.current.submit();
     };
 
     return (
@@ -53,13 +53,13 @@ export default function Report({ auth, InputData, gtins = [] }) {
         >
             <Head title="GTIN_Confirm/Report" />
 
-            <div className="py-12">
+            <div className="py-4">
               <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                 <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                   <form onSubmit={submit} className="space-y-6" ref={formRef}>
                     <div className="grid grid-cols-1">
                       <div>
-                          <InputLabel htmlFor="search" value="GTIN Pack Code" />
+                          <InputLabel htmlFor="search" value="Material ID" />
 
                           <TextInput
                               id="search"
@@ -71,6 +71,19 @@ export default function Report({ auth, InputData, gtins = [] }) {
 
                           <InputError className="mt-2" message={errors.search} />
                       </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-4">
+                        <PrimaryButton disabled={processing2}>Search</PrimaryButton>
+
+                        <Transition
+                            show={recentlySuccessful}
+                            enter="transition ease-in-out"
+                            enterFrom="opacity-0"
+                            leave="transition ease-in-out"
+                            leaveTo="opacity-0"
+                        >
+                            <p className="text-sm text-gray-600">Saved.</p>
+                        </Transition>
                     </div>
                   </form>
                 </div>
