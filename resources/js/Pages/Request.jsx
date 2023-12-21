@@ -55,7 +55,14 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">GTIN/Request</h2>}
+            header={
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <h2 className="font-semibold text-xl text-gray-800 leading-tight">GTIN/Request</h2>
+                <div className="justify-end flex mt-auto">
+                    <PrimaryButton type="button" onClick={() => window.open('/material/request', '_self')}>Create Material ID</PrimaryButton>
+                </div>
+              </div>
+            }
         >
             <Head title="GTIN/Request" />
 
@@ -116,9 +123,6 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
                                             <option key={`material_id-code-${o.material_id}`} value={o.material_id}>{o.material_id}</option>
                                         ))}
                                     </select>
-                                </div>
-                                <div className="mt-auto">
-                                    <PrimaryButton type="button" onClick={() => window.open('/material/request', '_self')}>Create Material ID</PrimaryButton>
                                 </div>
                               </div>
                             </>
