@@ -51,8 +51,11 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
             alert(p_message_pcs || p_message_box || p_message);
         }
         if (recentlySuccessful) {
-            setData('gtinPcsChoose', '');
-            setData('gtinPackChoose', '');
+            transform(dataSet => ({
+                ...dataSet,
+                gtinPcsChoose: '',
+                gtinPackChoose: '',
+            }));
         }
     }, [p_message_pcs, p_message_box, p_message, recentlySuccessful]);
 
