@@ -36,6 +36,8 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
       p_suggest_gtin_pcs: InputData?.p_suggest_gtin_pcs,
       p_new_last_gtin_box: InputData?.p_new_last_gtin_box,
       p_suggest_gtin_box: InputData?.p_suggest_gtin_box,
+      gtinPcsChoose: InputData?.gtinPcsChoose,
+      gtinPackChoose: InputData?.gtinPackChoose,
     }));
 
     const isDisabled = () => InputData?.brand && InputData?.mattype && InputData?.material_id;
