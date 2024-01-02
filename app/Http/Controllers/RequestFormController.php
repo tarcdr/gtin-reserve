@@ -77,6 +77,10 @@ class RequestFormController extends Controller
           } else if ($request->gtinPackChoose === 's') {
             $p_gtin_box = $p_suggest_gtin_box;
           }
+          $checkPack = Gtin::where('material_id', $request->material_id)->where('typ_gtin', '2')->where('trading_unit', $p_trading_unit_box)->get();
+          if (count($checkPack) > 0) {
+            $p_gtin_box = '';
+          }
           if ($p_gtin_pcs || $p_gtin_box) {
             if (!$conn) {
                 $e = oci_error();
