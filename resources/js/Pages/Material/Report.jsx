@@ -5,7 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Report({ auth, materials = [] }) {
+export default function Report({ auth, InputData, materials = [] }) {
     const [confirmingActive, setConfirmingActive] = useState(false);
     const { data, setData: setData2, patch: patch2, errors, processing: processing2, recentlySuccessful } = useForm({
         search: InputData?.search || '',
