@@ -36,8 +36,6 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
       p_suggest_gtin_pcs: InputData?.p_suggest_gtin_pcs,
       p_new_last_gtin_box: InputData?.p_new_last_gtin_box,
       p_suggest_gtin_box: InputData?.p_suggest_gtin_box,
-      gtinPcsChoose: data?.gtinPcsChoose || InputData?.gtinPcsChoose,
-      gtinPackChoose: data?.gtinPackChoose || InputData?.gtinPackChoose,
     }));
 
     const isDisabled = () => InputData?.brand && InputData?.mattype && InputData?.material_id;
@@ -51,6 +49,10 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
     useEffect(() => {
         if ((p_message_pcs || p_message_box || p_message) && recentlySuccessful) {
             alert(p_message_pcs || p_message_box || p_message);
+        }
+        if (recentlySuccessful) {
+            setData('gtinPcsChoose', '');
+            setData('gtinPackChoose', '');
         }
     }, [p_message_pcs, p_message_box, p_message, recentlySuccessful]);
 
