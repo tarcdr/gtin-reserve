@@ -40,13 +40,15 @@ class RequestFormController extends Controller
         $tradingUnits = [];
         $gtins = [];
 
-        $p_message_pcs      = NULL;
-        $p_message_box      = NULL;
-        $p_message          = NULL;
+        $p_message_pcs       = NULL;
+        $p_message_box       = NULL;
+        $p_message           = NULL;
         $p_new_last_gtin_pcs = $request->p_new_last_gtin_pcs;
         $p_suggest_gtin_pcs  = $request->p_suggest_gtin_pcs;
         $p_new_last_gtin_box = $request->p_new_last_gtin_box;
         $p_suggest_gtin_box  = $request->p_suggest_gtin_box;
+        $p_gtinPcsChoose     = $request->gtinPcsChoose;
+        $p_gtinPackChoose    = $request->gtinPackChoose;
 
         if ($request->material_id) {
           $conn = oci_connect($this->username, $this->password, $this->db, 'AL32UTF8');
@@ -89,6 +91,9 @@ class RequestFormController extends Controller
             oci_bind_by_name($stid0, ':p_message',          $p_message, 100);
 
             oci_execute($stid0);
+
+            $p_gtinPcsChoose  = '';
+            $p_gtinPackChoose = '';
           }
 
           foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
@@ -140,9 +145,9 @@ class RequestFormController extends Controller
             'gtinExistPcs'        => $request->gtinExistPcs,
             'gtinExistPack'       => $request->gtinExistPack,
             'gtinPcsCode'         => $request->gtinPcsCode,
-            'gtinPcsChoose'       => $request->gtinPcsChoose,
+            'gtinPcsChoose'       => $p_gtinPcsChoose,
             'gtinPackCode'        => $request->gtinPackCode,
-            'gtinPackChoose'      => $request->gtinPackChoose,
+            'gtinPackChoose'      => $p_gtinPackChoose,
             'trading_unit'        => $request->trading_unit,
             "p_new_last_gtin_pcs" => $p_new_last_gtin_pcs,
             "p_suggest_gtin_pcs"  => $p_suggest_gtin_pcs,
