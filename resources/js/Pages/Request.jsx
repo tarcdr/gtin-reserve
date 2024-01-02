@@ -50,13 +50,6 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
         if ((p_message_pcs || p_message_box || p_message) && recentlySuccessful) {
             alert(p_message_pcs || p_message_box || p_message);
         }
-        if (recentlySuccessful) {
-            transform(dataSet => ({
-                ...dataSet,
-                gtinPcsChoose: '',
-                gtinPackChoose: '',
-            }));
-        }
     }, [p_message_pcs, p_message_box, p_message, recentlySuccessful]);
 
     return (

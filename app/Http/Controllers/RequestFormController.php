@@ -66,6 +66,10 @@ class RequestFormController extends Controller
           } else if ($request->gtinPcsChoose === 's') {
             $p_gtin_pcs = $p_suggest_gtin_pcs;
           }
+          $checkPcs = Gtin::where('material_id', $request->material_id)->where('typ_gtin', '1')->get();
+          if (count($checkPcs) > 0) {
+            $p_gtin_pcs = '';
+          }
           if ($request->gtinExistPack && $request->gtinPackCode) {
             $p_gtin_box = $request->gtinPackCode;
           } else if ($request->gtinPackChoose === 'l') {
