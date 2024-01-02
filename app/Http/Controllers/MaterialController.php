@@ -154,10 +154,25 @@ class MaterialController extends Controller
     public function report(Request $request): Response
     {
       $materials = [];
-      foreach (MaterialTemp::orderByRaw('(case when status = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
-        array_push($materials, $m);
+      $search = $request->search;
+      if ($search) {
+        foreach (MaterialTemp::where('material_id', 'like', $search . '%')->orderByRaw('(case when status = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
+          array_push($materials, $m);
+        }
+      } else {
+        foreach (MaterialTemp::orderByRaw('(case when status = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
+          array_push($materials, $m);
+        }
       }
       return Inertia::render('Material/Report', [ "materials" => $materials ]);
+    }
+
+    public function search(Request $request): RedirectResponse
+    {
+        $inputData = [
+          'search' => $request->search,
+        ];
+        return Redirect::route('material.report', $inputData);
     }
 
     public function export()

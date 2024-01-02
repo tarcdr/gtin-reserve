@@ -7,6 +7,9 @@ import { useState } from 'react';
 
 export default function Report({ auth, materials = [] }) {
     const [confirmingActive, setConfirmingActive] = useState(false);
+    const { data, setData: setData2, patch: patch2, errors, processing: processing2, recentlySuccessful } = useForm({
+        search: InputData?.search || '',
+    });
     const { setData, patch, processing } = useForm({
         material_id: ''
     });
@@ -28,6 +31,16 @@ export default function Report({ auth, materials = [] }) {
         });
     };
 
+    const submit = (e) => {
+        e.preventDefault();
+
+        patch2(route('material.search'));
+    };
+
+    const trigger = value => {
+      setData2('search', value);
+    };
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -35,7 +48,43 @@ export default function Report({ auth, materials = [] }) {
         >
             <Head title="Material_Confirm/Report" />
 
-            <div className="py-12">
+            <div className="pt-12 pb-4">
+              <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                  <form onSubmit={submit} className="space-y-6">
+                    <div className="grid grid-cols-1">
+                      <div>
+                          <InputLabel htmlFor="search" value="Material ID" />
+
+                          <TextInput
+                              id="search"
+                              className="mt-1 block w-full"
+                              value={data.search}
+                              onChange={(e) => trigger(e.target.value)}
+                              isFocused
+                          />
+
+                          <InputError className="mt-2" message={errors.search} />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-4">
+                        <PrimaryButton disabled={processing2}>Search</PrimaryButton>
+
+                        <Transition
+                            show={recentlySuccessful}
+                            enter="transition ease-in-out"
+                            enterFrom="opacity-0"
+                            leave="transition ease-in-out"
+                            leaveTo="opacity-0"
+                        >
+                            <p className="text-sm text-gray-600">Saved.</p>
+                        </Transition>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <div className="pb-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="flex items-center justify-end gap-4 mb-2">
                         <PrimaryButton onClick={() => window.open(route('material.export'))}>Download</PrimaryButton>

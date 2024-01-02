@@ -7,14 +7,13 @@ import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 export default function Report({ auth, InputData, gtins = [] }) {
     const [confirmingActive, setConfirmingActive] = useState(false);
     const { data, setData: setData2, patch: patch2, errors, processing: processing2, recentlySuccessful } = useForm({
         search: InputData?.search || '',
     });
-    const formRef = useRef();
     const { setData, patch, processing } = useForm({
         gtin: '',
     });
@@ -56,7 +55,7 @@ export default function Report({ auth, InputData, gtins = [] }) {
             <div className="pt-12 pb-4">
               <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                 <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                  <form onSubmit={submit} className="space-y-6" ref={formRef}>
+                  <form onSubmit={submit} className="space-y-6">
                     <div className="grid grid-cols-1">
                       <div>
                           <InputLabel htmlFor="search" value="Material ID" />

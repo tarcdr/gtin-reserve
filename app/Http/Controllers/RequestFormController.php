@@ -221,6 +221,7 @@ class RequestFormController extends Controller
       }
       return Inertia::render('Report', [ "gtins" => $gtins, "search" => $search, ]);
     }
+
     public function search(Request $request): RedirectResponse
     {
         $inputData = [
