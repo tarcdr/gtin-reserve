@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
+use Illuminate\Http\Request;
 
 class VerifyCsrfToken extends Middleware
 {
@@ -14,4 +15,11 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         //
     ];
+    /**
+     * Get the path the user should be redirected to when they are not authenticated.
+     */
+    protected function redirectTo(Request $request): ?string
+    {
+        return $request->expectsJson() ? null : route('login');
+    }
 }
