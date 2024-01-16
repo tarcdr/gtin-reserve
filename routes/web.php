@@ -34,6 +34,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/material/request', [MaterialController::class, 'view'])->name('material.request');
     Route::patch('/material/request', [MaterialController::class, 'update'])->name('material.update');
     Route::get('/material/report', [MaterialController::class, 'report'])->name('material.report');
+    Route::patch('/material/report', [MaterialController::class, 'confirm'])->name('material.confirm');
     Route::patch('/material/search', [MaterialController::class, 'search'])->name('material.search');
     Route::get('/material/export', [MaterialController::class, 'export'])->name('material.export');
 
