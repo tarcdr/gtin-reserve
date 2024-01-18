@@ -224,11 +224,11 @@ class RequestFormController extends Controller
       $gtins = [];
       $search = $request->search;
       if ($search) {
-        foreach (Gtin::where('material_id', 'like', $search . '%')->orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')->orderBy('last_update', 'desc')->get() as $m) {
+        foreach (Gtin::where('material_id', 'like', $search . '%')->orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')->orderByRaw('(case when last_update is null then to_date(\'1900-01-01\', \'YYYY-MM-DD\') else last_update end) desc')->get() as $m) {
           array_push($gtins, $m);
         }
       } else {
-        foreach (Gtin::orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')->orderBy('last_update', 'desc')->get() as $m) {
+        foreach (Gtin::orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')->orderByRaw('(case when last_update is null then to_date(\'1900-01-01\', \'YYYY-MM-DD\') else last_update end) desc')->get() as $m) {
           array_push($gtins, $m);
         }
       }
