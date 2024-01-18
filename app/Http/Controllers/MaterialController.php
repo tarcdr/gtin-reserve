@@ -156,11 +156,11 @@ class MaterialController extends Controller
       $materials = [];
       $search = $request->search;
       if ($search) {
-        foreach (MaterialTemp::where('material_id', 'like', $search . '%')->orderByRaw('(case when status = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
+        foreach (MaterialTemp::where('material_id', 'like', $search . '%')->orderByRaw('(case when status = \'RESERVE\' then 0 else 1 end) asc')->orderBy('last_update', 'desc')->get() as $m) {
           array_push($materials, $m);
         }
       } else {
-        foreach (MaterialTemp::orderByRaw('(case when status = \'RESERVE\' then 0 else 1 end) asc')->orderBy('material_id')->get() as $m) {
+        foreach (MaterialTemp::orderByRaw('(case when status = \'RESERVE\' then 0 else 1 end) asc')->orderBy('last_update', 'desc')->get() as $m) {
           array_push($materials, $m);
         }
       }

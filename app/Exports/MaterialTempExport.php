@@ -31,6 +31,6 @@ class MaterialTempExport implements FromCollection, WithHeadings
                 ->addSelect('last_update')
                 ->addSelect('status')
                 ->orderByRaw('(case when status = \'RESERVE\' then 0 else 1 end) asc')
-                ->orderBy('material_id')->get();
+                ->orderBy('last_update', 'desc')->get();
     }
 }

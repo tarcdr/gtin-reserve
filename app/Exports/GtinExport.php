@@ -38,6 +38,6 @@ class GtinExport implements FromCollection, WithHeadings, WithColumnFormatting
                 ->addSelect('last_update')
                 ->addSelect('status_gtin')
                 ->orderByRaw('(case when status_gtin = \'RESERVE\' then 0 else 1 end) asc')
-                ->orderBy('material_id')->get();
+                ->orderBy('last_update', 'desc')->get();
     }
 }
