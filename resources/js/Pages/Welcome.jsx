@@ -22,13 +22,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                             >
                                 Log in
                             </Link>
-
-                            <Link
-                                href={route('register')}
-                                className="ml-4 font-semibold text-gray-600 hover:text-gray-900 focus:outline focus:outline-2 focus:rounded-sm"
-                            >
-                                Register
-                            </Link>
                         </>
                     )}
                 </div>

@@ -93,16 +93,6 @@ export default function Request({ auth, InputData, brand = [], mattype = [] }) {
                           {(!InputData?.brand || !InputData?.mattype) && (
                             <div className="flex items-center justify-center gap-4">
                                 <PrimaryButton disabled={processing}>Submit</PrimaryButton>
-
-                                <Transition
-                                    show={recentlySuccessful}
-                                    enter="transition ease-in-out"
-                                    enterFrom="opacity-0"
-                                    leave="transition ease-in-out"
-                                    leaveTo="opacity-0"
-                                >
-                                    <p className="text-sm text-gray-600">Saved.</p>
-                                </Transition>
                             </div>
                           )}
                           {InputData?.brand && InputData?.mattype && (
@@ -183,7 +173,7 @@ export default function Request({ auth, InputData, brand = [], mattype = [] }) {
                                       leave="transition ease-in-out"
                                       leaveTo="opacity-0"
                                   >
-                                      <p className="text-sm text-gray-600">Saved.</p>
+                                      <p className="text-sm text-gray-600">Reserved.</p>
                                   </Transition>
                               </div>
                             </>

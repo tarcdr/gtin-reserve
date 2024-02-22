@@ -5,7 +5,6 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -73,16 +72,6 @@ export default function Report({ auth, InputData, gtins = [] }) {
                     </div>
                     <div className="flex items-center justify-center gap-4">
                         <PrimaryButton disabled={processing2}>Search</PrimaryButton>
-
-                        <Transition
-                            show={recentlySuccessful}
-                            enter="transition ease-in-out"
-                            enterFrom="opacity-0"
-                            leave="transition ease-in-out"
-                            leaveTo="opacity-0"
-                        >
-                            <p className="text-sm text-gray-600">Saved.</p>
-                        </Transition>
                     </div>
                   </form>
                 </div>

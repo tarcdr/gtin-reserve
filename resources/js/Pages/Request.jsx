@@ -130,16 +130,6 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
                           {(!InputData?.brand || !InputData?.mattype || !InputData?.material_id) && (
                             <div className="flex items-center justify-center gap-4">
                                 <PrimaryButton disabled={processing}>Submit</PrimaryButton>
-
-                                <Transition
-                                    show={recentlySuccessful}
-                                    enter="transition ease-in-out"
-                                    enterFrom="opacity-0"
-                                    leave="transition ease-in-out"
-                                    leaveTo="opacity-0"
-                                >
-                                    <p className="text-sm text-gray-600">Saved.</p>
-                                </Transition>
                             </div>
                           )}
                           {InputData?.brand && InputData?.mattype && InputData?.material_id && (
@@ -342,7 +332,7 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
                                       leave="transition ease-in-out"
                                       leaveTo="opacity-0"
                                   >
-                                      <p className="text-sm text-gray-600">Saved.</p>
+                                      <p className="text-sm text-gray-600">Reserved.</p>
                                   </Transition>
                               </div>
                             </>
