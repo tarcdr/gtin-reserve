@@ -117,7 +117,7 @@ class RequestFormController extends Controller
           oci_bind_by_name($stid, ':p_suggest_gtin_pcs',  $p_suggest_gtin_pcs,  100);
           oci_bind_by_name($stid, ':p_new_last_gtin_box', $p_new_last_gtin_box, 100);
           oci_bind_by_name($stid, ':p_suggest_gtin_box',  $p_suggest_gtin_box,  100);
-          oci_bind_by_name($stid, ':p_material_id',       $$p_material_id);
+          oci_bind_by_name($stid, ':p_material_id',       $$p_material_id . 'XXX999');
   
           oci_execute($stid);
         }
