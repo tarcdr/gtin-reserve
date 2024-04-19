@@ -6,11 +6,12 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Report({ auth, InputData, gtins = [] }) {
     const [confirmingActive, setConfirmingActive] = useState(false);
-    const { data, setData: setData2, patch: patch2, errors, processing: processing2, recentlySuccessful } = useForm({
+    const [gtinList, setGtinList] = useState([]);
+    const { data, setData: setData2, patch: patch2, errors, processing: processing2 } = useForm({
         search: InputData?.search || '',
     });
     const { setData, patch, processing } = useForm({
@@ -43,6 +44,10 @@ export default function Report({ auth, InputData, gtins = [] }) {
     const trigger = value => {
       setData2('search', value);
     };
+
+    useEffect(() => {
+      setGtinList(gtins);
+    }, [gtins]);
 
     return (
         <AuthenticatedLayout
@@ -110,7 +115,7 @@ export default function Report({ auth, InputData, gtins = [] }) {
                         </tr>
                     </thead>
                     <tbody>
-                      {gtins.map((o, index) => (
+                      {gtinList.map((o, index) => (
                         <tr key={`report-gtin-${o.global_trade_item_number}`}>
                             <th scope="row" className="px-6 py-4">
                                 {index + 1}
