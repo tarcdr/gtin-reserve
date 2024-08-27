@@ -184,7 +184,7 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
                                                 <span className="ml-2">Choose</span>
                                             </label>
                                             <div className="col-span-3">
-                                                <InputLabel htmlFor="latestGTINCodeForPcs" value="Latest GTIN Code for Pcs" />
+                                                <InputLabel htmlFor="latestGTINCodeForPcs" value="Next GTIN Code for Pcs" />
 
                                                 <TextInput
                                                     id="latestGTINCodeForPcs"
@@ -283,7 +283,7 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
                                                 <span className="ml-2">Choose</span>
                                             </label>
                                             <div className="col-span-3">
-                                                <InputLabel htmlFor="latestGTINCodeForInnerOrPack" value="Latest GTIN Code for Inner / Pack" />
+                                                <InputLabel htmlFor="latestGTINCodeForInnerOrPack" value="Next GTIN Code for Inner / Pack" />
 
                                                 <TextInput
                                                     id="latestGTINCodeForInnerOrPack"
