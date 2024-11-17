@@ -16,10 +16,10 @@ class DashboardController extends Controller
     public function view(Request $request): Response
     {
       $message = '';
-      // $dash = Dash::first();
-      // if ($dash->message) {
-      //   $message = $dash->message;
-      // }
+      $dash = Dash::first();
+      if ($dash && $dash->message) {
+        $message = $dash->message;
+      }
       return Inertia::render('Dashboard', [
         "message" => $message,
       ]);
