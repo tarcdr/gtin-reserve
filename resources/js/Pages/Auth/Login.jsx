@@ -7,7 +7,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function Login({ status, canResetPassword }) {
+export default function Login({ status, canResetPassword, connection = '' }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         user_login: '',
         password: '',
@@ -93,6 +93,13 @@ export default function Login({ status, canResetPassword }) {
                     </div>
                 </div>
             </form>
+            <div className="max-w-7xl mx-auto p-6 lg:p-8">
+                <div className="flex justify-center px-6 sm:items-center sm:justify-between">
+                    <div className="ml-4 text-center text-sm text-gray-500 dark:text-gray-400 sm:text-right sm:ml-0">
+                        {connection}
+                    </div>
+                </div>
+            </div>
         </GuestLayout>
     );
 }

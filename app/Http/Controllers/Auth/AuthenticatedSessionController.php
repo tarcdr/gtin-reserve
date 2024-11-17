@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use DB;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -19,9 +20,17 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): Response
     {
+        $connection = '';
+        try {
+          DB::connection()->getPdo();
+          $connection = "Connected successfully to the database.";
+        } catch (\Exception $e) {
+          $connection = "Could not connect to the database. Error: " . $e->getMessage();
+        }
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            'connection' => $connection,
         ]);
     }
 

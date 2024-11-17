@@ -13,11 +13,9 @@ ENV TZ=UTC
 ENV SUPERVISOR_PHP_COMMAND="/usr/bin/php -d variables_order=EGPCS /var/www/html/artisan serve --host=0.0.0.0 --port=80"
 ENV SUPERVISOR_PHP_USER="sail"
 
-# Set the correct environment variables for Oracle Instant Client
 ENV LD_LIBRARY_PATH=/opt/oracle/instantclient_21_7
 ENV PATH=/opt/oracle/instantclient_21_7:$PATH
-ENV ORACLE_HOME=instantclient,/opt/oracle/instantclient_21_7
-ENV PATH=$ORACLE_HOME/bin:$PATH
+ENV ORACLE_HOME=/opt/oracle/instantclient_21_7
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
@@ -27,7 +25,7 @@ RUN apt-get update \
     && curl -sS 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x14aa40ec0831756756d7f66c4f4ea0aae5267a6c' | gpg --dearmor | tee /etc/apt/keyrings/ppa_ondrej_php.gpg > /dev/null \
     && echo "deb [signed-by=/etc/apt/keyrings/ppa_ondrej_php.gpg] https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy main" > /etc/apt/sources.list.d/ppa_ondrej_php.list \
     && apt-get update \
-    && apt-get install -y php8.2-cli php8.2-dev \
+    && apt-get install -y libaio1 php8.2-cli php8.2-dev \
        php8.2-pgsql php8.2-sqlite3 php8.2-gd php8.2-imagick \
        php8.2-curl php8.2-pdo \
        php8.2-imap php8.2-mysql php8.2-mbstring \
@@ -66,7 +64,9 @@ RUN wget https://download.oracle.com/otn_software/linux/instantclient/217000/ins
     && wget https://download.oracle.com/otn_software/linux/instantclient/217000/instantclient-sdk-linux.x64-21.7.0.0.0dbru.zip \
     && unzip instantclient-basic-linux.x64-21.7.0.0.0dbru.zip \
     && unzip instantclient-sdk-linux.x64-21.7.0.0.0dbru.zip \
-    && mv instantclient_21_7 /opt/oracle/instantclient_21_7
+    && mv instantclient_21_7 /opt/oracle/instantclient_21_7 \
+    && rm -f instantclient-basic-linux.x64-21.7.0.0.0dbru.zip \
+    && rm -f instantclient-sdk-linux.x64-21.7.0.0.0dbru.zip
 
 RUN ln -s /opt/oracle/instantclient_21_7/sdk/include/*.h /usr/local/include/ \
     && ln -s /opt/oracle/instantclient_21_7/*.dylib /usr/local/lib/ \
@@ -77,11 +77,8 @@ RUN echo /opt/oracle/instantclient_21_7 > /etc/ld.so.conf.d/oracle-instantclient
     && ldconfig
 
 RUN pecl channel-update pecl.php.net \
-    && echo instantclient,/opt/oracle/instantclient_21_7
-
-# RUN pecl install oci8
-
-# RUN pecl install pdo_oci
+    && echo "instantclient,/opt/oracle/instantclient_21_7" | pecl install oci8 \
+    && echo "extension=oci8.so" > /etc/php/8.2/cli/conf.d/oci8.ini
 
 COPY start-container /usr/local/bin/start-container
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
