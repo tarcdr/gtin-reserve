@@ -95,7 +95,9 @@ export default function Request({ auth, InputData, boms = [], subBoms = {} }) {
                                         Back
                                     </SecondaryButton>
                                 </Link>
-                                <PrimaryButton disabled={processing}>Finnish RM Go to Templete</PrimaryButton>
+                                <Link href={route('rm.report')}>
+                                    <PrimaryButton disabled={processing}>Finnish RM Go to Templete</PrimaryButton>
+                                </Link>
                             </div>
                           )}
                         </form>
