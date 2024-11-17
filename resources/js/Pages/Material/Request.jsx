@@ -110,7 +110,7 @@ export default function Request({ auth, InputData, brand = [], mattype = [] }) {
                                         <span className="ml-2">Choose</span>
                                     </label>
                                     <div className="col-span-3">
-                                        <InputLabel htmlFor="latestMaterialId" value="Latest Material ID" />
+                                        <InputLabel htmlFor="latestMaterialId" value="Next Material ID" />
 
                                         <TextInput
                                             id="latestMaterialId"
