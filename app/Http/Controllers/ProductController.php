@@ -8,20 +8,13 @@ use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Dash;
 
-class DashboardController extends Controller
+class ProductController extends Controller
 {
     /**
      * Display the user's profile form.
      */
     public function view(Request $request): Response
     {
-      $message = '';
-      // $dash = Dash::first();
-      // if ($dash->message) {
-      //   $message = $dash->message;
-      // }
-      return Inertia::render('Dashboard', [
-        "message" => $message,
-      ]);
+      return Inertia::render('NewProduct');
     }
 }

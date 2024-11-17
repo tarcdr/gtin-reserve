@@ -24,17 +24,85 @@ export default function Authenticated({ user, header, children }) {
                                 <NavLink href={route('dashboard')} active={route().current('dashboard')}>
                                     Dashboard
                                 </NavLink>
-                                <NavLink href={route('material.request')} active={route().current('material.request')}>
-                                    Material/Request
-                                </NavLink>
-                                <NavLink href={route('material.report')} active={route().current('material.report')}>
-                                    Material_Confirm/Report
-                                </NavLink>
-                                <NavLink href={route('request')} active={route().current('request')}>
-                                    GTIN/Request
-                                </NavLink>
-                                <NavLink href={route('report')} active={route().current('report')}>
-                                    GTIN_Confirm/Report
+
+                                <div className="hidden sm:flex sm:items-center sm:ml-6">
+                                    <div className="ml-3 relative">
+                                        <Dropdown>
+                                            <Dropdown.Trigger>
+                                                <span className="rounded-md">
+                                                    <button
+                                                        type="button"
+                                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
+                                                    >
+                                                        MMS
+
+                                                        <svg
+                                                            className="ml-2 -mr-0.5 h-4 w-4"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 20 20"
+                                                            fill="currentColor"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                </span>
+                                            </Dropdown.Trigger>
+
+                                            <Dropdown.Content>
+                                                <Dropdown.Link href={route('material.request')} active={route().current('material.request')}>
+                                                    Material Request
+                                                </Dropdown.Link>
+                                                <Dropdown.Link href={route('material.report')} active={route().current('material.report')}>
+                                                    Material Confirm/Report
+                                                </Dropdown.Link>
+                                            </Dropdown.Content>
+                                        </Dropdown>
+                                    </div>
+                                </div>
+                                <div className="hidden sm:flex sm:items-center sm:ml-6">
+                                    <div className="ml-3 relative">
+                                        <Dropdown>
+                                            <Dropdown.Trigger>
+                                                <span className="rounded-md">
+                                                    <button
+                                                        type="button"
+                                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
+                                                    >
+                                                        GTIN
+
+                                                        <svg
+                                                            className="ml-2 -mr-0.5 h-4 w-4"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 20 20"
+                                                            fill="currentColor"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                </span>
+                                            </Dropdown.Trigger>
+
+                                            <Dropdown.Content>
+                                                <Dropdown.Link href={route('request')} active={route().current('request')}>
+                                                    Request
+                                                </Dropdown.Link>
+                                                <Dropdown.Link href={route('report')} active={route().current('report')}>
+                                                    Confirm/Report
+                                                </Dropdown.Link>
+                                            </Dropdown.Content>
+                                        </Dropdown>
+                                    </div>
+                                </div>
+                                <NavLink href={route('dashboard')} active={route().current('dashboard')}>
+                                    Admin
                                 </NavLink>
                             </div>
                         </div>
@@ -48,7 +116,7 @@ export default function Authenticated({ user, header, children }) {
                                                 type="button"
                                                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
                                             >
-                                                {user?.employee_name}
+                                                {user?.employee_name || '-'}
 
                                                 <svg
                                                     className="ml-2 -mr-0.5 h-4 w-4"
@@ -123,7 +191,7 @@ export default function Authenticated({ user, header, children }) {
 
                     <div className="pt-4 pb-1 border-t border-gray-200">
                         <div className="px-4">
-                            <div className="font-medium text-base text-gray-800">{user?.employee_name}</div>
+                            <div className="font-medium text-base text-gray-800">{user?.employee_name || '-'}</div>
                             <div className="font-medium text-sm text-gray-500">{user?.user_login}</div>
                         </div>
 

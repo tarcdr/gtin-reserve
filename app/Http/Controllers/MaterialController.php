@@ -41,7 +41,7 @@ class MaterialController extends Controller
         $p_last_id    = $request->p_last_id;
         $p_suggest_id = $request->p_suggest_id;
         $success      = NULL;
-
+        /*
         foreach (Brand::all() as $b) {
           array_push($brand, [
             "abb"  => $b->brand_abb,
@@ -97,7 +97,7 @@ class MaterialController extends Controller
             $success = true;
           }
         }
-
+        */
         return Inertia::render('Material/Request', [
           'InputData' => [
             'brand'               => $p_brand,
@@ -154,6 +154,7 @@ class MaterialController extends Controller
     public function report(Request $request): Response
     {
       $materials = [];
+      /*
       $search = $request->search;
       if ($search) {
         foreach (MaterialTemp::where('material_id', 'like', $search . '%')->orderByRaw('(case when status = \'RESERVE\' then 0 else 1 end) asc')->orderByRaw('(case when last_update is null then to_date(\'1900-01-01\', \'YYYY-MM-DD\') else last_update end) desc')->get() as $m) {
@@ -164,6 +165,7 @@ class MaterialController extends Controller
           array_push($materials, $m);
         }
       }
+      */
       return Inertia::render('Material/Report', [ "materials" => $materials ]);
     }
 

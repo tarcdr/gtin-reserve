@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\RmController;
+use App\Http\Controllers\BomController;
 use App\Http\Controllers\RequestFormController;
 use App\Http\Controllers\MaterialController;
 use Illuminate\Foundation\Application;
@@ -28,12 +31,19 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', [DashboardController::class, 'view'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'view'])->name('dashboard');
+Route::get('/product/new', [ProductController::class, 'view'])->name('product.new');
+Route::get('/rm/material_create', [RmController::class, 'view'])->name('rm.material_create');
+Route::get('/rm/component_request', [RmController::class, 'viewComponentRequest'])->name('rm.component_request');
+Route::get('/rm/report', [RmController::class, 'report'])->name('rm.report');
 
+Route::get('/bom/new', [BomController::class, 'view'])->name('bom.new');
+Route::get('/bom/{id}', [BomController::class, 'exists'])->name('bom.exists');
+
+Route::get('/material/request', [MaterialController::class, 'view'])->name('material.request');
+Route::patch('/material/request', [MaterialController::class, 'update'])->name('material.update');
+Route::get('/material/report', [MaterialController::class, 'report'])->name('material.report');
 Route::middleware('auth')->group(function () {
-    Route::get('/material/request', [MaterialController::class, 'view'])->name('material.request');
-    Route::patch('/material/request', [MaterialController::class, 'update'])->name('material.update');
-    Route::get('/material/report', [MaterialController::class, 'report'])->name('material.report');
     Route::patch('/material/report', [MaterialController::class, 'confirm'])->name('material.confirm');
     Route::patch('/material/search', [MaterialController::class, 'search'])->name('material.search');
     Route::get('/material/export', [MaterialController::class, 'export'])->name('material.export');
