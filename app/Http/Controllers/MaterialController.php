@@ -58,18 +58,31 @@ class MaterialController extends Controller
         if ($request->brand && $request->mattype) {
           $conn = oci_connect($this->username, $this->password, $this->db);
 
-          if (!$conn) {
-            $e = oci_error();
-            trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-          }
+          // if (!$conn) {
+          //   $e = oci_error();
+          //   trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
+          // }
 
-          $stid = oci_parse($conn, 'begin proj1_gen_matid(:p_brand, :p_mattype, :p_last_id, :p_suggest_id); end;');
-          oci_bind_by_name($stid, ':p_brand',      $p_brand);
-          oci_bind_by_name($stid, ':p_mattype',    $p_mattype);
-          oci_bind_by_name($stid, ':p_last_id',    $p_last_id,    100);
-          oci_bind_by_name($stid, ':p_suggest_id', $p_suggest_id, 100);
+          // $stid = oci_parse($conn, 'begin proj1_gen_matid(:p_brand, :p_mattype, :p_last_id, :p_suggest_id); end;');
+          // oci_bind_by_name($stid, ':p_brand',      $p_brand);
+          // oci_bind_by_name($stid, ':p_mattype',    $p_mattype);
+          // oci_bind_by_name($stid, ':p_last_id',    $p_last_id,    100);
+          // oci_bind_by_name($stid, ':p_suggest_id', $p_suggest_id, 100);
 
-          oci_execute($stid);
+          // oci_execute($stid);
+
+          $pdo = DB::getPdo();
+          $stmt = $pdo->prepare("BEGIN proj1_gen_matid(:p_brand, :p_mattype, :p_last_id, :p_suggest_id); END;");
+          
+          // Bind the input parameters
+          $stmt->bindParam(':p_brand', $p_brand, PDO::PARAM_STR);
+          $stmt->bindParam(':p_mattype', $p_mattype, PDO::PARAM_STR);
+          
+          // Bind the output parameters
+          $stmt->bindParam(':p_last_id', $p_last_id, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100); // Specify size if needed
+          $stmt->bindParam(':p_suggest_id', $p_suggest_id, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100); // Specify size if needed
+          
+          $stmt->execute();
 
           $p_material_id      = NULL;
           $p_material_desc    = $request->material_desc;
