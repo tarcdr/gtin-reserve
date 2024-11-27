@@ -56,32 +56,17 @@ class MaterialController extends Controller
         }
 
         if ($request->brand && $request->mattype) {
-          $conn = oci_connect($this->username, $this->password, $this->db);
-
-          // if (!$conn) {
-          //   $e = oci_error();
-          //   trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-          // }
-
-          // $stid = oci_parse($conn, 'begin proj1_gen_matid(:p_brand, :p_mattype, :p_last_id, :p_suggest_id); end;');
-          // oci_bind_by_name($stid, ':p_brand',      $p_brand);
-          // oci_bind_by_name($stid, ':p_mattype',    $p_mattype);
-          // oci_bind_by_name($stid, ':p_last_id',    $p_last_id,    100);
-          // oci_bind_by_name($stid, ':p_suggest_id', $p_suggest_id, 100);
-
-          // oci_execute($stid);
-
           $pdo = DB::getPdo();
           $stmt = $pdo->prepare("BEGIN proj1_gen_matid(:p_brand, :p_mattype, :p_last_id, :p_suggest_id); END;");
-          
+
           // Bind the input parameters
           $stmt->bindParam(':p_brand', $p_brand, PDO::PARAM_STR);
           $stmt->bindParam(':p_mattype', $p_mattype, PDO::PARAM_STR);
-          
+
           // Bind the output parameters
           $stmt->bindParam(':p_last_id', $p_last_id, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100); // Specify size if needed
           $stmt->bindParam(':p_suggest_id', $p_suggest_id, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100); // Specify size if needed
-          
+
           $stmt->execute();
 
           $p_material_id      = NULL;
@@ -93,19 +78,16 @@ class MaterialController extends Controller
             $p_material_id = $p_suggest_id;
           }
           if ($p_material_id) {
-            if (!$conn) {
-                $e = oci_error();
-                trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-            }
-  
-            $stid_exc = oci_parse($conn, 'begin proj1_button_reserve_matid(:p_material_id, :p_material_desc, :p_brand, :p_mattype, :p_user_login); end;');
-            oci_bind_by_name($stid_exc, ':p_material_id',   $p_material_id);
-            oci_bind_by_name($stid_exc, ':p_material_desc', $p_material_desc);
-            oci_bind_by_name($stid_exc, ':p_brand',         $p_brand);
-            oci_bind_by_name($stid_exc, ':p_mattype',       $p_mattype);
-            oci_bind_by_name($stid_exc, ':p_user_login',    $p_user_login);
+            $stmt2 = $pdo->prepare("BEGIN proj1_button_reserve_matid(:p_material_id, :p_material_desc, :p_brand, :p_mattype, :p_user_login); END;");
 
-            oci_execute($stid_exc);
+            // Bind the input parameters
+            $stmt2->bindParam(':p_material_id',   $p_material_id, PDO::PARAM_STR);
+            $stmt2->bindParam(':p_material_desc', $p_material_desc, PDO::PARAM_STR);
+            $stmt2->bindParam(':p_brand',         $p_brand, PDO::PARAM_STR);
+            $stmt2->bindParam(':p_mattype',       $p_mattype, PDO::PARAM_STR);
+            $stmt2->bindParam(':p_user_login',    $p_user_login, PDO::PARAM_STR);
+
+            $stmt2->execute();
 
             $success = true;
           }
@@ -148,17 +130,15 @@ class MaterialController extends Controller
     {
         $p_material_id = $request->material_id;
         $p_user_login  = $request->user()->user_login;
-        $conn = oci_connect($this->username, $this->password, $this->db);
-        if (!$conn) {
-            $e = oci_error();
-            trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-        }
 
-        $stid0 = oci_parse($conn, 'begin proj1_button_confirm_matid(:p_material_id, :p_user_login); end;');
-        oci_bind_by_name($stid0, ':p_material_id',  $p_material_id);
-        oci_bind_by_name($stid0, ':p_user_login',   $p_user_login);
+        $pdo = DB::getPdo();
+        $stmt = $pdo->prepare("BEGIN proj1_button_confirm_matid(:p_material_id, :p_user_login); END;");
+        
+        // Bind the input parameters
+        $stmt->bindParam(':p_material_id', $p_material_id, PDO::PARAM_STR);
+        $stmt->bindParam(':p_user_login',  $p_user_login,  PDO::PARAM_STR);
 
-        oci_execute($stid0);
+        $stmt->execute();
 
         return Redirect::route('material.report');
     }
