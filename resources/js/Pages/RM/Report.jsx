@@ -1,12 +1,19 @@
+import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
+import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
+import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
 export default function Report({ auth, activeTab, columns = [], datas = [] }) {
-    const { data, setData, processing } = useForm({
-      status: ''
-    });
+  const [confirmingActive, setConfirmingActive] = useState(false);
+  const [filter, setFilter] = useState({
+    status: ''
+  });
+  const { data, setData, processing, errors, patch } = useForm({});
 
     const status = [{
       code: 'IMP',
@@ -26,6 +33,35 @@ export default function Report({ auth, activeTab, columns = [], datas = [] }) {
           preserveScroll: true, // เก็บตำแหน่ง scroll
       });
     };
+
+    const toggleModal = dataSet => {
+      const newData = { ...data };
+      Object.keys(data).forEach(o => {
+        newData[o] = dataSet[o] || '';
+      });
+      setData(newData);
+      setConfirmingActive(true);
+    };
+
+    const closeModal = () => {
+        setConfirmingActive(false);
+    };
+
+    const setActive = (e) => {
+        e.preventDefault();
+
+        patch(route('rm.confirm', { tab: activeTab }), {
+            onSuccess: () => closeModal()
+        });
+    };
+
+    useEffect(() => {
+      const newData = {};
+      columns.forEach(column => {
+        newData[column.name] = '';
+      });
+      setData(newData);
+    }, [columns]);
 
     return (
         <AuthenticatedLayout
@@ -130,14 +166,14 @@ export default function Report({ auth, activeTab, columns = [], datas = [] }) {
                 {/* Tabs Content */}
                 <div className="mt-4">
                     <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-3 hidden">
                           <div>
                               <InputLabel htmlFor="status" value="Status" />
                               <select
                                   id="status"
                                   className="mt-1 block w-full"
-                                  onChange={(e) => setData('status', e.target.value)}
-                                  defaultValue={data?.status}
+                                  onChange={(e) => setFilter({ ...filter, status: e.target.value })}
+                                  defaultValue={filter?.status}
                               >
                                   <option value="">---- Select Status ----</option>
                                   {status?.map(o => (
@@ -158,6 +194,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [] }) {
                                           {column.label}
                                       </th>
                                     ))}
+                                    <th className="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -171,6 +208,9 @@ export default function Report({ auth, activeTab, columns = [], datas = [] }) {
                                           {o[column.name]}
                                       </td>
                                     ))}
+                                    <td className="text-center px-6 py-3">
+                                      <SecondaryButton onClick={() => toggleModal(o)}>Edit</SecondaryButton>
+                                    </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -182,6 +222,35 @@ export default function Report({ auth, activeTab, columns = [], datas = [] }) {
                     </div>
                 </div>
             </div>
+            <Modal show={confirmingActive} onClose={closeModal}>
+                <form onSubmit={setActive} className="p-6 max-h-[600px] overflow-x-auto">
+                    <h2 className="text-lg font-medium text-gray-900">
+                        {`Update data table ${activeTab}`}
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {columns.map(column => (
+                        <div key={`form-input-${column.name}`}>
+                          <InputLabel htmlFor={column.name} value={column.label} />
+
+                          <TextInput
+                              id={column.name}
+                              className="mt-1 block w-full"
+                              value={data[column.name]}
+                              maxLength="100"
+                              onChange={(e) => setData(column.name, e.target.value)}
+                          />
+
+                          <InputError className="mt-2" message={errors[column.name]} />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-center gap-4 mt-5">
+                      <SecondaryButton onClick={closeModal}>Cancel</SecondaryButton>
+                      <PrimaryButton disabled={processing}>Confirm</PrimaryButton>
+                    </div>
+                </form>
+            </Modal>
         </AuthenticatedLayout>
     );
 }

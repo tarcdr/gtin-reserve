@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,6 +19,10 @@ use App\Models\SheetQtyConvers;
 use App\Models\SheetSalesData;
 use App\Models\SheetSuppPartNum;
 use App\Models\SheetUomChar;
+
+use Illuminate\Support\Facades\DB;
+// เปิด Query Log
+DB::enableQueryLog();
 
 class RmController extends Controller
 {
@@ -349,19 +354,85 @@ class RmController extends Controller
           default => [],
       };
       $datas = match ($tab) {
-          'tab1' => SheetAvailability::all(),
-          'tab2' => SheetCustPartNum::all(),
-          'tab3' => SheetFinancial::all(),
-          'tab4' => SheetGeneral::all(),
-          'tab5' => SheetGtins::all(),
-          'tab6' => SheetLogistics::all(),
-          'tab7' => SheetPlanning::all(),
-          'tab8' => SheetQtyConvers::all(),
-          'tab9' => SheetSalesData::all(),
+          'tab1'  => SheetAvailability::all(),
+          'tab2'  => SheetCustPartNum::all(),
+          'tab3'  => SheetFinancial::all(),
+          'tab4'  => SheetGeneral::all(),
+          'tab5'  => SheetGtins::all(),
+          'tab6'  => SheetLogistics::all(),
+          'tab7'  => SheetPlanning::all(),
+          'tab8'  => SheetQtyConvers::all(),
+          'tab9'  => SheetSalesData::all(),
           'tab10' => SheetSuppPartNum::all(),
           'tab11' => SheetUomChar::all(),
           default => [],
       };
-      return Inertia::render('RM/Report', [ "columns" => $columns, "datas" => $datas, "activeTab" => $tab ]);
+      $error = session('error');  // ข้อความ error
+      $success = session('success');  // ข้อความ success
+      $activeTab = $tab;
+
+      return Inertia::render('RM/Report', compact('error', 'success', 'columns', 'datas', 'activeTab'));
+    }
+
+    public function update(Request $request): RedirectResponse
+    {
+        // Match $tab เพื่อกำหนดการทำงานที่แตกต่างกัน
+        $modelClass = match ($request->tab) {
+            'tab1'  => SheetAvailability::class,
+            'tab2'  => SheetCustPartNum::class,
+            'tab3'  => SheetFinancial::class,
+            'tab4'  => SheetGeneral::class,
+            'tab5'  => SheetGtins::class,
+            'tab6'  => SheetLogistics::class,
+            'tab7'  => SheetPlanning::class,
+            'tab8'  => SheetQtyConvers::class,
+            'tab9'  => SheetSalesData::class,
+            'tab10' => SheetSuppPartNum::class,
+            'tab11' => SheetUomChar::class,
+            default => throw new InvalidArgumentException('Invalid tab value'),
+        };
+
+        // ดึง Content จาก Request
+        $content = $request->getContent();
+
+        // แปลง Content (กรณีเป็น JSON)
+        $data = json_decode($content, true);
+
+        // ตรวจสอบว่า Content ถูกต้องและมีข้อมูลที่จำเป็น
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return redirect()
+                ->route('rm.report', ['tab' => $request->tab])
+                ->with('error', 'Invalid JSON content.');
+        }
+
+        // ดึงชื่อ Primary Key จากโมเดล
+        $primaryKeys = (new $modelClass)->getKeyName();
+
+        // ตรวจสอบว่า Primary Keys มีอยู่ใน Content
+        $keys = is_array($primaryKeys) ? array_intersect_key($data, array_flip($primaryKeys)) : [$primaryKeys => $data[$primaryKeys] ?? null];
+
+        if (empty(array_filter($keys))) {
+            return redirect()
+                ->route('rm.report', ['tab' => $request->tab])
+                ->with('error', 'Primary keys are required for updating data.');
+        }
+
+        $conditions = is_array($keys) ? array_intersect_key($data, array_flip($keys)) : [$keys => $data[$keys]];
+    
+        $record = $modelClass::query()->where($conditions)->first();
+
+        if (!$record) {
+            return redirect()
+                ->route('rm.report', ['tab' => $request->tab])
+                ->with('error', 'Record not found.');
+        }
+
+        // อัปเดตข้อมูลในโมเดล
+        $record->fill($data);
+        $record->save();
+
+        return redirect()
+            ->route('rm.report', ['tab' => $request->tab])
+            ->with('success', 'Data updated successfully.');
     }
 }

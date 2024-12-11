@@ -44,9 +44,9 @@ export default function Request({ auth, InputData, brand = [] }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">NPD</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">FG Material</h2>}
         >
-            <Head title="NPD" />
+            <Head title="FG Material" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">

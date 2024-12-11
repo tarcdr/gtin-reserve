@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Thiagoprz\CompositeKey\HasCompositeKey;
 
 class SheetGtins extends Model
 {
-    use HasFactory;
+    use HasCompositeKey;
 
     /**
      * The table associated with the model.
@@ -21,4 +21,19 @@ class SheetGtins extends Model
      * @var bool
      */
     public $incrementing = false;
+
+    // ระบุประเภทของคีย์ (เช่น string หรือ int)
+    protected $keyType = 'string';
+
+    // ระบุชื่อของ Composite Keys
+    protected $primaryKey = ['material_id', 'trading_unit'];
+
+    // ฟิลด์ที่อนุญาตให้ทำ Mass Assignment
+    protected $fillable = [
+        'material_id',
+        'trading_unit',
+        'gtin_number',
+    ];
+
+    public $timestamps = false;
 }

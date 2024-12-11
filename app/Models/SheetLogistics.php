@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Thiagoprz\CompositeKey\HasCompositeKey;
 
 class SheetLogistics extends Model
 {
-    use HasFactory;
+    use HasCompositeKey;
 
     /**
      * The table associated with the model.
@@ -21,4 +21,20 @@ class SheetLogistics extends Model
      * @var bool
      */
     public $incrementing = false;
+
+    // ระบุประเภทของคีย์ (เช่น string หรือ int)
+    protected $keyType = 'string';
+
+    // ระบุชื่อของ Composite Keys
+    protected $primaryKey = ['material_id', 'site_id'];
+
+    // ฟิลด์ที่อนุญาตให้ทำ Mass Assignment
+    protected $fillable = [
+        'material_id',
+        'site_id',
+        'status',
+        'storage_group_id',
+    ];
+
+    public $timestamps = false;
 }

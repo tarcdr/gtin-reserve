@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/rm/material_create', [RmController::class, 'view'])->name('rm.material_create');
     Route::get('/rm/component_request', [RmController::class, 'viewComponentRequest'])->name('rm.component_request');
     Route::get('/rm/report/{tab?}', [RmController::class, 'report'])->name('rm.report');
+    Route::patch('/rm/confirm', [RmController::class, 'update'])->name('rm.confirm');
     
     Route::get('/bom/new', [BomController::class, 'view'])->name('bom.new');
     Route::get('/bom/{id}', [BomController::class, 'exists'])->name('bom.exists');
