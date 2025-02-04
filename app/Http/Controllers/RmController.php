@@ -19,6 +19,7 @@ use App\Models\SheetQtyConvers;
 use App\Models\SheetSalesData;
 use App\Models\SheetSuppPartNum;
 use App\Models\SheetUomChar;
+use App\Models\Labels;
 
 use Illuminate\Support\Facades\DB;
 // เปิด Query Log
@@ -48,11 +49,15 @@ class RmController extends Controller
       return Inertia::render('RM/MaterialCreate', [ "InputData" => $input ]);
     }
 
-    public function report(Request $request, $tab = 'tab1'): Response
+    public function report(Request $request, $tab = 'AVAILABILITY'): Response
     {
       $columns = match ($tab) {
-          'tab1' => [
+          'AVAILABILITY'  => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -64,9 +69,15 @@ class RmController extends Controller
             ], [
               'name' => 'availability_check_scope',
               'label' => 'AVAILABILITY_CHECK_SCOPE',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
-          'tab2' => [
+          'CUST_PART_NUM' => [
             [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
@@ -76,9 +87,15 @@ class RmController extends Controller
             ], [
               'name' => 'customer_part_number',
               'label' => 'CUSTOMER_PART_NUMBER',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
-          'tab3' => [
+          'FINANCIAL'     => [
             [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
@@ -88,9 +105,15 @@ class RmController extends Controller
             ], [
               'name' => 'business_residence_id',
               'label' => 'BUSINESS_RESIDENCE_ID',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
-          'tab4' => [
+          'GENERAL'       => [
             [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
@@ -181,9 +204,15 @@ class RmController extends Controller
             ], [
               'name' => 'detail_name',
               'label' => 'DETAIL_NAME',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
-          'tab5' => [
+          'GTINS'         => [
             [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
@@ -193,9 +222,15 @@ class RmController extends Controller
             ], [
               'name' => 'gtin_number',
               'label' => 'GTIN_NUMBER',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
-          'tab6' => [
+          'LOGISTICS'     => [
             [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
@@ -208,9 +243,15 @@ class RmController extends Controller
             ], [
               'name' => 'storage_group_id',
               'label' => 'STORAGE_GROUP_ID',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
-          'tab7' => [
+          'PLANNING'      => [
             [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
@@ -235,9 +276,15 @@ class RmController extends Controller
             ], [
               'name' => 'lot_sizing_method',
               'label' => 'LOT_SIZING_METHOD',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
-          'tab8' => [
+          'QTY_CONVERS'   => [
             [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
@@ -253,9 +300,15 @@ class RmController extends Controller
             ], [
               'name' => 'corres_qty_uom',
               'label' => 'CORRES_QTY_UOM',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
-          'tab9' => [
+          'SALES_DATA'    => [
             [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
@@ -274,9 +327,15 @@ class RmController extends Controller
             ], [
               'name' => 'item_group',
               'label' => 'ITEM_GROUP',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
-          'tab10' => [
+          'SUPP_PART_NUM' => [
             [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
@@ -289,9 +348,15 @@ class RmController extends Controller
             ], [
               'name' => 'supplier_lead_time',
               'label' => 'SUPPLIER_LEAD_TIME',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
-          'tab11' => [
+          'UOM_CHAR'      => [
             [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
@@ -349,47 +414,68 @@ class RmController extends Controller
             ], [
               'name' => 'quantity_type_char',
               'label' => 'QUANTITY_TYPE_CHAR',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
             ],
           ],
           default => [],
       };
+      $user_login  = $request->user()->user_login;
       $datas = match ($tab) {
-          'tab1'  => SheetAvailability::all(),
-          'tab2'  => SheetCustPartNum::all(),
-          'tab3'  => SheetFinancial::all(),
-          'tab4'  => SheetGeneral::all(),
-          'tab5'  => SheetGtins::all(),
-          'tab6'  => SheetLogistics::all(),
-          'tab7'  => SheetPlanning::all(),
-          'tab8'  => SheetQtyConvers::all(),
-          'tab9'  => SheetSalesData::all(),
-          'tab10' => SheetSuppPartNum::all(),
-          'tab11' => SheetUomChar::all(),
-          default => [],
+        'AVAILABILITY'  => SheetAvailability::where('user_create', $user_login)->get(),
+        'CUST_PART_NUM' => SheetCustPartNum::where('user_create', $user_login)->get(),
+        'FINANCIAL'     => SheetFinancial::where('user_create', $user_login)->get(),
+        'GENERAL'       => SheetGeneral::where('user_create', $user_login)->get(),
+        'GTINS'         => SheetGtins::where('user_create', $user_login)->get(),
+        'LOGISTICS'     => SheetLogistics::where('user_create', $user_login)->get(),
+        'PLANNING'      => SheetPlanning::where('user_create', $user_login)->get(),
+        'QTY_CONVERS'   => SheetQtyConvers::where('user_create', $user_login)->get(),
+        'SALES_DATA'    => SheetSalesData::where('user_create', $user_login)->get(),
+        'SUPP_PART_NUM' => SheetSuppPartNum::where('user_create', $user_login)->get(),
+        'UOM_CHAR'      => SheetUomChar::where('user_create', $user_login)->get(),
+        default => [],
+      };
+      $labels = match ($tab) {
+        'AVAILABILITY'  => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'AVAILABILITY')->get(),
+        'CUST_PART_NUM' => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'CUST_PART_NUM')->get(),
+        'FINANCIAL'     => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'FINANCIAL')->get(),
+        'GENERAL'       => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'GENERAL')->get(),
+        'GTINS'         => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'GTINS')->get(),
+        'LOGISTICS'     => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'LOGISTICS')->get(),
+        'PLANNING'      => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'PLANNING')->get(),
+        'QTY_CONVERS'   => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'QTY_CONVERS')->get(),
+        'SALES_DATA'    => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'SALES_DATA')->get(),
+        'SUPP_PART_NUM' => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'SUPP_PART_NUM')->get(),
+        'UOM_CHAR'      => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'UOM_CHAR')->get(),
+        default => [],
       };
       $error = session('error');  // ข้อความ error
       $success = session('success');  // ข้อความ success
       $activeTab = $tab;
 
-      return Inertia::render('RM/Report', compact('error', 'success', 'columns', 'datas', 'activeTab'));
+      return Inertia::render('RM/Report', compact('error', 'success', 'columns', 'datas', 'activeTab', 'labels'));
     }
 
     public function update(Request $request): RedirectResponse
     {
         // Match $tab เพื่อกำหนดการทำงานที่แตกต่างกัน
         $modelClass = match ($request->tab) {
-            'tab1'  => SheetAvailability::class,
-            'tab2'  => SheetCustPartNum::class,
-            'tab3'  => SheetFinancial::class,
-            'tab4'  => SheetGeneral::class,
-            'tab5'  => SheetGtins::class,
-            'tab6'  => SheetLogistics::class,
-            'tab7'  => SheetPlanning::class,
-            'tab8'  => SheetQtyConvers::class,
-            'tab9'  => SheetSalesData::class,
-            'tab10' => SheetSuppPartNum::class,
-            'tab11' => SheetUomChar::class,
-            default => throw new InvalidArgumentException('Invalid tab value'),
+          'AVAILABILITY'  => SheetAvailability::class,
+          'CUST_PART_NUM' => SheetCustPartNum::class,
+          'FINANCIAL'     => SheetFinancial::class,
+          'GENERAL'       => SheetGeneral::class,
+          'GTINS'         => SheetGtins::class,
+          'LOGISTICS'     => SheetLogistics::class,
+          'PLANNING'      => SheetPlanning::class,
+          'QTY_CONVERS'   => SheetQtyConvers::class,
+          'SALES_DATA'    => SheetSalesData::class,
+          'SUPP_PART_NUM' => SheetSuppPartNum::class,
+          'UOM_CHAR'      => SheetUomChar::class,
+          default => throw new InvalidArgumentException('Invalid tab value'),
         };
 
         // ดึง Content จาก Request
@@ -417,7 +503,9 @@ class RmController extends Controller
                 ->with('error', 'Primary keys are required for updating data.');
         }
 
-        $conditions = is_array($keys) ? array_intersect_key($data, array_flip($keys)) : [$keys => $data[$keys]];
+        $conditions = (is_array($keys) && count($keys) > 1)
+          ? array_intersect_key($data, array_flip($keys))
+          : $keys;
     
         $record = $modelClass::query()->where($conditions)->first();
 

@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Thiagoprz\CompositeKey\HasCompositeKey;
 
 class SheetAvailability extends Model
 {
-    use HasCompositeKey;
+    use HasFactory;
 
     /**
      * The table associated with the model.
@@ -21,16 +21,14 @@ class SheetAvailability extends Model
      *
      * @var bool
      */
-    public $incrementing = false;
-
-    // ระบุประเภทของคีย์ (เช่น string หรือ int)
-    protected $keyType = 'string';
+    public $incrementing = true;
 
     // ระบุชื่อของ Composite Keys
-    protected $primaryKey = ['material_id', 'planning_area_id'];
+    protected $primaryKey = 'no';
 
     // ฟิลด์ที่อนุญาตให้ทำ Mass Assignment
     protected $fillable = [
+        'no',
         'material_id',
         'planning_area_id',
         'status',

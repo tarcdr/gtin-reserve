@@ -1,3 +1,4 @@
+import DangerButton from '@/Components/DangerButton';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import Modal from '@/Components/Modal';
@@ -8,60 +9,71 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
-export default function Report({ auth, activeTab, columns = [], datas = [] }) {
+export default function Report({ auth, activeTab, columns = [], datas = [], labels = [] }) {
   const [confirmingActive, setConfirmingActive] = useState(false);
   const [filter, setFilter] = useState({
     status: ''
   });
+  const [dataLabels, setDataLabels] = useState({});
   const { data, setData, processing, errors, patch } = useForm({});
 
-    const status = [{
-      code: 'IMP',
-      label: 'Inprocess'
-    }, {
-      code: 'CP',
-      label: 'Complete'
-    }, {
-      code: 'ETS',
-      label: 'Export to SAP'
-    }];
+  const status = [{
+    code: 'IMP',
+    label: 'Inprocess'
+  }, {
+    code: 'CP',
+    label: 'Complete'
+  }, {
+    code: 'ETS',
+    label: 'Export to SAP'
+  }];
 
-    const toggleActiveTab = tabInput => {
-      router.visit(`/rm/report/${tabInput}`, {
-          method: "get",
-          preserveState: true, // เก็บ state เดิม
-          preserveScroll: true, // เก็บตำแหน่ง scroll
+  const disabledColumn = ['status_row', 'user_create'];
+
+  const toggleActiveTab = tabInput => {
+    router.visit(`/rm/report/${tabInput}`, {
+        method: "get",
+        preserveState: true, // เก็บ state เดิม
+        preserveScroll: true, // เก็บตำแหน่ง scroll
+    });
+  };
+
+  const toggleModal = dataSet => {
+    const newData = { ...data };
+    Object.keys(data).forEach(o => {
+      newData[o] = dataSet[o] || '';
+    });
+    setData(newData);
+    setConfirmingActive(true);
+  };
+
+  const closeModal = () => {
+      setConfirmingActive(false);
+  };
+
+  const setActive = (e) => {
+      e.preventDefault();
+
+      patch(route('rm.confirm', { tab: activeTab }), {
+          onSuccess: () => closeModal()
       });
-    };
+  };
 
-    const toggleModal = dataSet => {
-      const newData = { ...data };
-      Object.keys(data).forEach(o => {
-        newData[o] = dataSet[o] || '';
+  useEffect(() => {
+    const newData = {};
+    columns.forEach(column => {
+      newData[column.name] = '';
+    });
+    setData(newData);
+  }, [columns]);
+
+  useEffect(() => {
+      const newLabels = {};
+      labels?.forEach(label => {
+          newLabels[label.label_col_name] = label.label_value;
       });
-      setData(newData);
-      setConfirmingActive(true);
-    };
-
-    const closeModal = () => {
-        setConfirmingActive(false);
-    };
-
-    const setActive = (e) => {
-        e.preventDefault();
-
-        patch(route('rm.confirm', { tab: activeTab }), {
-            onSuccess: () => closeModal()
-        });
-    };
-
-    useEffect(() => {
-      const newData = {};
-      columns.forEach(column => {
-        newData[column.name] = '';
-      });
-      setData(newData);
-    }, [columns]);
+      setDataLabels(newLabels);
+  }, [labels]);
 
     return (
         <AuthenticatedLayout
@@ -75,89 +87,89 @@ export default function Report({ auth, activeTab, columns = [], datas = [] }) {
                 <div className="flex flex-wrap border-b border-gray-200">
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab1' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'AVAILABILITY' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab1')}
+                        onClick={() => toggleActiveTab('AVAILABILITY')}
                     >
                         AVAILABILITY
                     </button>
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab2' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'CUST_PART_NUM' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab2')}
+                        onClick={() => toggleActiveTab('CUST_PART_NUM')}
                     >
                         CUST_PART_NUM
                     </button>
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab3' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'FINANCIAL' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab3')}
+                        onClick={() => toggleActiveTab('FINANCIAL')}
                     >
                         FINANCIAL
                     </button>
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab4' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'GENERAL' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab4')}
+                        onClick={() => toggleActiveTab('GENERAL')}
                     >
                         GENERAL
                     </button>
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab5' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'GTINS' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab5')}
+                        onClick={() => toggleActiveTab('GTINS')}
                     >
                         GTINS
                     </button>
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab6' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'LOGISTICS' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab6')}
+                        onClick={() => toggleActiveTab('LOGISTICS')}
                     >
                         LOGISTICS
                     </button>
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab7' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'PLANNING' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab7')}
+                        onClick={() => toggleActiveTab('PLANNING')}
                     >
                         PLANNING
                     </button>
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab8' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'QTY_CONVERS' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab8')}
+                        onClick={() => toggleActiveTab('QTY_CONVERS')}
                     >
                         QTY_CONVERS
                     </button>
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab9' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'SALES_DATA' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab9')}
+                        onClick={() => toggleActiveTab('SALES_DATA')}
                     >
                         SALES_DATA
                     </button>
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab10' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'SUPP_PART_NUM' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab10')}
+                        onClick={() => toggleActiveTab('SUPP_PART_NUM')}
                     >
                         SUPP_PART_NUM
                     </button>
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
-                            activeTab === 'tab11' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
+                            activeTab === 'UOM_CHAR' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:text-blue-500'
                         }`}
-                        onClick={() => toggleActiveTab('tab11')}
+                        onClick={() => toggleActiveTab('UOM_CHAR')}
                     >
                         UOM_CHAR
                     </button>
@@ -189,9 +201,9 @@ export default function Report({ auth, activeTab, columns = [], datas = [] }) {
                                     <th scope="col" className="px-6 py-3">
                                         #
                                     </th>
-                                    {columns.map(column => (
+                                    {columns.filter(column => !column?.hidden).map(column => (
                                       <th scope="col" className="px-6 py-3" key={`${activeTab}-column-${column.name}`}>
-                                          {column.label}
+                                          {dataLabels[column.label] || column.label}
                                       </th>
                                     ))}
                                     <th className="text-center">Action</th>
@@ -203,21 +215,21 @@ export default function Report({ auth, activeTab, columns = [], datas = [] }) {
                                     <td scope="row" className="px-6 py-4">
                                         {index + 1}
                                     </td>
-                                    {columns.map(column => (
+                                    {columns.filter(column => !column?.hidden).map(column => (
                                       <td scope="col" className="px-6 py-3" key={`${activeTab}-data-${column.name}`}>
                                           {o[column.name]}
                                       </td>
                                     ))}
                                     <td className="text-center px-6 py-3">
-                                      <SecondaryButton onClick={() => toggleModal(o)}>Edit</SecondaryButton>
+                                      <div className="flex gap-1 items-center justify-center">
+                                        <SecondaryButton disabled={o?.status_row === 'ETS'} onClick={() => toggleModal(o)}>Edit</SecondaryButton>
+                                        <DangerButton disabled={o?.status_row === 'ETS'}>Delete</DangerButton>
+                                      </div>
                                     </td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
-                        </div>
-                        <div className="flex items-center justify-center mt-3">
-                            <PrimaryButton>Save</PrimaryButton>
                         </div>
                     </div>
                 </div>
@@ -230,15 +242,17 @@ export default function Report({ auth, activeTab, columns = [], datas = [] }) {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {columns.map(column => (
-                        <div key={`form-input-${column.name}`}>
-                          <InputLabel htmlFor={column.name} value={column.label} />
+                        <div key={`form-input-${column.name}`} className={column?.hidden && 'hidden'}>
+                          <InputLabel htmlFor={column.name} value={dataLabels[column.label] || column.label} />
 
                           <TextInput
                               id={column.name}
-                              className="mt-1 block w-full"
+                              className={`mt-1 block w-full${disabledColumn.includes(column.name) ? ' opacity-25' : ''}`}
                               value={data[column.name]}
+                              type={column?.hidden ? 'number' : 'text'}
                               maxLength="100"
                               onChange={(e) => setData(column.name, e.target.value)}
+                              disabled={disabledColumn.includes(column.name)}
                           />
 
                           <InputError className="mt-2" message={errors[column.name]} />
