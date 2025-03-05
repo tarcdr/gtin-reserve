@@ -26,10 +26,11 @@ class SheetSuppPartNum extends Model
     protected $keyType = 'string';
 
     // ระบุชื่อของ Composite Keys
-    protected $primaryKey = ['material_id', 'supplier_id'];
+    protected $primaryKey = ['no'];
 
     // ฟิลด์ที่อนุญาตให้ทำ Mass Assignment
     protected $fillable = [
+        'no',
         'material_id',
         'supplier_id',
         'supplier_part_number',

@@ -39,7 +39,7 @@ export default function ComponentRequest({ auth, boms = [] }) {
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div className="my-12 flex justify-center">
-                        <Link href={route('bom.new')}>
+                        <Link href={route('bom.create')}>
                             <PrimaryButton className="ml-3 font-bold py-4 px-8">
                               <span className="text-3xl">
                                 New BOM

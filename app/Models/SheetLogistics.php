@@ -26,10 +26,11 @@ class SheetLogistics extends Model
     protected $keyType = 'string';
 
     // ระบุชื่อของ Composite Keys
-    protected $primaryKey = ['material_id', 'site_id'];
+    protected $primaryKey = ['no'];
 
     // ฟิลด์ที่อนุญาตให้ทำ Mass Assignment
     protected $fillable = [
+        'no',
         'material_id',
         'site_id',
         'status',

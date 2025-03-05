@@ -79,6 +79,10 @@ class RmController extends Controller
           ],
           'CUST_PART_NUM' => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -97,6 +101,10 @@ class RmController extends Controller
           ],
           'FINANCIAL'     => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -115,6 +123,10 @@ class RmController extends Controller
           ],
           'GENERAL'       => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -214,6 +226,10 @@ class RmController extends Controller
           ],
           'GTINS'         => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -232,6 +248,10 @@ class RmController extends Controller
           ],
           'LOGISTICS'     => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -253,6 +273,10 @@ class RmController extends Controller
           ],
           'PLANNING'      => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -286,6 +310,10 @@ class RmController extends Controller
           ],
           'QTY_CONVERS'   => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -310,6 +338,10 @@ class RmController extends Controller
           ],
           'SALES_DATA'    => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -337,6 +369,10 @@ class RmController extends Controller
           ],
           'SUPP_PART_NUM' => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -358,6 +394,10 @@ class RmController extends Controller
           ],
           'UOM_CHAR'      => [
             [
+              'name' => 'no',
+              'label' => 'NO',
+              'hidden' => true
+            ], [
               'name' => 'material_id',
               'label' => 'MATERIAL_ID',
             ], [
@@ -518,6 +558,70 @@ class RmController extends Controller
         // อัปเดตข้อมูลในโมเดล
         $record->fill($data);
         $record->save();
+
+        return redirect()
+            ->route('rm.report', ['tab' => $request->tab])
+            ->with('success', 'Data updated successfully.');
+    }
+
+    public function delete(Request $request): RedirectResponse
+    {
+        // Match $tab เพื่อกำหนดการทำงานที่แตกต่างกัน
+        $modelClass = match ($request->tab) {
+          'AVAILABILITY'  => SheetAvailability::class,
+          'CUST_PART_NUM' => SheetCustPartNum::class,
+          'FINANCIAL'     => SheetFinancial::class,
+          'GENERAL'       => SheetGeneral::class,
+          'GTINS'         => SheetGtins::class,
+          'LOGISTICS'     => SheetLogistics::class,
+          'PLANNING'      => SheetPlanning::class,
+          'QTY_CONVERS'   => SheetQtyConvers::class,
+          'SALES_DATA'    => SheetSalesData::class,
+          'SUPP_PART_NUM' => SheetSuppPartNum::class,
+          'UOM_CHAR'      => SheetUomChar::class,
+          default => throw new InvalidArgumentException('Invalid tab value'),
+        };
+
+        // ดึง Content จาก Request
+        $content = $request->getContent();
+
+        // แปลง Content (กรณีเป็น JSON)
+        $data = json_decode($content, true);
+
+        // ตรวจสอบว่า Content ถูกต้องและมีข้อมูลที่จำเป็น
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return redirect()
+                ->route('rm.report', ['tab' => $request->tab])
+                ->with('error', 'Invalid JSON content.');
+        }
+
+        // ดึงชื่อ Primary Key จากโมเดล
+        $primaryKeys = (new $modelClass)->getKeyName();
+
+        // ตรวจสอบว่า Primary Keys มีอยู่ใน Content
+        $keys = is_array($primaryKeys) ? array_intersect_key($data, array_flip($primaryKeys)) : [$primaryKeys => $data[$primaryKeys] ?? null];
+
+        if (empty(array_filter($keys))) {
+            return redirect()
+                ->route('rm.report', ['tab' => $request->tab])
+                ->with('error', 'Primary keys are required for updating data.');
+        }
+
+        $conditions = (is_array($keys) && count($keys) > 1)
+          ? array_intersect_key($data, array_flip($keys))
+          : $keys;
+    
+        $record = $modelClass::query()->where($conditions)->first();
+
+        if (!$record) {
+            return redirect()
+                ->route('rm.report', ['tab' => $request->tab])
+                ->with('error', 'Record not found.');
+        }
+
+        // อัปเดตข้อมูลในโมเดล
+        $record->fill($data);
+        $record->delete();
 
         return redirect()
             ->route('rm.report', ['tab' => $request->tab])

@@ -39,7 +39,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/rm/component_request', [RmController::class, 'viewComponentRequest'])->name('rm.component_request');
     Route::get('/rm/report/{tab?}', [RmController::class, 'report'])->name('rm.report');
     Route::patch('/rm/confirm', [RmController::class, 'update'])->name('rm.confirm');
+    Route::delete('/rm/delete', [RmController::class, 'delete'])->name('rm.delete');
     
+    Route::get('/bom/create', [BomController::class, 'create'])->name('bom.create');
+    Route::patch('/bom/create', [BomController::class, 'process'])->name('bom.create');
     Route::get('/bom/new', [BomController::class, 'view'])->name('bom.new');
     Route::get('/bom/{id}', [BomController::class, 'exists'])->name('bom.exists');
 

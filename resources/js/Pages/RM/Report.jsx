@@ -11,11 +11,12 @@ import { useEffect, useState } from 'react';
 
 export default function Report({ auth, activeTab, columns = [], datas = [], labels = [] }) {
   const [confirmingActive, setConfirmingActive] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [filter, setFilter] = useState({
     status: ''
   });
   const [dataLabels, setDataLabels] = useState({});
-  const { data, setData, processing, errors, patch } = useForm({});
+  const { data, setData, processing, errors, patch, delete: actionDelete } = useForm({});
 
   const status = [{
     code: 'IMP',
@@ -51,11 +52,32 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
       setConfirmingActive(false);
   };
 
+  const toggleDelete = dataSet => {
+    const newData = { ...data };
+    Object.keys(data).forEach(o => {
+      newData[o] = dataSet[o] || '';
+    });
+    setData(newData);
+    setConfirmingDelete(true);
+  };
+
+  const closeModalDelete = () => {
+    setConfirmingDelete(false);
+  };
+
   const setActive = (e) => {
       e.preventDefault();
 
       patch(route('rm.confirm', { tab: activeTab }), {
           onSuccess: () => closeModal()
+      });
+  };
+
+  const setDelete = (e) => {
+      e.preventDefault();
+
+      actionDelete(route('rm.delete', { tab: activeTab }), {
+          onSuccess: () => closeModalDelete()
       });
   };
 
@@ -223,7 +245,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                                     <td className="text-center px-6 py-3">
                                       <div className="flex gap-1 items-center justify-center">
                                         <SecondaryButton disabled={o?.status_row === 'ETS'} onClick={() => toggleModal(o)}>Edit</SecondaryButton>
-                                        <DangerButton disabled={o?.status_row === 'ETS'}>Delete</DangerButton>
+                                        <DangerButton disabled={o?.status_row === 'ETS'} onClick={() => toggleDelete(o)}>Delete</DangerButton>
                                       </div>
                                     </td>
                                 </tr>
@@ -262,6 +284,37 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                     <div className="flex items-center justify-center gap-4 mt-5">
                       <SecondaryButton onClick={closeModal}>Cancel</SecondaryButton>
                       <PrimaryButton disabled={processing}>Confirm</PrimaryButton>
+                    </div>
+                </form>
+            </Modal>
+            <Modal show={confirmingDelete} onClose={closeModalDelete}>
+                <form onSubmit={setDelete} className="p-6 max-h-[600px] overflow-x-auto">
+                    <h2 className="text-lg font-medium text-gray-900">
+                        {`Delete data from table ${activeTab}`}
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {columns.map(column => (
+                        <div key={`form-input-${column.name}`} className={column?.hidden && 'hidden'}>
+                          <InputLabel htmlFor={column.name} value={dataLabels[column.label] || column.label} />
+
+                          <TextInput
+                              id={column.name}
+                              className={`mt-1 block w-full opacity-25`}
+                              value={data[column.name]}
+                              type={column?.hidden ? 'number' : 'text'}
+                              maxLength="100"
+                              onChange={(e) => setData(column.name, e.target.value)}
+                              disabled={true}
+                          />
+
+                          <InputError className="mt-2" message={errors[column.name]} />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-center gap-4 mt-5">
+                      <SecondaryButton onClick={closeModalDelete}>Cancel</SecondaryButton>
+                      <DangerButton disabled={processing}>Delete</DangerButton>
                     </div>
                 </form>
             </Modal>

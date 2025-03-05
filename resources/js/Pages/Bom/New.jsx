@@ -15,6 +15,8 @@ export default function Request({ auth, InputData, boms = [], subBoms = {}, bran
 
     const { data, setData, patch, errors, processing, recentlySuccessful, transform } = useForm({
         bom: InputData?.bom || '',
+        description: InputData?.description || '',
+        bom_refer: InputData?.bom_refer || '',
         brand: InputData?.brand || '',
         mattype: 1,
         material_desc: InputData?.material_desc || '',
@@ -29,7 +31,7 @@ export default function Request({ auth, InputData, boms = [], subBoms = {}, bran
       p_suggest_id: InputData?.p_suggest_id,
     }));
 
-    const isDisabled = () => InputData?.bom;
+    const isDisabled = () => InputData?.bom_refer;
 
     const submit = (e) => {
         e.preventDefault();
@@ -42,8 +44,8 @@ export default function Request({ auth, InputData, boms = [], subBoms = {}, bran
     };
 
     useEffect(() => {
-      if (data?.bom && subBoms[data.bom]) {
-        setMaterialList(subBoms[data.bom]);
+      if (data?.bom_refer && subBoms[data.bom_refer]) {
+        setMaterialList(subBoms[data.bom_refer]);
       }
     }, [data, subBoms]);
 
@@ -62,18 +64,46 @@ export default function Request({ auth, InputData, boms = [], subBoms = {}, bran
         >
             <Head title="BOM - Create" />
 
-            <div className={`py-12${(isCreateMaterial && ' hidden') || ''}`}>
+            <div className="pt-12 mb-2">
+              <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                  <form className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div>
+                        <InputLabel htmlFor="bom" value="New BOM ID" />
+                        <TextInput
+                            id="bom"
+                            className="mt-1 block w-full"
+                            defaultValue={data.bom}
+                            disabled
+                        />
+                      </div>
+                      <div>
+                        <InputLabel htmlFor="description" value="Description" />
+                        <TextInput
+                            id="description"
+                            className="mt-1 block w-full"
+                            defaultValue={data.description}
+                            disabled
+                        />
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <div className={`pb-12${(isCreateMaterial && ' hidden') || ''}`}>
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                         <form onSubmit={submit} className="space-y-6">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
-                                <InputLabel htmlFor="bom" value="BOM ID (Referrance)" />
+                                <InputLabel htmlFor="bom_refer" value="BOM ID (Referrance)" />
                                 <select
-                                    id="bom"
+                                    id="bom_refer"
                                     className="mt-1 block w-full"
-                                    onChange={(e) => setData('bom', e.target.value)}
-                                    defaultValue={data?.bom}
+                                    onChange={(e) => setData('bom_refer', e.target.value)}
+                                    defaultValue={data?.bom_refer}
                                     disabled={isDisabled()}
                                 >
                                     <option value="">---- Select BOM ID ----</option>
@@ -82,7 +112,7 @@ export default function Request({ auth, InputData, boms = [], subBoms = {}, bran
                                     ))}
                                 </select>
 
-                                <InputError className="mt-2" message={errors.bom} />
+                                <InputError className="mt-2" message={errors.bom_refer} />
                             </div>
                           </div>
                           {/* Sub BOM Items List */}
@@ -106,7 +136,7 @@ export default function Request({ auth, InputData, boms = [], subBoms = {}, bran
                                 Add New Material
                             </PrimaryButton>
                           </div>
-                          {(!InputData?.bom) && (
+                          {(!InputData?.bom_refer) && (
                             <div className="flex items-center justify-center gap-4">
                                 <Link href={route('rm.component_request')}>
                                     <SecondaryButton>
@@ -122,7 +152,7 @@ export default function Request({ auth, InputData, boms = [], subBoms = {}, bran
                     </div>
                 </div>
             </div>
-            <div className={`py-12${(!isCreateMaterial && ' hidden') || ''}`}>
+            <div className={`pb-12${(!isCreateMaterial && ' hidden') || ''}`}>
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                         <form onSubmit={submit} className="space-y-6">

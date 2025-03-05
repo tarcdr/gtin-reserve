@@ -26,10 +26,11 @@ class SheetQtyConvers extends Model
     protected $keyType = 'string';
 
     // ระบุชื่อของ Composite Keys
-    protected $primaryKey = ['material_id', 'quantity_uom'];
+    protected $primaryKey = ['no'];
 
     // ฟิลด์ที่อนุญาตให้ทำ Mass Assignment
     protected $fillable = [
+        'no',
         'material_id',
         'quantity',
         'quantity_uom',

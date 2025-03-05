@@ -26,10 +26,11 @@ class SheetUomChar extends Model
     protected $keyType = 'string';
 
     // ระบุชื่อของ Composite Keys
-    protected $primaryKey = ['material_id', 'unit_of_measure'];
+    protected $primaryKey = ['no'];
 
     // ฟิลด์ที่อนุญาตให้ทำ Mass Assignment
     protected $fillable = [
+        'no',
         'material_id',
         'unit_of_measure',
         'net_weight',
