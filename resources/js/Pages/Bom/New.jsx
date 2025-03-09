@@ -39,6 +39,11 @@ export default function Request({ auth, InputData, boms = [], subBoms = {}, bran
         patch(route('material.update'));
     };
 
+    const handleRemove = code => {
+      const newList = materialList.filter(o => o.code !== code);
+      setMaterialList(newList);
+    };
+
     const toggleCreateMaterial = () => {
         setIsCreateMaterial(!isCreateMaterial);
     };

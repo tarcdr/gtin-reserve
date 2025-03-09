@@ -243,13 +243,13 @@ export default function Request({ auth, InputData, brand = [] }) {
                                 </div>
                             </div>
                             <div className="border-2 border-gray-400 rounded-lg p-3">
-                                <div>
+                                <Link href={route('bns.create')}>
                                     <PrimaryButton className="ml-3 font-bold py-4 px-8">
                                         <span className="text-xl">
-                                            Businewss Supply
+                                            Business Supply
                                         </span>
                                     </PrimaryButton>
-                                </div>
+                                </Link>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-3">

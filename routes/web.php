@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RmController;
 use App\Http\Controllers\BomController;
+use App\Http\Controllers\BusinessSupplyController;
 use App\Http\Controllers\RequestFormController;
 use App\Http\Controllers\MaterialController;
 use Illuminate\Foundation\Application;
@@ -40,11 +41,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/rm/report/{tab?}', [RmController::class, 'report'])->name('rm.report');
     Route::patch('/rm/confirm', [RmController::class, 'update'])->name('rm.confirm');
     Route::delete('/rm/delete', [RmController::class, 'delete'])->name('rm.delete');
+    Route::get('/rm/export', [RmController::class, 'export'])->name('rm.export');
     
     Route::get('/bom/create', [BomController::class, 'create'])->name('bom.create');
     Route::patch('/bom/create', [BomController::class, 'process'])->name('bom.create');
     Route::get('/bom/new', [BomController::class, 'view'])->name('bom.new');
     Route::get('/bom/{id}', [BomController::class, 'exists'])->name('bom.exists');
+
+    Route::get('/bns/create', [BusinessSupplyController::class, 'create'])->name('bns.create');
 
     Route::get('/material/request', [MaterialController::class, 'view'])->name('material.request');
     Route::patch('/material/request', [MaterialController::class, 'update'])->name('material.update');

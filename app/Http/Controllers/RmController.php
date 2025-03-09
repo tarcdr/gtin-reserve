@@ -20,10 +20,11 @@ use App\Models\SheetSalesData;
 use App\Models\SheetSuppPartNum;
 use App\Models\SheetUomChar;
 use App\Models\Labels;
+use SimpleXMLElement;
 
-use Illuminate\Support\Facades\DB;
+// use Illuminate\Support\Facades\DB;
 // เปิด Query Log
-DB::enableQueryLog();
+// DB::enableQueryLog();
 
 class RmController extends Controller
 {
@@ -626,5 +627,78 @@ class RmController extends Controller
         return redirect()
             ->route('rm.report', ['tab' => $request->tab])
             ->with('success', 'Data updated successfully.');
+    }
+
+    public function export(Request $request)
+    {
+      $user_login = $request->user()->user_login;
+      $tabs = ['AVAILABILITY', 'CUST_PART_NUM', 'FINANCIAL', 'GENERAL', 'GTINS', 'LOGISTICS', 'PLANNING', 'QTY_CONVERS', 'SALES_DATA', 'SUPP_PART_NUM', 'UOM_CHAR'];
+
+      // Mapping คอลัมน์ของแต่ละ Sheet
+      $columnsConfig = [
+        'AVAILABILITY'  => ['material_id', 'planning_area_id', 'status', 'availability_check_scope', 'status_row', 'user_create'],
+        'CUST_PART_NUM' => ['material_id', 'customer_id', 'customer_part_number', 'status_row', 'user_create'],
+        'FINANCIAL'     => ['material_id', 'company_id', 'business_residence_id', 'status_row', 'user_create'],
+        'GENERAL'       => ['material_id', 'material_desc', 'full_material_desc', 'meterial_desc_th', 'product_category_id', 'mat_type', 'sub_type', 'brand', 'base_uom', 'inv_valuation_uom', 'pillar', 'division', 'department', 'sub_department', 'class', 'sub_class', 'section', 'series', 'attribute_1', 'register_off', 'shelf_life', 'hs_code', 'country', 'old_product_id', 'identified_stock_type', 'serial_number_profile', 'retail_sales_price', 'product_core', 'attribute_2', 'detail_name', 'status_row', 'user_create'],
+        'GTINS'         => ['material_id', 'trading_unit', 'gtin_number', 'status_row', 'user_create'],
+        'LOGISTICS'     => ['material_id', 'planning_area_id', 'status', 'planning_uom', 'demand_manage_procedure', 'procurement_type', 'planning_procedure', 'lot_sizing_method', 'status_row', 'user_create'],
+        'PLANNING'      => ['material_id', 'planning_area_id', 'status', 'planning_uom', 'procurement_type', 'status_row', 'user_create'],
+        'QTY_CONVERS'   => ['material_id', 'quantity', 'quantity_uom', 'corres_qty', 'corres_qty_uom', 'status_row', 'user_create'],
+        'SALES_DATA'    => ['material_id', 'sales_org_id', 'distribution_channel', 'status', 'sales_uom', 'item_group', 'status_row', 'user_create'],
+        'SUPP_PART_NUM' => ['material_id', 'supplier_id', 'supplier_part_number', 'supplier_lead_time', 'status_row', 'user_create'],
+        'UOM_CHAR'      => ['material_id', 'unit_of_measure', 'net_weight', 'uom_net_weight', 'gross_weight', 'uom_gross_weight', 'net_volume', 'uom_net_volume', 'gross_volume', 'uom_gross_volume', 'lengths', 'uom_length', 'width', 'uom_width', 'height', 'uom_height', 'quantity', 'quantity_uom', 'quantity_type_char', 'status_row', 'user_create'],
+      ];
+
+      // ดึงข้อมูลจากฐานข้อมูลเฉพาะ user_create
+      $sheets = [];
+      foreach ($tabs as $tab) {
+        $sheets[$tab] = match ($tab) {
+          'AVAILABILITY'  => SheetAvailability::where('user_create', $user_login)->get(),
+          'CUST_PART_NUM' => SheetCustPartNum::where('user_create', $user_login)->get(),
+          'FINANCIAL'     => SheetFinancial::where('user_create', $user_login)->get(),
+          'GENERAL'       => SheetGeneral::where('user_create', $user_login)->get(),
+          'GTINS'         => SheetGtins::where('user_create', $user_login)->get(),
+          'LOGISTICS'     => SheetLogistics::where('user_create', $user_login)->get(),
+          'PLANNING'      => SheetPlanning::where('user_create', $user_login)->get(),
+          'QTY_CONVERS'   => SheetQtyConvers::where('user_create', $user_login)->get(),
+          'SALES_DATA'    => SheetSalesData::where('user_create', $user_login)->get(),
+          'SUPP_PART_NUM' => SheetSuppPartNum::where('user_create', $user_login)->get(),
+          'UOM_CHAR'      => SheetUomChar::where('user_create', $user_login)->get(),
+          default => [],
+        };
+      }
+
+      // สร้าง XML Document
+      $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><sheets></sheets>');
+
+      // Loop ผ่านแต่ละ Sheet
+      foreach ($sheets as $sheetName => $records) {
+          if ($records->isEmpty()) continue; // ข้ามถ้าไม่มีข้อมูล
+
+          $sheetXml = $xml->addChild('sheet');
+          $sheetXml->addAttribute('name', $sheetName);
+
+          foreach ($records as $record) {
+              $recordXml = $sheetXml->addChild('record');
+
+              // Export เฉพาะ Columns ที่กำหนด
+              $columns = $columnsConfig[$sheetName] ?? [];
+              foreach ($columns as $column) {
+                  if (isset($record->$column)) {
+                      $recordXml->addChild($column, htmlspecialchars($record->$column));
+                  }
+              }
+          }
+      }
+
+      // ตั้งชื่อไฟล์
+      $fileName = 'export_sheets_' . now()->format('Ymd_His') . '.xml';
+      $filePath = storage_path('app/public/' . $fileName);
+
+      // บันทึก XML ไฟล์
+      $xml->asXML($filePath);
+
+      // ให้ดาวน์โหลดไฟล์ และลบทิ้งหลังจากดาวน์โหลดเสร็จ
+      return response()->download($filePath)->deleteFileAfterSend(true);
     }
 }

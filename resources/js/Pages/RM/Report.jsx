@@ -16,6 +16,9 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
     status: ''
   });
   const [dataLabels, setDataLabels] = useState({});
+  const [showGoToBottom, setShowGoToBottom] = useState(true);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
   const { data, setData, processing, errors, patch, delete: actionDelete } = useForm({});
 
   const status = [{
@@ -81,6 +84,35 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
       });
   };
 
+  // ฟังก์ชันเลื่อนขึ้นบนสุด
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ฟังก์ชันเลื่อนลงล่างสุด
+  const scrollToBottom = () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const windowHeight = window.innerHeight;
+
+      // แสดงปุ่ม "Go to Bottom" ถ้าอยู่ด้านบนสุด
+      setShowBackToTop(scrollY > 300);
+
+      // แสดงปุ่ม "Back to Top" ถ้าอยู่ด้านล่างสุด
+      setShowGoToBottom(scrollY + windowHeight < scrollHeight - 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   useEffect(() => {
     const newData = {};
     columns.forEach(column => {
@@ -104,8 +136,11 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
         >
             <Head title="Material Template" />
 
-            <div className="container mx-auto p-6">
+            <div className="container mx-auto py-6">
                 {/* Tabs Header */}
+                <div className="flex items-center justify-end gap-4 mb-2">
+                    <PrimaryButton onClick={() => window.open(route('rm.export'))}>Download</PrimaryButton>
+                </div>
                 <div className="flex flex-wrap border-b border-gray-200">
                     <button
                         className={`px-4 py-2 -mb-px border-b-2 transition-colors duration-300 ${
@@ -199,7 +234,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
 
                 {/* Tabs Content */}
                 <div className="mt-4">
-                    <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div className="w-full mx-auto">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-3 hidden">
                           <div>
                               <InputLabel htmlFor="status" value="Status" />
@@ -318,6 +353,29 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                     </div>
                 </form>
             </Modal>
+            {/* ปุ่ม Go to Bottom (แสดงเฉพาะเมื่ออยู่ด้านบน) */}
+            {showGoToBottom && (
+              <div className="fixed top-10 right-5">
+                <button
+                  onClick={scrollToBottom}
+                  className="bg-gray-800 text-white px-4 py-2 rounded shadow-md hover:bg-gray-700 transition opacity-75"
+                >
+                  ⬇ Go to Bottom
+                </button>
+              </div>
+            )}
+
+            {/* ปุ่ม Back to Top (แสดงเฉพาะเมื่ออยู่ด้านล่าง) */}
+            {showBackToTop && (
+              <div className="fixed bottom-10 right-5">
+                <button
+                  onClick={scrollToTop}
+                  className="bg-gray-800 text-white px-4 py-2 rounded shadow-md hover:bg-gray-700 transition opacity-75"
+                >
+                  ⬆ Back to Top
+                </button>
+              </div>
+            )}
         </AuthenticatedLayout>
     );
 }
