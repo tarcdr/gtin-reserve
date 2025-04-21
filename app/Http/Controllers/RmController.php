@@ -21,6 +21,8 @@ use App\Models\SheetSuppPartNum;
 use App\Models\SheetUomChar;
 use App\Models\Labels;
 use SimpleXMLElement;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 // use Illuminate\Support\Facades\DB;
 // เปิด Query Log
@@ -634,7 +636,6 @@ class RmController extends Controller
       $user_login = $request->user()->user_login;
       $tabs = ['AVAILABILITY', 'CUST_PART_NUM', 'FINANCIAL', 'GENERAL', 'GTINS', 'LOGISTICS', 'PLANNING', 'QTY_CONVERS', 'SALES_DATA', 'SUPP_PART_NUM', 'UOM_CHAR'];
 
-      // Mapping คอลัมน์ของแต่ละ Sheet
       $columnsConfig = [
         'AVAILABILITY'  => ['material_id', 'planning_area_id', 'status', 'availability_check_scope', 'status_row', 'user_create'],
         'CUST_PART_NUM' => ['material_id', 'customer_id', 'customer_part_number', 'status_row', 'user_create'],
@@ -649,56 +650,60 @@ class RmController extends Controller
         'UOM_CHAR'      => ['material_id', 'unit_of_measure', 'net_weight', 'uom_net_weight', 'gross_weight', 'uom_gross_weight', 'net_volume', 'uom_net_volume', 'gross_volume', 'uom_gross_volume', 'lengths', 'uom_length', 'width', 'uom_width', 'height', 'uom_height', 'quantity', 'quantity_uom', 'quantity_type_char', 'status_row', 'user_create'],
       ];
 
-      // ดึงข้อมูลจากฐานข้อมูลเฉพาะ user_create
       $sheets = [];
       foreach ($tabs as $tab) {
-        $sheets[$tab] = match ($tab) {
-          'AVAILABILITY'  => SheetAvailability::where('user_create', $user_login)->get(),
-          'CUST_PART_NUM' => SheetCustPartNum::where('user_create', $user_login)->get(),
-          'FINANCIAL'     => SheetFinancial::where('user_create', $user_login)->get(),
-          'GENERAL'       => SheetGeneral::where('user_create', $user_login)->get(),
-          'GTINS'         => SheetGtins::where('user_create', $user_login)->get(),
-          'LOGISTICS'     => SheetLogistics::where('user_create', $user_login)->get(),
-          'PLANNING'      => SheetPlanning::where('user_create', $user_login)->get(),
-          'QTY_CONVERS'   => SheetQtyConvers::where('user_create', $user_login)->get(),
-          'SALES_DATA'    => SheetSalesData::where('user_create', $user_login)->get(),
-          'SUPP_PART_NUM' => SheetSuppPartNum::where('user_create', $user_login)->get(),
-          'UOM_CHAR'      => SheetUomChar::where('user_create', $user_login)->get(),
-          default => [],
-        };
-      }
-
-      // สร้าง XML Document
-      $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><sheets></sheets>');
-
-      // Loop ผ่านแต่ละ Sheet
-      foreach ($sheets as $sheetName => $records) {
-          if ($records->isEmpty()) continue; // ข้ามถ้าไม่มีข้อมูล
-
-          $sheetXml = $xml->addChild('sheet');
-          $sheetXml->addAttribute('name', $sheetName);
-
-          foreach ($records as $record) {
-              $recordXml = $sheetXml->addChild('record');
-
-              // Export เฉพาะ Columns ที่กำหนด
-              $columns = $columnsConfig[$sheetName] ?? [];
-              foreach ($columns as $column) {
-                  if (isset($record->$column)) {
-                      $recordXml->addChild($column, htmlspecialchars($record->$column));
-                  }
-              }
+          $model = "\\App\\Models\\Sheet" . Str::studly(Str::lower($tab));
+          if (class_exists($model)) {
+              $sheets[$tab] = $model::where('user_create', $user_login)->get();
           }
       }
 
-      // ตั้งชื่อไฟล์
-      $fileName = 'export_sheets_' . now()->format('Ymd_His') . '.xml';
+      ob_start(); // จับ output ทั้งหมดลง buffer เพื่อกัน BOM
+
+      echo '<?xml version="1.0"?>' . "\n";
+      echo '<?mso-application progid="Excel.Sheet"?>' . "\n";
+      echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+          xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+          xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n";
+
+      foreach ($sheets as $sheetName => $records) {
+          if ($records->isEmpty()) continue;
+
+          echo "<Worksheet ss:Name=\"{$sheetName}\">\n";
+          echo "<Table>\n";
+
+          // Header row
+          echo "<Row>\n";
+          foreach ($columnsConfig[$sheetName] ?? [] as $col) {
+              echo "<Cell><Data ss:Type=\"String\">" . htmlspecialchars($col) . "</Data></Cell>\n";
+          }
+          echo "</Row>\n";
+
+          // Data rows
+          foreach ($records as $record) {
+              echo "<Row>\n";
+              foreach ($columnsConfig[$sheetName] ?? [] as $col) {
+                  $value = $record->$col ?? '';
+                  $type = is_numeric($value) ? 'Number' : 'String';
+                  echo "<Cell><Data ss:Type=\"{$type}\">" . htmlspecialchars($value) . "</Data></Cell>\n";
+              }
+              echo "</Row>\n";
+          }
+
+          echo "</Table>\n";
+          echo "</Worksheet>\n";
+      }
+
+      echo "</Workbook>\n";
+
+      $output = ob_get_clean(); // เก็บ output จาก buffer
+
+      $fileName = 'export_excel_' . now()->format('Ymd_His') . '.xml';
       $filePath = storage_path('app/public/' . $fileName);
+      file_put_contents($filePath, trim($output)); // trim เพื่อกัน whitespace หน้า xml
 
-      // บันทึก XML ไฟล์
-      $xml->asXML($filePath);
-
-      // ให้ดาวน์โหลดไฟล์ และลบทิ้งหลังจากดาวน์โหลดเสร็จ
       return response()->download($filePath)->deleteFileAfterSend(true);
     }
 }

@@ -101,6 +101,9 @@ export default function Authenticated({ user, header, children }) {
                                         </Dropdown>
                                     </div>
                                 </div>
+                                <NavLink href={route('rm.report')} active={route().current('rm.report')}>
+                                    Export-to-SAP
+                                </NavLink>
                                 <NavLink href={route('dashboard')} active={route().current('admin')}>
                                     Admin
                                 </NavLink>
