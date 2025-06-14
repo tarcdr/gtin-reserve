@@ -35,7 +35,14 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'view'])->name('dashboard');
 
-    Route::get('/product/new', [ProductController::class, 'view'])->name('product.new');
+    Route::get('/product/new', [ProductController::class, 'new'])->name('product.new');
+    Route::patch('/product/create', [ProductController::class, 'create'])->name('product.create');
+    Route::get('/product/search', [ProductController::class, 'search'])->name('product.search');
+    Route::patch('/product/search', [ProductController::class, 'find'])->name('product.search');
+    Route::get('/product/search/bom', [ProductController::class, 'searchBom'])->name('product.search.bom');
+    Route::patch('/product/search/bom', [ProductController::class, 'findBom'])->name('product.search.bom');
+    Route::get('/product/view', [ProductController::class, 'view'])->name('product.view');
+    Route::get('/product/edit', [ProductController::class, 'edit'])->name('product.edit');
     Route::get('/rm/material_create', [RmController::class, 'view'])->name('rm.material_create');
     Route::get('/rm/component_request', [RmController::class, 'viewComponentRequest'])->name('rm.component_request');
     Route::get('/rm/report/{tab?}', [RmController::class, 'report'])->name('rm.report');

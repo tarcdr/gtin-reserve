@@ -22,11 +22,13 @@ export default function Dashboard({ auth, message = '' }) {
                                   </span>
                                 </PrimaryButton>
                             </Link>
-                            <PrimaryButton className="ml-3 font-bold py-4 px-8">
-                              <span className="text-3xl">
-                                Existing
-                              </span>
-                            </PrimaryButton>
+                            <Link href={route('product.search')}>
+                                <PrimaryButton className="ml-3 font-bold py-4 px-8">
+                                  <span className="text-3xl">
+                                    Existing
+                                  </span>
+                                </PrimaryButton>
+                            </Link>
                         </div>
 
                         <div className="p-6 text-gray-900">{parse(message)}</div>
