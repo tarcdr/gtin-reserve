@@ -1,61 +1,33 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
 import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
-import ReactSelect from 'react-select';
 import SuccessButton from '@/Components/SuccessButton';
 import DangerButton from '@/Components/DangerButton';
 
-export default function ProductDetail({ auth, InputData, isDisabled = true, brands = [], mattypes = [], sites = [], materials = [] }) {
-  const [showSite, setShowSite] = useState(false);
-  const [showBomId, setShowBomId] = useState(false);
-  const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
+export default function ProductDetail({ auth, InputData, isDisabled = true, brands = [], mattypes = [], materials = [] }) {
+  const { data, setData, patch, errors, processing } = useForm({
     brand: InputData?.brand || '',
     mattype: InputData?.mattype || '',
     subMattype: InputData?.subMattype || '',
-    productGroup: InputData?.productGroup || '',
-    finishGoods: InputData?.finishGoods || '',
-    site: InputData?.site || '',
     materialId: InputData?.materialId || '',
     bomId: InputData?.bomId || '',
-    materialDesc: InputData?.materialDesc || '',
-    fullDescEn: InputData?.fullDescEn || '',
-    fullDescTh: InputData?.fullDescTh || '',
+    bomDesc: InputData?.bomDesc || '',
     uom: InputData?.uom || ''
   });
+
+  const goToPackMaterial = () => {
+    router.post('/packmaterial/new', { bomId: data.bomId, bomDesc: data.bomDesc });
+  };
 
   const submit = (e) => {
     e.preventDefault();
     patch(route('product.create'));
   };
-
-  useEffect(() => {
-    let dispSite = false;
-    const mattype = mattypes.find(mat => mat.code === data.mattype);
-    if (mattype && mattype?.showSite) {
-      dispSite = true;
-    }
-    let dispBomId = false;
-    const mattype2 = mattypes.find(mat => mat.code === data.mattype);
-    if (mattype2 && mattype2?.showBomId) {
-      dispBomId = true;
-    }
-    setShowSite(dispSite);
-    setShowBomId(dispBomId);
-  }, [data.mattype]);
-
-  useEffect(() => {
-    if (recentlySuccessful && InputData?.success) {
-      setTimeout(() => {
-        window.open('/material/report', '_self');
-      }, 500);
-    }
-  }, [recentlySuccessful]);
 
   return (
     <AuthenticatedLayout
@@ -143,10 +115,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   <InputError className="mt-2" message={errors.materialId} />
                 </div>
                 <div>
-                  <InputLabel htmlFor="bomId" value="Material Status" />
+                  <InputLabel htmlFor="materialStatus" value="Material Status" />
 
                   <TextInput
-                    id="bomId"
+                    id="materialStatus"
                     className="mt-1 block w-full bg-gray-100"
                     disabled
                     defaultValue="INS"
@@ -161,6 +133,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                     id="bomId"
                     className="mt-1 block w-full bg-gray-100"
                     disabled
+                    defaultValue={data.bomId}
                   />
                 </div>
                 <div>
@@ -169,6 +142,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   <TextInput
                     id="bomDesc"
                     className="mt-1 block w-full"
+                    value={data.bomDesc}
+                    onChange={(e) => setData('bomDesc', e.target.value)}
                   />
                 </div>
               </div>
@@ -230,6 +205,49 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   </div>
                 </div>
               )}
+              <fieldset className="border border-gray-300 rounded-md p-4 mt-8">
+                <legend className="px-2 text-gray-600">Components</legend>
+                <div className="flex items-center justify-end gap-4 mb-2">
+                    <SuccessButton type="button" onClick={goToPackMaterial}>Add Component</SuccessButton>
+                </div>
+                <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                  <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
+                    <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+                        <tr>
+                            <th scope="col" className="px-6 py-3">
+                                #
+                            </th>
+                            <th scope="col" className="px-6 py-3">
+                                Component ID
+                            </th>
+                            <th scope="col" className="px-6 py-3">
+                                Description
+                            </th>
+                            <th scope="col" className="px-6 py-3" width="100">
+                                Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row" className="px-6 py-4">
+                          1
+                        </th>
+                        <th scope="row" className="px-6 py-4">
+                          56000001
+                        </th>
+                        <th scope="row" className="px-6 py-4">
+                          LLLLLLLL
+                        </th>
+                        <td className="px-6 py-4 flex gap-2">
+                          <DangerButton type="button">DELETE</DangerButton>
+                          <PrimaryButton type="button">Edit</PrimaryButton>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </fieldset>
               <div className="flex items-center justify-center gap-4">
                 <Link href={route('dashboard')}>
                   <SecondaryButton>

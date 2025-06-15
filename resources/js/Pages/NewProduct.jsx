@@ -20,7 +20,7 @@ export default function Request({ auth, InputData, brands = [], mattypes = [], s
     site: '',
     materialId: '',
     bomId: '',
-    materialDesc: '',
+    searchDesc: '',
     fullDescEn: '',
     fullDescTh: '',
     uom: ''
@@ -205,17 +205,17 @@ export default function Request({ auth, InputData, brands = [], mattypes = [], s
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <InputLabel htmlFor="materialDesc" value="Search Description" />
+                  <InputLabel htmlFor="searchDesc" value="Search Description" />
 
                   <TextInput
-                    id="materialDesc"
+                    id="searchDesc"
                     className="mt-1 block w-full border-gray-300 rounded-md"
-                    value={data.materialDesc}
+                    value={data.searchDesc}
                     maxLength="40"
-                    onChange={(e) => setData('materialDesc', e.target.value)}
+                    onChange={(e) => setData('searchDesc', e.target.value)}
                   />
 
-                  <InputError className="mt-2" message={errors.materialDesc} />
+                  <InputError className="mt-2" message={errors.searchDesc} />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

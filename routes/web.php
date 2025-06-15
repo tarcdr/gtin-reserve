@@ -8,6 +8,7 @@ use App\Http\Controllers\BomController;
 use App\Http\Controllers\BusinessSupplyController;
 use App\Http\Controllers\RequestFormController;
 use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\PackMaterialController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -49,7 +50,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/rm/confirm', [RmController::class, 'update'])->name('rm.confirm');
     Route::delete('/rm/delete', [RmController::class, 'delete'])->name('rm.delete');
     Route::get('/rm/export', [RmController::class, 'export'])->name('rm.export');
-    
+
+    Route::get('/packmaterial/new', [PackMaterialController::class, 'new'])->name('packmaterial.new');
+    Route::post('/packmaterial/new', [PackMaterialController::class, 'callNew'])->name('packmaterial.new');
+    Route::patch('/packmaterial/create', [PackMaterialController::class, 'create'])->name('packmaterial.create');
+
     Route::get('/bom/create', [BomController::class, 'create'])->name('bom.create');
     Route::patch('/bom/create', [BomController::class, 'process'])->name('bom.create');
     Route::get('/bom/new', [BomController::class, 'view'])->name('bom.new');

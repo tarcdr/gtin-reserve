@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class ProductCreateRequest extends FormRequest
+class PackMaterialCreateRequest extends FormRequest
 {
   /**
    * Get the validation rules that apply to the request.
@@ -18,10 +18,8 @@ class ProductCreateRequest extends FormRequest
     return [
       'brand'        => ['required'],
       'mattype'      => ['required'],
-      'site'         => ['required_if:mattype,1'],
       'subMattype'   => ['required'],
-      'productGroup' => ['required'],
-      'finishGoods'  => ['required'],
+      'componentId'  => ['required'],
       'searchDesc'   => ['required'],
       'fullDescEn'   => ['required'],
       'fullDescTh'   => ['required'],
@@ -34,10 +32,8 @@ class ProductCreateRequest extends FormRequest
     return [
       'brand'        => 'Brand',
       'mattype'      => 'Mattye',
-      'site'         => 'Site',
       'subMattype'   => 'Sub Mattype',
-      'productGroup' => 'Product Group',
-      'finishGoods'  => 'Finish Goods',
+      'componentId'  => 'Component ID',
       'searchDesc'   => 'Search Description',
       'fullDescEn'   => 'Full Description (EN)',
       'fullDescTh'   => 'Full Description (TH)',

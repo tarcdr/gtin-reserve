@@ -42,6 +42,9 @@ class ProductController extends Controller
     "showSite" => true,
     "showBomId" => true
   ], [
+    "code" => "5",
+    "label" => "5"
+  ], [
     "code" => "7",
     "label" => "7"
   ], [
@@ -66,7 +69,7 @@ class ProductController extends Controller
   public function new(Request $request): Response
   {
     $brands = $this->brands;
-    $mattypes = self::$mattypes;
+    $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
     $sites = self::$sites;
     return Inertia::render('NewProduct', compact('brands', 'mattypes', 'sites'));
   }
@@ -74,7 +77,7 @@ class ProductController extends Controller
   public function view(Request $request): Response
   {
     $brands = $this->brands;
-    $mattypes = self::$mattypes;
+    $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
     $sites = self::$sites;
     $materials = $this->materials;
     $InputData = [
@@ -82,6 +85,8 @@ class ProductController extends Controller
       'mattype'    => $request->mattype,
       'subMattype' => $request->subMattype,
       'materialId' => $request->materialId,
+      'bomId'      => $request->bomId,
+      'bomDesc'    => $request->bomDesc,
     ];
     return Inertia::render('ProductDetail', compact('InputData', 'brands', 'mattypes', 'sites', 'materials'));
   }
@@ -99,20 +104,20 @@ class ProductController extends Controller
   public function search(Request $request): Response
   {
     $brands = $this->brands;
-    $mattypes = self::$mattypes;
+    $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
     return Inertia::render('ProductSearch', compact('brands', 'mattypes'));
   }
 
   public function searchBom(Request $request): Response
   {
     $brands = $this->brands;
-    $mattypes = self::$mattypes;
+    $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
     $materials = $this->materials;
     $InputData = [
       'brand'      => $request->brand,
       'mattype'    => $request->mattype,
       'subMattype' => $request->subMattype,
-      'status'     => 'INS'
+      'status'     => 'INS',
     ];
     return Inertia::render('ProductSearchBom', compact('InputData', 'brands', 'mattypes', 'materials'));
   }
@@ -120,7 +125,7 @@ class ProductController extends Controller
   public function edit(Request $request): Response
   {
     $brands = $this->brands;
-    $mattypes = self::$mattypes;
+    $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
     return Inertia::render('ProductSearch', compact('brands', 'mattypes'));
   }
 
@@ -141,6 +146,8 @@ class ProductController extends Controller
       'mattype'    => $request->mattype,
       'subMattype' => $request->subMattype,
       'materialId' => $request->materialId['code'],
+      'bomId'      => 'B10SW00727_RJ_01',
+      'bomDesc'    => 'Description of BOM ID',
     ];
     return Redirect::route('product.view', $InputData);
   }
