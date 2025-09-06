@@ -90,6 +90,7 @@ class ProductController extends Controller
     $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
     $materials = $this->materials;
     $sites = $this->masterSite;
+    $finishGoods = $this->mk->subcategoriesOf('10');
     $InputData = [
       'brand'      => $request->brand,
       'mattype'    => $request->mattype,
@@ -97,8 +98,15 @@ class ProductController extends Controller
       'materialId' => $request->materialId,
       'bomId'      => $request->bomId,
       'bomDesc'    => $request->bomDesc,
+      'finishGoods'  => '10BR',
+      'fullDescEn'   => 'Test',
+      'fullDescTh'   => 'ทดสอบ',
+      'searchDesc'   => 'ทดสอบ ค้นหา',
+      'productGroup' => 'AT HOME',
+      'site'         => '01',
+      'uom'          => 'Z06',
     ];
-    return Inertia::render('ProductDetail', compact('InputData', 'brands', 'mattypes', 'sites', 'materials'));
+    return Inertia::render('ProductDetail', compact('InputData', 'brands', 'mattypes', 'sites', 'materials', 'finishGoods'));
   }
 
   public function create(ProductCreateRequest $request): RedirectResponse
@@ -152,12 +160,19 @@ class ProductController extends Controller
   public function findBom(ProductSearchBomRequest $request): RedirectResponse
   {
     $InputData = [
-      'brand'      => $request->brand,
-      'mattype'    => $request->mattype,
-      'subMattype' => $request->subMattype,
-      'materialId' => $request->materialId['code'],
-      'bomId'      => 'B10SW00727_RJ_01',
-      'bomDesc'    => 'Description of BOM ID',
+      'brand'        => $request->brand,
+      'mattype'      => $request->mattype,
+      'subMattype'   => $request->subMattype,
+      'materialId'   => $request->materialId['code'],
+      'bomId'        => 'B10SW00727_RJ_01',
+      'bomDesc'      => 'Description of BOM ID',
+      'finishGoods'  => '10BR',
+      'fullDescEn'   => 'Test',
+      'fullDescTh'   => 'ทดสอบ',
+      'searchDesc'   => 'ทดสอบ ค้นหา',
+      'productGroup' => 'AT HOME',
+      'site'         => '01',
+      'uom'          => 'Z06',
     ];
     return Redirect::route('product.view', $InputData);
   }

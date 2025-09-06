@@ -21,6 +21,13 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
     materialId: InputData?.materialId || '',
     bomId: InputData?.bomId || '',
     bomDesc: InputData?.bomDesc || '',
+    uom: InputData?.uom || '',
+    finishGoods: InputData?.finishGoods || '',
+    fullDescEn: InputData?.fullDescEn || '',
+    fullDescTh: InputData?.fullDescTh || '',
+    searchDesc: InputData?.searchDesc || '',
+    productGroup: InputData?.productGroup || '',
+    site: InputData?.site || '',
     uom: InputData?.uom || ''
   });
 
@@ -325,15 +332,6 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   </table>
                 </div>
               </fieldset>
-              <div>
-                <SuccessButton type="button">Create Semi FG Lelve</SuccessButton>
-              </div>
-              <div>
-                <SuccessButton type="button">Create Semi FG Lelve 1</SuccessButton>
-              </div>
-              <div>
-                <SuccessButton type="button">Create Business Supply</SuccessButton>
-              </div>
               {data?.mattype === '1' && (
                 <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -343,6 +341,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                       <TextInput
                         id="materialIdLv2"
                         className="mt-1 block w-full bg-gray-100"
+                        value="KEY_OF_FG_LV_2"
                         disabled
                       />
                     </div>
@@ -352,6 +351,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                       <TextInput
                         id="materialIdLv2Desc"
                         className="mt-1 block w-full bg-gray-100"
+                        value="DESC_OF_FG_LV_2"
                         disabled
                       />
                     </div>
@@ -362,6 +362,12 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   </div>
                 </div>
               )}
+              <div>
+                <SuccessButton type="button">Create Semi FG Lelve 1</SuccessButton>
+              </div>
+              <div>
+                <SuccessButton type="button">Create Business Supply</SuccessButton>
+              </div>
               <div className="flex items-center justify-center gap-4">
                 <Link href={route('dashboard')}>
                   <SecondaryButton>
