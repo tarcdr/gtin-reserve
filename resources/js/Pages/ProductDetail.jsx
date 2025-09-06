@@ -8,8 +8,12 @@ import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
 import SuccessButton from '@/Components/SuccessButton';
 import DangerButton from '@/Components/DangerButton';
+import { useState } from 'react';
+import { useEffect } from 'react';
 
-export default function ProductDetail({ auth, InputData, isDisabled = true, brands = [], mattypes = [], materials = [] }) {
+export default function ProductDetail({ auth, InputData, isDisabled = true, brands = [], mattypes = [], sites = [], masterUom = [], finishGoods = [] }) {
+  const [showSite, setShowSite] = useState(false);
+  const [showBomId, setShowBomId] = useState(false);
   const { data, setData, patch, errors, processing } = useForm({
     brand: InputData?.brand || '',
     mattype: InputData?.mattype || '',
@@ -28,6 +32,21 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
     e.preventDefault();
     patch(route('product.create'));
   };
+  
+  useEffect(() => {
+    let dispSite = false;
+    const mattype = mattypes.find(mat => mat.code === data.mattype);
+    if (mattype && mattype?.showSite) {
+      dispSite = true;
+    }
+    let dispBomId = false;
+    const mattype2 = mattypes.find(mat => mat.code === data.mattype);
+    if (mattype2 && mattype2?.showBomId) {
+      dispBomId = true;
+    }
+    setShowSite(dispSite);
+    setShowBomId(dispBomId);
+  }, [data.mattype]);
 
   return (
     <AuthenticatedLayout
@@ -88,77 +107,162 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   >
                     <option value="">---- Select Sub Mattype ----</option>
                     {brands?.map(o => (
-                      <option key={`subMattype-code-${o.code}`} value={o.code}>{`${o.code} - ${o?.label || o.code}`}</option>
+                      <option key={`subMattype-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.code}`}</option>
                     ))}
                   </select>
 
                   <InputError className="mt-2" message={errors.subMattype} />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <InputLabel htmlFor="materialId" value="Material ID FG" />
+                  <InputLabel htmlFor="productGroup" value="Product Group" />
                   <select
-                    id="materialId"
+                    id="productGroup"
                     className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
-                    onChange={(e) => setData('materialId', e.target.value)}
-                    defaultValue={data.materialId}
+                    onChange={(e) => setData('productGroup', e.target.value)}
+                    defaultValue={data.productGroup}
                     disabled={isDisabled}
                   >
-                    <option value="">---- Select Material ID FG ----</option>
-                    {materials?.map(o => (
-                      <option key={`materialId-code-${o.code}`} value={o.code}>{`${o.code} - ${o.label}`}</option>
+                    <option value="">---- Select Product Group ----</option>
+                    {brands?.map(o => (
+                      <option key={`productGroup-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.code}`}</option>
                     ))}
                   </select>
 
-                  <InputError className="mt-2" message={errors.materialId} />
+                  <InputError className="mt-2" message={errors.productGroup} />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <InputLabel htmlFor="materialStatus" value="Material Status" />
+                  <InputLabel htmlFor="finishGoods" value="Finish Goods" />
+                  <select
+                    id="finishGoods"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
+                    onChange={(e) => setData('finishGoods', e.target.value)}
+                    defaultValue={data.finishGoods}
+                    disabled={isDisabled}
+                  >
+                    <option value="">---- Select Finish Goods ----</option>
+                    {finishGoods?.map(o => (
+                      <option key={`finishGoods-code-${o.code}`} value={o.code}>{`${o.code} - ${o.name}`}</option>
+                    ))}
+                  </select>
+
+                  <InputError className="mt-2" message={errors.finishGoods} />
+                </div>
+                {showSite && (
+                  <div>
+                    <InputLabel htmlFor="site" value="Site" />
+                    <select
+                      id="site"
+                      className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
+                      onChange={(e) => setData('site', e.target.value)}
+                      defaultValue={data.site}
+                      disabled={isDisabled}
+                    >
+                      <option value="">---- Select Site ----</option>
+                      {sites?.map(o => (
+                        <option key={`site-code-${o.value}`} value={o.value}>{`${o.value} - ${o.label}`}</option>
+                      ))}
+                    </select>
+
+                    <InputError className="mt-2" message={errors.site} />
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <InputLabel htmlFor="materialId" value="Suggest Material ID" />
 
                   <TextInput
-                    id="materialStatus"
+                    id="materialId"
                     className="mt-1 block w-full bg-gray-100"
                     disabled
-                    defaultValue="INS"
                   />
+                </div>
+              </div>
+              {showBomId && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <InputLabel htmlFor="bomId" value="BOM ID For FG" />
+
+                      <TextInput
+                        id="bomId"
+                        className="mt-1 block w-full bg-gray-100"
+                        disabled
+                        defaultValue={data.bomId}
+                      />
+                    </div>
+                    <div>
+                      <InputLabel htmlFor="bomDesc" value="Description of BOM ID" />
+
+                      <TextInput
+                        id="bomDesc"
+                        className="mt-1 block w-full"
+                        value={data.bomDesc}
+                        onChange={(e) => setData('bomDesc', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <InputLabel htmlFor="bomStatus" value="BOM Status" />
+
+                      <TextInput
+                        id="bomStatus"
+                        className="mt-1 block w-full bg-gray-100"
+                        disabled
+                        defaultValue="INS"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <InputLabel htmlFor="searchDesc" value="Search Description" />
+
+                  <TextInput
+                    id="searchDesc"
+                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    value={data.searchDesc}
+                    maxLength="40"
+                    onChange={(e) => setData('searchDesc', e.target.value)}
+                  />
+
+                  <InputError className="mt-2" message={errors.searchDesc} />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <InputLabel htmlFor="bomId" value="BOM ID For FG" />
+                  <InputLabel htmlFor="fullDescEn" value="Full Description (EN)" />
 
                   <TextInput
-                    id="bomId"
-                    className="mt-1 block w-full bg-gray-100"
-                    disabled
-                    defaultValue={data.bomId}
+                    id="fullDescEn"
+                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    value={data.fullDescEn}
+                    maxLength="40"
+                    onChange={(e) => setData('fullDescEn', e.target.value)}
                   />
+
+                  <InputError className="mt-2" message={errors.fullDescEn} />
                 </div>
                 <div>
-                  <InputLabel htmlFor="bomDesc" value="Description of BOM ID" />
+                  <InputLabel htmlFor="fullDescTh" value="Full Description (TH)" />
 
                   <TextInput
-                    id="bomDesc"
-                    className="mt-1 block w-full"
-                    value={data.bomDesc}
-                    onChange={(e) => setData('bomDesc', e.target.value)}
+                    id="fullDescTh"
+                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    value={data.fullDescTh}
+                    maxLength="40"
+                    onChange={(e) => setData('fullDescTh', e.target.value)}
                   />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <InputLabel htmlFor="bomStatus" value="BOM Status" />
 
-                  <TextInput
-                    id="bomStatus"
-                    className="mt-1 block w-full bg-gray-100"
-                    disabled
-                    defaultValue="INS"
-                  />
+                  <InputError className="mt-2" message={errors.fullDescTh} />
                 </div>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <InputLabel htmlFor="uom" value="UOM" />
@@ -170,41 +274,14 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                     disabled={isDisabled}
                   >
                     <option value="">---- Select UOM ----</option>
-                    {brands?.map(o => (
-                      <option key={`uom-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.code}`}</option>
+                    {masterUom?.map(o => (
+                      <option key={`uom-code-${o.value}`} value={o.value}>{o.label}</option>
                     ))}
                   </select>
 
                   <InputError className="mt-2" message={errors.uom} />
                 </div>
               </div>
-              {data?.mattype === '1' && (
-                <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <InputLabel htmlFor="materialIdLv2" value="Material ID Semi FG Lv.2" />
-
-                      <TextInput
-                        id="materialIdLv2"
-                        className="mt-1 block w-full bg-gray-100"
-                        disabled
-                      />
-                    </div>
-                    <div>
-                      <InputLabel htmlFor="materialIdLv2Desc" value="Description of Lv.2" />
-
-                      <TextInput
-                        id="materialIdLv2Desc"
-                        className="mt-1 block w-full"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <SuccessButton type="button">Add FG Lv.2</SuccessButton>
-                    <PrimaryButton type="button">Edit FG Lv.2</PrimaryButton>
-                  </div>
-                </div>
-              )}
               <fieldset className="border border-gray-300 rounded-md p-4 mt-8">
                 <legend className="px-2 text-gray-600">Components</legend>
                 <div className="flex items-center justify-end gap-4 mb-2">
@@ -248,6 +325,43 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   </table>
                 </div>
               </fieldset>
+              <div>
+                <SuccessButton type="button">Create Semi FG Lelve</SuccessButton>
+              </div>
+              <div>
+                <SuccessButton type="button">Create Semi FG Lelve 1</SuccessButton>
+              </div>
+              <div>
+                <SuccessButton type="button">Create Business Supply</SuccessButton>
+              </div>
+              {data?.mattype === '1' && (
+                <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <InputLabel htmlFor="materialIdLv2" value="Material ID Semi FG Lv.2" />
+
+                      <TextInput
+                        id="materialIdLv2"
+                        className="mt-1 block w-full bg-gray-100"
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <InputLabel htmlFor="materialIdLv2Desc" value="Description of Lv.2" />
+
+                      <TextInput
+                        id="materialIdLv2Desc"
+                        className="mt-1 block w-full bg-gray-100"
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    {/* <SuccessButton type="button">Add FG Lv.2</SuccessButton> */}
+                    <PrimaryButton type="button">Edit FG Lv.2</PrimaryButton>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-center gap-4">
                 <Link href={route('dashboard')}>
                   <SecondaryButton>

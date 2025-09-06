@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
 
-export default function Request({ auth, InputData, brands = [], mattypes = [], sites = [] }) {
+export default function Request({ auth, InputData, brands = [], mattypes = [], sites = [], masterUom = [], finishGoods = [] }) {
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
   const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
@@ -144,8 +144,8 @@ export default function Request({ auth, InputData, brands = [], mattypes = [], s
                     defaultValue={data.finishGoods}
                   >
                     <option value="">---- Select Finish Goods ----</option>
-                    {brands?.map(o => (
-                      <option key={`finishGoods-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.code}`}</option>
+                    {finishGoods?.map(o => (
+                      <option key={`finishGoods-code-${o.code}`} value={o.code}>{`${o.code} - ${o.name}`}</option>
                     ))}
                   </select>
 
@@ -162,7 +162,7 @@ export default function Request({ auth, InputData, brands = [], mattypes = [], s
                     >
                       <option value="">---- Select Site ----</option>
                       {sites?.map(o => (
-                        <option key={`site-code-${o.code}`} value={o.code}>{o.label}</option>
+                        <option key={`site-code-${o.value}`} value={o.value}>{`${o.value} - ${o.label}`}</option>
                       ))}
                     </select>
 
@@ -257,8 +257,8 @@ export default function Request({ auth, InputData, brands = [], mattypes = [], s
                     defaultValue={data.uom}
                   >
                     <option value="">---- Select UOM ----</option>
-                    {brands?.map(o => (
-                      <option key={`uom-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.code}`}</option>
+                    {masterUom?.map(o => (
+                      <option key={`uom-code-${o.value}`} value={o.value}>{o.label}</option>
                     ))}
                   </select>
 

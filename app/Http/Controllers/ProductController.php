@@ -11,14 +11,21 @@ use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Brand;
+use App\Models\MasterUOM;
+use App\Models\MasterLogisitcSite;
+use App\Services\MasterCatLookup;
 
 class ProductController extends Controller
 {
   protected $brands;
   protected $materials;
+  protected $masterUom;
+  protected $masterSite;
+  protected MasterCatLookup $mk;
 
-  public function __construct()
+  public function __construct(MasterCatLookup $mk)
   {
+    $this->mk = $mk;
     $this->brands = Brand::all()->map(function ($b) {
       return [
         "abb"  => $b->brand_abb,
@@ -34,6 +41,18 @@ class ProductController extends Controller
         "label" => "002"
       ]
     ];
+    $this->masterUom = MasterUOM::all()->map(function ($b) {
+      return [
+        "value" => $b->code_uom,
+        "label" => $b->description_uom,
+      ];
+    })->toArray();
+    $this->masterSite = MasterLogisitcSite::all()->map(function ($b) {
+      return [
+        "value" => $b->no,
+        "label" => $b->site,
+      ];
+    })->toArray();
   }
 
   static $mattypes = [[
@@ -55,31 +74,22 @@ class ProductController extends Controller
     "label" => "9"
   ]];
 
-  static $sites = [[
-    "code" => "RJ",
-    "label" => "RJ"
-  ], [
-    "code" => "RK",
-    "label" => "RK"
-  ], [
-    "code" => "SN",
-    "label" => "SN"
-  ]];
-
   public function new(Request $request): Response
   {
     $brands = $this->brands;
     $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
-    $sites = self::$sites;
-    return Inertia::render('NewProduct', compact('brands', 'mattypes', 'sites'));
+    $masterUom = $this->masterUom;
+    $sites = $this->masterSite;
+    $finishGoods = $this->mk->subcategoriesOf('10');
+    return Inertia::render('NewProduct', compact('brands', 'mattypes', 'sites', 'masterUom', 'finishGoods'));
   }
 
   public function view(Request $request): Response
   {
     $brands = $this->brands;
     $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
-    $sites = self::$sites;
     $materials = $this->materials;
+    $sites = $this->masterSite;
     $InputData = [
       'brand'      => $request->brand,
       'mattype'    => $request->mattype,
