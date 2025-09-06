@@ -27,8 +27,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
     fullDescTh: InputData?.fullDescTh || '',
     searchDesc: InputData?.searchDesc || '',
     productGroup: InputData?.productGroup || '',
-    site: InputData?.site || '',
-    uom: InputData?.uom || ''
+    site: InputData?.site || ''
   });
 
   const goToPackMaterial = () => {
