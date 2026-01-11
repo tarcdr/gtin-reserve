@@ -238,49 +238,55 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                 </div>
 
                 {/* Scrollable Table */}
-                <div className="bg-white shadow-sm sm:rounded-lg w-full overflow-x-auto">
-                  <table className="min-w-[640px] w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
-                    <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
-                      <tr>
-                        <th scope="col" className="px-6 py-3">#</th>
-                        {columns.filter(column => !column?.hidden).map(column => (
-                          <th scope="col" className="px-6 py-3" key={`${activeTab}-column-${column.name}`}>
-                            {dataLabels[column.label] || column.label}
-                          </th>
-                        ))}
-                        <th className="text-center">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {datas.map((o, index) => (
-                        <tr key={`${activeTab}-tr-${index}`} className="border-b">
-                          <td scope="row" className="px-6 py-4">{index + 1}</td>
+                <div className="bg-white shadow-sm sm:rounded-lg w-full">
+                  <div className="max-h-[calc(100vh-240px)] overflow-auto">
+                    <table className="min-w-[640px] w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
+                      <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+                        <tr>
+                          <th scope="col" className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-700 px-6 py-3">#</th>
                           {columns.filter(column => !column?.hidden).map(column => (
-                            <td scope="col" className="px-6 py-3" key={`${activeTab}-data-${column.name}`}>
-                              {activeTab === 'GTINS' && (gtinColumnNames.has(column.name) || gtinColumnLabels.has(column.label) || gtinColumnLabels.has(dataLabels[column.label]))
-                                ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => openGtinModal(o[column.name])}
-                                    className="text-blue-600 hover:underline"
-                                  >
-                                    {o[column.name]}
-                                  </button>
-                                ) : (
-                                  o[column.name]
-                                )}
-                            </td>
+                            <th
+                              scope="col"
+                              className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-700 px-6 py-3"
+                              key={`${activeTab}-column-${column.name}`}
+                            >
+                              {dataLabels[column.label] || column.label}
+                            </th>
                           ))}
-                          <td className="text-center px-6 py-3">
-                            <div className="flex flex-wrap gap-1 items-center justify-center">
-                              <SecondaryButton disabled={o?.status_row === 'ETS'} onClick={() => toggleModal(o)}>Edit</SecondaryButton>
-                              <DangerButton disabled={o?.status_row === 'ETS'} onClick={() => toggleDelete(o)}>Delete</DangerButton>
-                            </div>
-                          </td>
+                          <th className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-700 text-center px-6 py-3 w-[160px]">Action</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {datas.map((o, index) => (
+                          <tr key={`${activeTab}-tr-${index}`} className="border-b">
+                            <td scope="row" className="px-6 py-4">{index + 1}</td>
+                            {columns.filter(column => !column?.hidden).map(column => (
+                              <td scope="col" className="px-6 py-3" key={`${activeTab}-data-${column.name}`}>
+                                {activeTab === 'GTINS' && (gtinColumnNames.has(column.name) || gtinColumnLabels.has(column.label) || gtinColumnLabels.has(dataLabels[column.label]))
+                                  ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => openGtinModal(o[column.name])}
+                                      className="text-blue-600 hover:underline"
+                                    >
+                                      {o[column.name]}
+                                    </button>
+                                  ) : (
+                                    o[column.name]
+                                  )}
+                              </td>
+                            ))}
+                            <td className="text-center px-6 py-3 w-[160px]">
+                              <div className="flex flex-nowrap gap-1 items-center justify-center">
+                                <SecondaryButton disabled={o?.status_row === 'ETS'} onClick={() => toggleModal(o)}>Edit</SecondaryButton>
+                                <DangerButton disabled={o?.status_row === 'ETS'} onClick={() => toggleDelete(o)}>Delete</DangerButton>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
