@@ -1,12 +1,12 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { useForm } from '@inertiajs/react';
 import SecondaryButton from '@/Components/SecondaryButton';
 
-export default function Request({ auth, brands = [], mattypes = [] }) {
+export default function ProductSearch({ auth, brands = [], mattypes = [] }) {
   const { data, setData, patch, errors, processing } = useForm({
     brand: '',
     mattype: '',
@@ -83,11 +83,9 @@ export default function Request({ auth, brands = [], mattypes = [] }) {
                 </div>
               </div>
               <div className="flex items-center justify-center gap-4">
-                <Link href={route('dashboard')}>
-                  <SecondaryButton>
-                    Back
-                  </SecondaryButton>
-                </Link>
+                <SecondaryButton type="button" onClick={() => window.history.back()}>
+                  Back
+                </SecondaryButton>
                 <PrimaryButton disabled={processing}>Search FG</PrimaryButton>
               </div>
             </form>

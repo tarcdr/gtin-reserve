@@ -90,11 +90,9 @@ export default function Request({ auth, InputData, boms = [], subBoms = {} }) {
                           )}
                           {(InputData?.bom) && (
                             <div className="flex items-center justify-center gap-4">
-                                <Link href={route('rm.component_request')}>
-                                    <SecondaryButton>
-                                        Back
-                                    </SecondaryButton>
-                                </Link>
+                                <SecondaryButton type="button" onClick={() => window.history.back()}>
+                                    Back
+                                </SecondaryButton>
                                 <Link href={route('rm.report')}>
                                     <PrimaryButton disabled={processing}>Finnish RM Go to Templete</PrimaryButton>
                                 </Link>

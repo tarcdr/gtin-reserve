@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -34,9 +34,50 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
     router.post('/packmaterial/new', { bomId: data.bomId, bomDesc: data.bomDesc });
   };
 
+  const materialLevelPayload = {
+    materialId: data.materialId,
+    bomId: data.bomId,
+    bomDesc: data.bomDesc,
+    mattype: data.mattype,
+    subMattype: data.subMattype
+  };
+
+  const goToSemiFgLv2 = (levelData = {}) => {
+    router.get(route('material-levels.semi-fg-lv2.new'), { ...materialLevelPayload, ...levelData });
+  };
+
+  const goToSemiFgLv1 = (levelData = {}) => {
+    router.get(route('material-levels.semi-fg-lv1.new'), { ...materialLevelPayload, ...levelData });
+  };
+
+  const goToBusinessSupply = (levelData = {}) => {
+    router.get(route('material-levels.business-supply.new'), { ...materialLevelPayload, ...levelData });
+  };
+
   const submit = (e) => {
     e.preventDefault();
-    patch(route('product.create'));
+    if (isDisabled) {
+      return;
+    }
+    patch(route('product.update'));
+  };
+
+  const goToEdit = () => {
+    router.get(route('product.edit'), data);
+  };
+
+  const handleDelete = () => {
+    if (!window.confirm('Delete this FG material?')) {
+      return;
+    }
+    router.delete(route('product.delete'), {
+      data: {
+        materialId: data.materialId,
+        brand: data.brand,
+        mattype: data.mattype,
+        subMattype: data.subMattype
+      }
+    });
   };
   
   useEffect(() => {
@@ -178,11 +219,12 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <InputLabel htmlFor="materialId" value="Suggest Material ID" />
+                  <InputLabel htmlFor="materialId" value="Material ID" />
 
                   <TextInput
                     id="materialId"
                     className="mt-1 block w-full bg-gray-100"
+                    value={data.materialId}
                     disabled
                   />
                 </div>
@@ -205,9 +247,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
 
                       <TextInput
                         id="bomDesc"
-                        className="mt-1 block w-full"
+                        className={`mt-1 block w-full ${isDisabled ? 'bg-gray-100' : ''}`}
                         value={data.bomDesc}
                         onChange={(e) => setData('bomDesc', e.target.value)}
+                        disabled={isDisabled}
                       />
                     </div>
                   </div>
@@ -231,10 +274,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
 
                   <TextInput
                     id="searchDesc"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
                     value={data.searchDesc}
                     maxLength="40"
                     onChange={(e) => setData('searchDesc', e.target.value)}
+                    disabled={isDisabled}
                   />
 
                   <InputError className="mt-2" message={errors.searchDesc} />
@@ -246,10 +290,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
 
                   <TextInput
                     id="fullDescEn"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
                     value={data.fullDescEn}
                     maxLength="40"
                     onChange={(e) => setData('fullDescEn', e.target.value)}
+                    disabled={isDisabled}
                   />
 
                   <InputError className="mt-2" message={errors.fullDescEn} />
@@ -259,10 +304,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
 
                   <TextInput
                     id="fullDescTh"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
                     value={data.fullDescTh}
                     maxLength="40"
                     onChange={(e) => setData('fullDescTh', e.target.value)}
+                    disabled={isDisabled}
                   />
 
                   <InputError className="mt-2" message={errors.fullDescTh} />
@@ -291,7 +337,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
               <fieldset className="border border-gray-300 rounded-md p-4 mt-8">
                 <legend className="px-2 text-gray-600">Components</legend>
                 <div className="flex items-center justify-end gap-4 mb-2">
-                    <SuccessButton type="button" onClick={goToPackMaterial}>Add Component</SuccessButton>
+                    <SuccessButton type="button" onClick={goToPackMaterial} disabled={isDisabled}>Add Component</SuccessButton>
                 </div>
                 <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                   <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
@@ -333,48 +379,99 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
               </fieldset>
               {data?.mattype === '1' && (
                 <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <InputLabel htmlFor="materialIdLv2" value="Material ID Semi FG Lv.2" />
-
-                      <TextInput
-                        id="materialIdLv2"
-                        className="mt-1 block w-full bg-gray-100"
-                        value="KEY_OF_FG_LV_2"
-                        disabled
-                      />
+                  {InputData?.semiFgLv2 ? (
+                    <div className="space-y-3">
+                      <div className="text-sm text-gray-600">Semi FG Level 2</div>
+                      <div className="font-semibold">{InputData.semiFgLv2.id}</div>
+                      <div className="text-gray-500">{InputData.semiFgLv2.desc}</div>
+                      <PrimaryButton
+                        type="button"
+                        onClick={() => goToSemiFgLv2({
+                          levelMaterialId: InputData.semiFgLv2.id,
+                          searchDesc: InputData.semiFgLv2.searchDesc,
+                          fullDescEn: InputData.semiFgLv2.fullDescEn,
+                          fullDescTh: InputData.semiFgLv2.fullDescTh,
+                          uom: InputData.semiFgLv2.uom
+                        })}
+                        disabled={isDisabled}
+                      >
+                        Edit Semi FG Level 2
+                      </PrimaryButton>
                     </div>
-                    <div>
-                      <InputLabel htmlFor="materialIdLv2Desc" value="Description of Lv.2" />
-
-                      <TextInput
-                        id="materialIdLv2Desc"
-                        className="mt-1 block w-full bg-gray-100"
-                        value="DESC_OF_FG_LV_2"
-                        disabled
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    {/* <SuccessButton type="button">Add FG Lv.2</SuccessButton> */}
-                    <PrimaryButton type="button">Edit FG Lv.2</PrimaryButton>
-                  </div>
+                  ) : (
+                    <SuccessButton type="button" onClick={() => goToSemiFgLv2()} disabled={isDisabled}>
+                      Create Semi FG Level 2
+                    </SuccessButton>
+                  )}
                 </div>
               )}
-              <div>
-                <SuccessButton type="button">Create Semi FG Lelve 1</SuccessButton>
+              <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
+                {InputData?.semiFgLv1 ? (
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-600">Semi FG Level 1</div>
+                    <div className="font-semibold">{InputData.semiFgLv1.id}</div>
+                    <div className="text-gray-500">{InputData.semiFgLv1.desc}</div>
+                    <PrimaryButton
+                      type="button"
+                      onClick={() => goToSemiFgLv1({
+                        levelMaterialId: InputData.semiFgLv1.id,
+                        searchDesc: InputData.semiFgLv1.searchDesc,
+                        fullDescEn: InputData.semiFgLv1.fullDescEn,
+                        fullDescTh: InputData.semiFgLv1.fullDescTh,
+                        uom: InputData.semiFgLv1.uom
+                      })}
+                      disabled={isDisabled}
+                    >
+                      Edit Semi FG Level 1
+                    </PrimaryButton>
+                  </div>
+                ) : (
+                  <SuccessButton type="button" onClick={() => goToSemiFgLv1()} disabled={isDisabled}>
+                    Create Semi FG Level 1
+                  </SuccessButton>
+                )}
               </div>
-              <div>
-                <SuccessButton type="button">Create Business Supply</SuccessButton>
+              <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
+                {InputData?.businessSupply ? (
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-600">Business Supply</div>
+                    <div className="font-semibold">{InputData.businessSupply.id}</div>
+                    <div className="text-gray-500">{InputData.businessSupply.desc}</div>
+                    <PrimaryButton
+                      type="button"
+                      onClick={() => goToBusinessSupply({
+                        levelMaterialId: InputData.businessSupply.id,
+                        searchDesc: InputData.businessSupply.searchDesc,
+                        fullDescEn: InputData.businessSupply.fullDescEn,
+                        fullDescTh: InputData.businessSupply.fullDescTh,
+                        uom: InputData.businessSupply.uom
+                      })}
+                      disabled={isDisabled}
+                    >
+                      Edit Business Supply
+                    </PrimaryButton>
+                  </div>
+                ) : (
+                  <SuccessButton type="button" onClick={() => goToBusinessSupply()} disabled={isDisabled}>
+                    Create Business Supply
+                  </SuccessButton>
+                )}
               </div>
               <div className="flex items-center justify-center gap-4">
-                <Link href={route('dashboard')}>
-                  <SecondaryButton>
-                    Back
-                  </SecondaryButton>
-                </Link>
-                <PrimaryButton disabled={processing}>Edit FG</PrimaryButton>
-                <DangerButton type="button">DELETE FG</DangerButton>
+                <SecondaryButton type="button" onClick={() => window.history.back()}>
+                  Back
+                </SecondaryButton>
+                {isDisabled ? (
+                  <>
+                    <PrimaryButton type="button" onClick={goToEdit}>Edit FG</PrimaryButton>
+                    <DangerButton type="button" onClick={handleDelete}>DELETE FG</DangerButton>
+                  </>
+                ) : (
+                  <>
+                    <PrimaryButton disabled={processing}>Save FG</PrimaryButton>
+                    <DangerButton type="button" onClick={handleDelete}>DELETE FG</DangerButton>
+                  </>
+                )}
               </div>
             </form>
           </div>

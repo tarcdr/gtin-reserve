@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Brand;
+use App\Models\MasterUOM;
 
 class PackMaterialController extends Controller
 {
   protected $brands;
   protected $materials;
+  protected $uoms;
 
   public function __construct()
   {
@@ -32,6 +34,12 @@ class PackMaterialController extends Controller
         "label" => "002"
       ]
     ];
+    $this->uoms = MasterUOM::all()->map(function ($b) {
+      return [
+        "value" => $b->code_uom,
+        "label" => $b->description_uom,
+      ];
+    })->toArray();
   }
 
   static $mattypes = [[
@@ -83,7 +91,8 @@ class PackMaterialController extends Controller
       'bomDesc'    => $request->bomDesc,
     ];
 
-    return Inertia::render('PackMaterial/New', compact('InputData', 'mattypes', 'subMattypes'));
+    $uoms = $this->uoms;
+    return Inertia::render('PackMaterial/New', compact('InputData', 'mattypes', 'subMattypes', 'uoms'));
   }
 
   public function create(PackMaterialCreateRequest $request): RedirectResponse

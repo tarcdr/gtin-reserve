@@ -16,6 +16,7 @@ class ProductCreateRequest extends FormRequest
   public function rules(): array
   {
     return [
+      'materialId'   => ['required'],
       'brand'        => ['required'],
       'mattype'      => ['required'],
       'site'         => ['required_if:mattype,1'],
@@ -32,6 +33,7 @@ class ProductCreateRequest extends FormRequest
   public function attributes(): array
   {
     return [
+      'materialId'   => 'Material ID',
       'brand'        => 'Brand',
       'mattype'      => 'Mattye',
       'site'         => 'Site',

@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -36,7 +36,7 @@ export default function Request({ auth, InputData, brand = [] }) {
     };
 
     const backToBom = () => {
-      get(route('bom.new'));
+      window.history.back();
     };
 
     useEffect(() => {
@@ -171,7 +171,7 @@ export default function Request({ auth, InputData, brand = [] }) {
                           {(!InputData?.brand || !InputData?.mattype) && (
                             <div className="flex items-center justify-center gap-4">
                                 <SecondaryButton type="button" onClick={backToBom}>
-                                    Back To BOM
+                                    Back
                                 </SecondaryButton>
                                 <PrimaryButton disabled={processing}>Save</PrimaryButton>
                                 <DangerButton>Delete</DangerButton>

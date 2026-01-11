@@ -9,6 +9,7 @@ use App\Http\Controllers\BusinessSupplyController;
 use App\Http\Controllers\RequestFormController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\PackMaterialController;
+use App\Http\Controllers\MaterialLevelController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,25 @@ Route::middleware('auth')->group(function () {
     Route::patch('/product/search/bom', [ProductController::class, 'findBom'])->name('product.search.bom');
     Route::get('/product/view', [ProductController::class, 'view'])->name('product.view');
     Route::get('/product/edit', [ProductController::class, 'edit'])->name('product.edit');
+    Route::get('/product/material-status', [ProductController::class, 'materialStatus'])->name('product.material-status');
+    Route::patch('/product/update', [ProductController::class, 'update'])->name('product.update');
+    Route::delete('/product/delete', [ProductController::class, 'delete'])->name('product.delete');
+
+    Route::get('/material-levels/raw', [MaterialLevelController::class, 'rawMaterial'])->name('material-levels.raw.new');
+    Route::patch('/material-levels/raw', [MaterialLevelController::class, 'saveRaw'])->name('material-levels.raw.save');
+    Route::get('/material-levels/raw/create-component', [MaterialLevelController::class, 'createComponentRaw'])->name('material-levels.raw.create-component');
+
+    Route::get('/material-levels/semi-fg-lv2', [MaterialLevelController::class, 'semiFgLevel2'])->name('material-levels.semi-fg-lv2.new');
+    Route::patch('/material-levels/semi-fg-lv2', [MaterialLevelController::class, 'saveSemiFgLevel2'])->name('material-levels.semi-fg-lv2.save');
+    Route::get('/material-levels/semi-fg-lv2/create-component', [MaterialLevelController::class, 'createComponentSemiFgLevel2'])->name('material-levels.semi-fg-lv2.create-component');
+
+    Route::get('/material-levels/semi-fg-lv1', [MaterialLevelController::class, 'semiFgLevel1'])->name('material-levels.semi-fg-lv1.new');
+    Route::patch('/material-levels/semi-fg-lv1', [MaterialLevelController::class, 'saveSemiFgLevel1'])->name('material-levels.semi-fg-lv1.save');
+    Route::get('/material-levels/semi-fg-lv1/create-component', [MaterialLevelController::class, 'createComponentSemiFgLevel1'])->name('material-levels.semi-fg-lv1.create-component');
+
+    Route::get('/material-levels/business-supply', [MaterialLevelController::class, 'businessSupply'])->name('material-levels.business-supply.new');
+    Route::patch('/material-levels/business-supply', [MaterialLevelController::class, 'saveBusinessSupply'])->name('material-levels.business-supply.save');
+    Route::get('/material-levels/business-supply/create-component', [MaterialLevelController::class, 'createComponentBusinessSupply'])->name('material-levels.business-supply.create-component');
     Route::get('/rm/material_create', [RmController::class, 'view'])->name('rm.material_create');
     Route::get('/rm/component_request', [RmController::class, 'viewComponentRequest'])->name('rm.component_request');
     Route::get('/rm/report/{tab?}', [RmController::class, 'report'])->name('rm.report');

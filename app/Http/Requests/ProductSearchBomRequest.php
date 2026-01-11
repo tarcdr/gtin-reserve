@@ -20,7 +20,6 @@ class ProductSearchBomRequest extends FormRequest
       'mattype'         => ['required'],
       'subMattype'      => ['required'],
       'materialId'      => ['required'],
-      'materialId.code' => ['required'],
     ];
   }
   public function attributes(): array
@@ -30,7 +29,6 @@ class ProductSearchBomRequest extends FormRequest
       'mattype'         => 'Mattye',
       'subMattype'      => 'Sub Mattype',
       'materialId'      => 'Material ID FG',
-      'materialId.code' => 'Material ID FG (Code)',
     ];
   }
 }

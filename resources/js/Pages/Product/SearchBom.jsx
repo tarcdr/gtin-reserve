@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -9,7 +9,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import ReactSelect from 'react-select';
 import { useEffect } from 'react';
 
-export default function ProductDetail({ auth, InputData, isDisabled = true, brands = [], mattypes = [], materials = [] }) {
+export default function ProductSearchBom({ auth, InputData, isDisabled = true, brands = [], mattypes = [], materials = [] }) {
   const { data, setData, patch, errors, processing } = useForm({
     brand: InputData?.brand || '',
     mattype: InputData?.mattype || '',
@@ -17,6 +17,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
     materialId: InputData?.materialId || '',
     status: InputData?.status || ''
   });
+
+  const selectedMaterial = materials.find(item => item.code === data.materialId) || null;
 
   const submit = (e) => {
     e.preventDefault();
@@ -26,6 +28,33 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
   useEffect(() => {
     console.log(errors);
   }, [errors]);
+
+  useEffect(() => {
+    if (!data.materialId) {
+      if (data.status) {
+        setData('status', '');
+      }
+      return;
+    }
+    const controller = new AbortController();
+    const url = route('product.material-status', { materialId: data.materialId });
+    fetch(url, {
+      headers: {
+        Accept: 'application/json'
+      },
+      signal: controller.signal
+    })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        if (!payload) {
+          return;
+        }
+        setData('status', payload.status || '');
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [data.materialId]);
 
   return (
     <AuthenticatedLayout
@@ -102,13 +131,18 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                     options={materials}
                     isSearchable={true}
                     placeholder="---- Select Material ID ----"
-                    value={data.materialId}
-                    onChange={(e) => setData('materialId', e)}
+                    value={selectedMaterial}
+                    onChange={(option) => {
+                      setData('materialId', option?.code || '');
+                      setData('status', option?.status || '');
+                    }}
+                    getOptionLabel={(option) => option.label}
+                    getOptionValue={(option) => option.code}
                     classNames={{
                       control: () => 'mt-1 block w-full'
                     }}
                   />
-                  <InputError className="mt-2" message={errors?.materialId || errors['materialId.code']} />
+                  <InputError className="mt-2" message={errors?.materialId} />
                 </div>
                 <div>
                   <InputLabel htmlFor="status" value="Status" />
@@ -117,16 +151,14 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                     id="status"
                     className="mt-1 block w-full bg-gray-100"
                     disabled
-                    defaultValue={data?.status}
+                    value={data.status}
                   />
                 </div>
               </div>
               <div className="flex items-center justify-center gap-4">
-                <Link href={route('product.search')}>
-                  <SecondaryButton>
-                    Back to Search
-                  </SecondaryButton>
-                </Link>
+                <SecondaryButton type="button" onClick={() => window.history.back()}>
+                  Back
+                </SecondaryButton>
                 <PrimaryButton disabled={processing}>Submit</PrimaryButton>
               </div>
             </form>

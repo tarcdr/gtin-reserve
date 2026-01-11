@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -8,9 +8,10 @@ import { useEffect, useState } from 'react';
 import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
 
-export default function Request({ auth, InputData, brands = [], mattypes = [], sites = [], masterUom = [], finishGoods = [] }) {
+export default function ProductNew({ auth, InputData, brands = [], mattypes = [], sites = [], masterUom = [], finishGoods = [] }) {
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
+  const [suggestSeed] = useState(() => Date.now().toString().slice(-6));
   const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
     brand: '',
     mattype: '',
@@ -25,6 +26,14 @@ export default function Request({ auth, InputData, brands = [], mattypes = [], s
     fullDescTh: '',
     uom: ''
   });
+
+  const buildSuggestMaterialId = (brand, mattype, subMattype, finishGood, seed) => {
+    if (!brand || !mattype || !subMattype) {
+      return '';
+    }
+    const compact = `${brand}${mattype}${subMattype}${finishGood || ''}`.replace(/[^a-zA-Z0-9]/g, '');
+    return `${compact}${seed}`;
+  };
 
   const submit = (e) => {
     e.preventDefault();
@@ -45,6 +54,19 @@ export default function Request({ auth, InputData, brands = [], mattypes = [], s
     setShowSite(dispSite);
     setShowBomId(dispBomId);
   }, [data.mattype]);
+
+  useEffect(() => {
+    const next = buildSuggestMaterialId(
+      data.brand,
+      data.mattype,
+      data.subMattype,
+      data.finishGoods,
+      suggestSeed
+    );
+    if (data.materialId !== next) {
+      setData('materialId', next);
+    }
+  }, [data.brand, data.mattype, data.subMattype, data.finishGoods, suggestSeed]);
 
   useEffect(() => {
     if (recentlySuccessful && InputData?.success) {
@@ -177,6 +199,7 @@ export default function Request({ auth, InputData, brands = [], mattypes = [], s
                   <TextInput
                     id="materialId"
                     className="mt-1 block w-full bg-gray-100"
+                    value={data.materialId}
                     disabled
                   />
                 </div>
@@ -266,11 +289,9 @@ export default function Request({ auth, InputData, brands = [], mattypes = [], s
                 </div>
               </div>
               <div className="flex items-center justify-center gap-4">
-                <Link href={route('dashboard')}>
-                  <SecondaryButton>
-                    Back
-                  </SecondaryButton>
-                </Link>
+                <SecondaryButton type="button" onClick={() => window.history.back()}>
+                  Back
+                </SecondaryButton>
                 <PrimaryButton disabled={processing}>Save FG</PrimaryButton>
               </div>
             </form>
