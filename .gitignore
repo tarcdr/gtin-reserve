@@ -22,3 +22,5 @@ Homestead.json
 /.vagrant
 .phpunit.result.cache
 public/build
+composer.lock
+package-lock.json
