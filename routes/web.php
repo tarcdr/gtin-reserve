@@ -9,6 +9,7 @@ use App\Http\Controllers\BusinessSupplyController;
 use App\Http\Controllers\RequestFormController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\PackMaterialController;
+use App\Http\Controllers\UserManagementController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -78,6 +79,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users.index');
+        Route::post('/admin/users', [UserManagementController::class, 'store'])->name('admin.users.store');
+        Route::patch('/admin/users/{user_login}', [UserManagementController::class, 'update'])->name('admin.users.update');
+        Route::patch('/admin/users/{user_login}/password', [UserManagementController::class, 'updatePassword'])->name('admin.users.password');
+        Route::delete('/admin/users/{user_login}', [UserManagementController::class, 'destroy'])->name('admin.users.destroy');
+    });
 });
 
 require __DIR__.'/auth.php';

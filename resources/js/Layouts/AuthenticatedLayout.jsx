@@ -7,6 +7,8 @@ import { Link } from '@inertiajs/react';
 
 export default function Authenticated({ user, header, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
+    const isAdmin = user?.role === 'admin';
+    const roleLabel = user?.role ? user.role.toUpperCase() : 'USER';
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -104,9 +106,11 @@ export default function Authenticated({ user, header, children }) {
                                 <NavLink href={route('rm.report')} active={route().current('rm.report')}>
                                     Export-to-SAP
                                 </NavLink>
-                                <NavLink href={route('dashboard')} active={route().current('admin')}>
-                                    Admin
-                                </NavLink>
+                                {isAdmin && (
+                                    <NavLink href={route('admin.users.index')} active={route().current('admin.users.index')}>
+                                        Account Management
+                                    </NavLink>
+                                )}
                             </div>
                         </div>
 
@@ -119,7 +123,7 @@ export default function Authenticated({ user, header, children }) {
                                                 type="button"
                                                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
                                             >
-                                                {`${user?.employee_name || '-'} (Admin)`}
+                                                {`${user?.employee_name || '-'} (${roleLabel})`}
 
                                                 <svg
                                                     className="ml-2 -mr-0.5 h-4 w-4"
@@ -190,11 +194,16 @@ export default function Authenticated({ user, header, children }) {
                         <ResponsiveNavLink href={route('report')} active={route().current('report')}>
                             GTIN_Confirm/Report
                         </ResponsiveNavLink>
+                        {isAdmin && (
+                            <ResponsiveNavLink href={route('admin.users.index')} active={route().current('admin.users.index')}>
+                                Account Management
+                            </ResponsiveNavLink>
+                        )}
                     </div>
 
                     <div className="pt-4 pb-1 border-t border-gray-200">
                         <div className="px-4">
-                            <div className="font-medium text-base text-gray-800">{`${user?.employee_name || '-'} (Admin)`}</div>
+                            <div className="font-medium text-base text-gray-800">{`${user?.employee_name || '-'} (${roleLabel})`}</div>
                         </div>
 
                         <div className="mt-3 space-y-1">

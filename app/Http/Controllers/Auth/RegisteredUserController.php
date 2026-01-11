@@ -41,6 +41,8 @@ class RegisteredUserController extends Controller
             'employee_name' => $request->employee_name,
             'user_login' => $request->user_login,
             'password' => Hash::make($request->password),
+            'role' => 'rd',
+            'is_active' => true,
         ]);
 
         event(new Registered($user));

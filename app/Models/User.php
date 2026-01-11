@@ -21,6 +21,7 @@ class User extends Authenticatable
      * @var bool
      */
     public $incrementing = false;
+    protected $keyType = 'string';
 
     const CREATED_AT = 'DATE_CREATE';
     const UPDATED_AT = null;
@@ -34,6 +35,8 @@ class User extends Authenticatable
         'employee_name',
         'user_login',
         'password',
+        'role',
+        'is_active',
     ];
 
     /**
@@ -53,6 +56,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'create_date' => 'datetime',
+        'is_active' => 'boolean',
         'password' => 'hashed',
     ];
 }
