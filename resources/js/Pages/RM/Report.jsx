@@ -10,7 +10,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
-export default function Report({ auth, activeTab, columns = [], datas = [], labels = [] }) {
+export default function Report({ auth, activeTab, columns = [], datas = [], labels = [], fieldOptions = {} }) {
   const [confirmingActive, setConfirmingActive] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [dataLabels, setDataLabels] = useState({});
@@ -45,26 +45,36 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
     }))
   );
 
+  const getFieldOptions = (columnName) => {
+    const masterOptions = fieldOptions?.[activeTab]?.[columnName];
+
+    if (Array.isArray(masterOptions) && masterOptions.length > 0) {
+      return masterOptions;
+    }
+
+    return getOptionsFromData(columnName);
+  };
+
   const tabFieldConfigs = {
     AVAILABILITY: {
       material_id: { type: 'display', required: true },
-      planning_area_id: { type: 'list', required: true, options: getOptionsFromData('planning_area_id') },
-      status: { type: 'list', required: true, options: getOptionsFromData('status') },
+      planning_area_id: { type: 'list', required: true, options: getFieldOptions('planning_area_id') },
+      status: { type: 'list', required: true, options: getFieldOptions('status') },
       availability_check_scope: { type: 'text', required: false },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
     },
     CUST_PART_NUM: {
       material_id: { type: 'display', required: true },
-      customer_id: { type: 'combo', required: true, options: getOptionsFromData('customer_id') },
-      customer_part_number: { type: 'combo', required: true, options: getOptionsFromData('customer_part_number') },
+      customer_id: { type: 'combo', required: true, options: getFieldOptions('customer_id') },
+      customer_part_number: { type: 'combo', required: true, options: getFieldOptions('customer_part_number') },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
     },
     FINANCIAL: {
       material_id: { type: 'display', required: true },
-      company_id: { type: 'combo', required: true, options: getOptionsFromData('company_id') },
-      business_residence_id: { type: 'combo', required: true, options: getOptionsFromData('business_residence_id') },
+      company_id: { type: 'combo', required: true, options: getFieldOptions('company_id') },
+      business_residence_id: { type: 'combo', required: true, options: getFieldOptions('business_residence_id') },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
     },
@@ -73,38 +83,38 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
       material_desc: { type: 'display', required: true, maxLength: 40 },
       full_material_desc: { type: 'display', required: true },
       meterial_desc_th: { type: 'display', required: true },
-      product_category_id: { type: 'list', required: true, options: getOptionsFromData('product_category_id') },
+      product_category_id: { type: 'list', required: true, options: getFieldOptions('product_category_id') },
       mat_type: { type: 'display', required: true },
       sub_type: { type: 'display', required: true, maxLength: 30 },
       brand: { type: 'display', required: true },
       base_uom: { type: 'display', required: true },
       inv_valuation_uom: { type: 'text', required: false },
-      pillar: { type: 'list', required: true, options: getOptionsFromData('pillar') },
-      division: { type: 'combo', required: true, options: getOptionsFromData('division') },
-      department: { type: 'list', required: true, options: getOptionsFromData('department') },
-      sub_department: { type: 'list', required: false, options: getOptionsFromData('sub_department') },
-      class: { type: 'combo', required: true, maxLength: 30, options: getOptionsFromData('class') },
-      sub_class: { type: 'combo', required: true, maxLength: 30, options: getOptionsFromData('sub_class') },
-      section: { type: 'combo', required: true, maxLength: 30, options: getOptionsFromData('section') },
-      series: { type: 'combo', required: true, maxLength: 30, options: getOptionsFromData('series') },
-      attribute_1: { type: 'list', required: true, options: getOptionsFromData('attribute_1') },
+      pillar: { type: 'list', required: true, options: getFieldOptions('pillar') },
+      division: { type: 'combo', required: true, options: getFieldOptions('division') },
+      department: { type: 'list', required: true, options: getFieldOptions('department') },
+      sub_department: { type: 'list', required: false, options: getFieldOptions('sub_department') },
+      class: { type: 'combo', required: true, maxLength: 30, options: getFieldOptions('class') },
+      sub_class: { type: 'combo', required: true, maxLength: 30, options: getFieldOptions('sub_class') },
+      section: { type: 'combo', required: true, maxLength: 30, options: getFieldOptions('section') },
+      series: { type: 'combo', required: true, maxLength: 30, options: getFieldOptions('series') },
+      attribute_1: { type: 'list', required: true, options: getFieldOptions('attribute_1') },
       register_off: { type: 'text', required: false, maxLength: 30 },
       shelf_life: { type: 'text', required: true },
-      hs_code: { type: 'combo', required: true, options: getOptionsFromData('hs_code') },
-      country: { type: 'combo', required: true, maxLength: 30, options: getOptionsFromData('country') },
+      hs_code: { type: 'combo', required: true, options: getFieldOptions('hs_code') },
+      country: { type: 'combo', required: true, maxLength: 30, options: getFieldOptions('country') },
       old_product_id: { type: 'text', required: false },
       identified_stock_type: { type: 'text', required: false },
       serial_number_profile: { type: 'text', required: false },
       retail_sales_price: { type: 'text', required: false },
       product_core: { type: 'text', required: false },
-      attribute_2: { type: 'combo', required: true, options: getOptionsFromData('attribute_2') },
+      attribute_2: { type: 'combo', required: true, options: getFieldOptions('attribute_2') },
       detail_name: { type: 'display', required: false },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
     },
     GTINS: {
       material_id: { type: 'display', required: true },
-      trading_unit: { type: 'list', required: true, options: getOptionsFromData('trading_unit') },
+      trading_unit: { type: 'list', required: true, options: getFieldOptions('trading_unit') },
       gtin_number: { type: 'display', required: true },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
@@ -112,46 +122,46 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
     LOGISTICS: {
       material_id: { type: 'display', required: true },
       site_id: { type: 'display', required: true },
-      status: { type: 'list', required: true, options: getOptionsFromData('status') },
-      storage_group_id: { type: 'combo', required: true, options: getOptionsFromData('storage_group_id') },
+      status: { type: 'list', required: true, options: getFieldOptions('status') },
+      storage_group_id: { type: 'combo', required: true, options: getFieldOptions('storage_group_id') },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
     },
     PLANNING: {
       material_id: { type: 'display', required: true },
-      planning_area_id: { type: 'combo', required: true, options: getOptionsFromData('planning_area_id') },
-      status: { type: 'list', required: true, options: getOptionsFromData('status') },
-      planning_uom: { type: 'list', required: true, options: getOptionsFromData('planning_uom') },
-      demand_manage_procedure: { type: 'combo', required: true, options: getOptionsFromData('demand_manage_procedure') },
-      procurement_type: { type: 'combo', required: true, options: getOptionsFromData('procurement_type') },
-      planning_procedure: { type: 'combo', required: true, options: getOptionsFromData('planning_procedure') },
-      lot_sizing_method: { type: 'combo', required: true, options: getOptionsFromData('lot_sizing_method') },
+      planning_area_id: { type: 'combo', required: true, options: getFieldOptions('planning_area_id') },
+      status: { type: 'list', required: true, options: getFieldOptions('status') },
+      planning_uom: { type: 'list', required: true, options: getFieldOptions('planning_uom') },
+      demand_manage_procedure: { type: 'combo', required: true, options: getFieldOptions('demand_manage_procedure') },
+      procurement_type: { type: 'combo', required: true, options: getFieldOptions('procurement_type') },
+      planning_procedure: { type: 'combo', required: true, options: getFieldOptions('planning_procedure') },
+      lot_sizing_method: { type: 'combo', required: true, options: getFieldOptions('lot_sizing_method') },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
     },
     QTY_CONVERS: {
       material_id: { type: 'display', required: true },
       quantity: { type: 'text', required: true },
-      quantity_uom: { type: 'list', required: true, options: getOptionsFromData('quantity_uom') },
+      quantity_uom: { type: 'list', required: true, options: getFieldOptions('quantity_uom') },
       corres_qty: { type: 'text', required: true },
-      corres_qty_uom: { type: 'list', required: true, options: getOptionsFromData('corres_qty_uom') },
+      corres_qty_uom: { type: 'list', required: true, options: getFieldOptions('corres_qty_uom') },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
     },
     SALES_DATA: {
       material_id: { type: 'display', required: true },
-      sales_org_id: { type: 'list', required: true, options: getOptionsFromData('sales_org_id') },
-      distribution_channel: { type: 'combo', required: true, options: getOptionsFromData('distribution_channel') },
-      status: { type: 'list', required: true, options: getOptionsFromData('status') },
-      sales_uom: { type: 'list', required: true, options: getOptionsFromData('sales_uom') },
-      item_group: { type: 'combo', required: true, options: getOptionsFromData('item_group') },
+      sales_org_id: { type: 'list', required: true, options: getFieldOptions('sales_org_id') },
+      distribution_channel: { type: 'combo', required: true, options: getFieldOptions('distribution_channel') },
+      status: { type: 'list', required: true, options: getFieldOptions('status') },
+      sales_uom: { type: 'list', required: true, options: getFieldOptions('sales_uom') },
+      item_group: { type: 'combo', required: true, options: getFieldOptions('item_group') },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
     },
     SUPP_PART_NUM: {
       material_id: { type: 'display', required: true },
-      supplier_id: { type: 'combo', required: true, options: getOptionsFromData('supplier_id') },
-      supplier_part_number: { type: 'combo', required: true, options: getOptionsFromData('supplier_part_number') },
+      supplier_id: { type: 'combo', required: true, options: getFieldOptions('supplier_id') },
+      supplier_part_number: { type: 'combo', required: true, options: getFieldOptions('supplier_part_number') },
       supplier_lead_time: { type: 'text', required: false },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
@@ -174,7 +184,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
       height: { type: 'text', required: false },
       uom_height: { type: 'text', required: false },
       quantity: { type: 'text', required: false },
-      quantity_uom: { type: 'list', required: false, options: getOptionsFromData('quantity_uom') },
+      quantity_uom: { type: 'list', required: false, options: getFieldOptions('quantity_uom') },
       quantity_type_char: { type: 'text', required: false },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },

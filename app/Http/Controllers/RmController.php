@@ -22,6 +22,7 @@ use App\Models\SheetUomChar;
 use App\Models\Labels;
 use SimpleXMLElement;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 // use Illuminate\Support\Facades\DB;
@@ -30,6 +31,103 @@ use Illuminate\Support\Str;
 
 class RmController extends Controller
 {
+    private function fetchMasterOptions(string $table, string $chooseColumn, string $useColumn): array
+    {
+      try {
+        return DB::table($table)
+          ->select([
+            DB::raw("{$chooseColumn} as option_label"),
+            DB::raw("{$useColumn} as option_value"),
+          ])
+          ->whereNotNull($useColumn)
+          ->distinct()
+          ->orderBy($chooseColumn)
+          ->get()
+          ->map(function ($row) {
+            $label = $row->option_label ?? $row->option_value;
+            $value = $row->option_value ?? $row->option_label;
+
+            return [
+              'label' => $label,
+              'value' => $value,
+              'code' => $value,
+            ];
+          })
+          ->filter(fn ($row) => filled($row['value']))
+          ->values()
+          ->all();
+      } catch (\Throwable $exception) {
+        return [];
+      }
+    }
+
+    private function reportFieldOptions(): array
+    {
+      return [
+        'AVAILABILITY' => [
+          'planning_area_id' => $this->fetchMasterOptions('PROJ1_2_MASTER_PLANNING_AREA', 'PLANNING_AREA_LIST', 'PLANNING_AREA_ID'),
+          'status' => $this->fetchMasterOptions('PROJ1_2_MASTER_STATUS_ITEM', 'STATUS', 'STATUS'),
+        ],
+        'CUST_PART_NUM' => [
+          'customer_id' => $this->fetchMasterOptions('PROJ1_2_MASTER_CUSTOMER', 'CUSTOMER_ID_LIST', 'CUSTOMER_ID'),
+          'customer_part_number' => $this->fetchMasterOptions('PROJ1_2_MASTER_CUST_PART_NUM', 'CUSTOMER_PART_NUMBER', 'CUSTOMER_PART_NUMBER'),
+        ],
+        'FINANCIAL' => [
+          'company_id' => $this->fetchMasterOptions('PROJ1_2_MASTER_COMPANY', 'COMPANY_LIST', 'COMPANY_ID'),
+          'business_residence_id' => $this->fetchMasterOptions('PROJ1_2_MASTER_BUSINESS_RES', 'BUSINESS_RES_LIST', 'BUSINESS_RESIDENCE_ID'),
+        ],
+        'GENERAL' => [
+          'product_category_id' => $this->fetchMasterOptions('PROJ1_2_MASTER_PRODUCT_CAT', 'PRODUCT_CAT_LIST', 'PRODUCT_CATEGORY_ID'),
+          'pillar' => $this->fetchMasterOptions('PROJ1_2_MASTER_PILLAR', 'PILLAR', 'PILLAR'),
+          'division' => $this->fetchMasterOptions('PROJ1_2_MASTER_DIVISION', 'DIVISION', 'DIVISION'),
+          'department' => $this->fetchMasterOptions('PROJ1_2_MASTER_DEPARTMENT', 'DEPARTMENT_LIST', 'DESCRIPTION_DEPARTMENT'),
+          'sub_department' => $this->fetchMasterOptions('PROJ1_2_MASTER_SUBDEPARTMENT', 'SUBDEPARTMENT_LIST', 'DESCRIPTION_SUBDEPARTMENT'),
+          'class' => $this->fetchMasterOptions('PROJ1_2_MASTER_CLASS', 'CLASS', 'CLASS'),
+          'sub_class' => $this->fetchMasterOptions('PROJ1_2_MASTER_SUB_CLASS', 'SUB_CLASS', 'SUB_CLASS'),
+          'section' => $this->fetchMasterOptions('PROJ1_2_MASTER_SECTION', 'SECTION', 'SECTION'),
+          'series' => $this->fetchMasterOptions('PROJ1_2_MASTER_SERIES', 'SERIES', 'SERIES'),
+          'attribute_1' => $this->fetchMasterOptions('PROJ1_2_MASTER_ATTRIBUTE1', 'ATTRIBUTE_1', 'ATTRIBUTE_1'),
+          'hs_code' => $this->fetchMasterOptions('PROJ1_2_MASTER_HS_CODE', 'HS_CODE', 'HS_CODE'),
+          'country' => $this->fetchMasterOptions('PROJ1_2_MASTER_COUNTRY', 'COUNTRY', 'COUNTRY'),
+          'attribute_2' => $this->fetchMasterOptions('PROJ1_2_MASTER_ATTRIBUTE_2', 'ATTRIBUTE_2', 'ATTRIBUTE_2'),
+        ],
+        'GTINS' => [
+          'trading_unit' => $this->fetchMasterOptions('PROJ1_2_MASTER_TRADING_UNIT', 'TRADING_UNIT', 'TRADING_UNIT'),
+        ],
+        'LOGISTICS' => [
+          'status' => $this->fetchMasterOptions('PROJ1_2_MASTER_STATUS_ITEM', 'STATUS', 'STATUS'),
+          'storage_group_id' => $this->fetchMasterOptions('PROJ1_2_MASTER_STORAGE_GROUP', 'STORAGE_GROUP_LIST', 'STORAGE_GROUP_ID'),
+        ],
+        'PLANNING' => [
+          'planning_area_id' => $this->fetchMasterOptions('PROJ1_2_MASTER_PLANNING_AREA', 'PLANNING_AREA_LIST', 'PLANNING_AREA_ID'),
+          'status' => $this->fetchMasterOptions('PROJ1_2_MASTER_STATUS_ITEM', 'STATUS', 'STATUS'),
+          'planning_uom' => $this->fetchMasterOptions('PROJ1_2_MASTER_PLANNING_UOM', 'PLANNING_UOM', 'PLANNING_UOM'),
+          'demand_manage_procedure' => $this->fetchMasterOptions('PROJ1_2_MASTER_DEMAND_PROC', 'DEMAND_MANAGE_PROCEDURE', 'DEMAND_MANAGE_PROCEDURE'),
+          'procurement_type' => $this->fetchMasterOptions('PROJ1_2_MASTER_PROCURE_TYPE', 'PROCUREMENT_TYPE', 'PROCUREMENT_TYPE'),
+          'planning_procedure' => $this->fetchMasterOptions('PROJ1_2_MASTER_PLANNING_PROC', 'PLANNING_PROCEDURE', 'PLANNING_PROCEDURE'),
+          'lot_sizing_method' => $this->fetchMasterOptions('PROJ1_2_MASTER_LOT_SIZING_METH', 'LOT_SIZING_METHOD', 'LOT_SIZING_METHOD'),
+        ],
+        'QTY_CONVERS' => [
+          'quantity_uom' => $this->fetchMasterOptions('PROJ1_2_MASTER_UOM', 'QUANTITY_UOM_LIST', 'QUANTITY_UOM_LIST'),
+          'corres_qty_uom' => $this->fetchMasterOptions('PROJ1_2_MASTER_CORRES_UOM', 'CORRES_QTY_UOM', 'CORRES_QTY_UOM'),
+        ],
+        'SALES_DATA' => [
+          'sales_org_id' => $this->fetchMasterOptions('PROJ1_2_MASTER_SALES_ORG', 'SALES_ORG_ID', 'SALES_ORG_ID'),
+          'distribution_channel' => $this->fetchMasterOptions('PROJ1_2_MASTER_DIST_CHANNEL', 'DIST_CHANNEL_LIST', 'DIST_CHANNEL_LIST'),
+          'status' => $this->fetchMasterOptions('PROJ1_2_MASTER_STATUS_ITEM', 'STATUS', 'STATUS'),
+          'sales_uom' => $this->fetchMasterOptions('PROJ1_2_MASTER_SALES_UOM', 'SALES_UOM', 'SALES_UOM'),
+          'item_group' => $this->fetchMasterOptions('PROJ1_2_MASTER_ITEM_GROUP', 'ITEM_GROUP', 'ITEM_GROUP'),
+        ],
+        'SUPP_PART_NUM' => [
+          'supplier_id' => $this->fetchMasterOptions('PROJ1_2_MASTER_SUPPLIER', 'SUPPLIER_LIST', 'SUPPLIER_ID'),
+          'supplier_part_number' => $this->fetchMasterOptions('PROJ1_2_MASTER_SUPPL_PART_NUM', 'SUPPLIER_PART_NUMBER', 'SUPPLIER_PART_NUMBER'),
+        ],
+        'UOM_CHAR' => [
+          'quantity_uom' => $this->fetchMasterOptions('PROJ1_2_MASTER_UOM', 'QUANTITY_UOM_LIST', 'DESCRIPTION_UOM'),
+        ],
+      ];
+    }
+
     /**
      * Display the user's profile form.
      */
@@ -499,8 +597,9 @@ class RmController extends Controller
       $error = session('error');  // ข้อความ error
       $success = session('success');  // ข้อความ success
       $activeTab = $tab;
+      $fieldOptions = $this->reportFieldOptions();
 
-      return Inertia::render('RM/Report', compact('error', 'success', 'columns', 'datas', 'activeTab', 'labels'));
+      return Inertia::render('RM/Report', compact('error', 'success', 'columns', 'datas', 'activeTab', 'labels', 'fieldOptions'));
     }
 
     public function update(Request $request): RedirectResponse
