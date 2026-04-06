@@ -26,9 +26,6 @@ export default function Authenticated({ user, header, children }) {
                                 <NavLink href={route('dashboard')} active={route().current('dashboard')}>
                                     Dashboard
                                 </NavLink>
-                                <NavLink href={route('material-levels.raw.new')} active={route().current('material-levels.raw.new')}>
-                                    Raw Material
-                                </NavLink>
 
                                 <div className="hidden sm:flex sm:items-center sm:ml-6">
                                     <div className="ml-3 relative">
@@ -184,9 +181,6 @@ export default function Authenticated({ user, header, children }) {
                     <div className="pt-2 pb-3 space-y-1">
                         <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
                             Dashboard
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('material-levels.raw.new')} active={route().current('material-levels.raw.new')}>
-                            Raw Material
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route('material.request')} active={route().current('material.request')}>
                             Material/Request

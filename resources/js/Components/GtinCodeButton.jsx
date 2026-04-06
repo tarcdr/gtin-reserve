@@ -75,14 +75,26 @@ export default function GtinCodeButton({
                 {children || gtinValue}
             </button>
 
-            <Modal show={showModal} onClose={closeModal} maxWidth={modalMaxWidth}>
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div className="bg-slate-100 border-b border-slate-200 px-6 py-4">
-                        <h2 className="text-lg font-semibold text-slate-800">
+            <Modal
+                show={showModal}
+                onClose={closeModal}
+                maxWidth={modalMaxWidth}
+                panelClassName="w-full h-[100dvh] max-h-[100dvh] m-0 rounded-none sm:h-auto sm:max-h-[90vh] sm:rounded-lg"
+            >
+                <div className="bg-white shadow-lg overflow-hidden h-full flex flex-col">
+                    <div className="bg-slate-100 border-b border-slate-200 px-4 py-4 sm:px-6 flex items-center justify-between gap-4">
+                        <h2 className="text-lg font-semibold text-slate-800 truncate">
                             {gtinValue}
                         </h2>
+                        <button
+                            type="button"
+                            onClick={closeModal}
+                            className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                        >
+                            Close
+                        </button>
                     </div>
-                    <div className="p-6 space-y-6">
+                    <div className="p-4 sm:p-6 space-y-6 overflow-y-auto">
                         <div className="flex flex-col items-center gap-3">
                             <div className="text-sm text-slate-600">QR Code</div>
                             <canvas ref={qrCanvasRef} className="bg-white border border-slate-200 rounded p-2" />

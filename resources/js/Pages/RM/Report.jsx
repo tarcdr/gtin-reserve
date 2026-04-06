@@ -3,6 +3,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
+import SearchableCreatableInput from '@/Components/SearchableCreatableInput';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -13,6 +14,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
   const [confirmingActive, setConfirmingActive] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [dataLabels, setDataLabels] = useState({});
+  const [formErrors, setFormErrors] = useState({});
   const [showGoToBottom, setShowGoToBottom] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -35,7 +37,202 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
     label: 'Export to SAP'
   }];
 
-  const disabledColumn = ['status_row', 'user_create'];
+  const getOptionsFromData = (columnName) => (
+    [...new Set(datas.map((item) => item?.[columnName]).filter(Boolean))].map((value) => ({
+      value,
+      label: value,
+      code: value,
+    }))
+  );
+
+  const tabFieldConfigs = {
+    AVAILABILITY: {
+      material_id: { type: 'display', required: true },
+      planning_area_id: { type: 'list', required: true, options: getOptionsFromData('planning_area_id') },
+      status: { type: 'list', required: true, options: getOptionsFromData('status') },
+      availability_check_scope: { type: 'text', required: false },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+    CUST_PART_NUM: {
+      material_id: { type: 'display', required: true },
+      customer_id: { type: 'combo', required: true, options: getOptionsFromData('customer_id') },
+      customer_part_number: { type: 'combo', required: true, options: getOptionsFromData('customer_part_number') },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+    FINANCIAL: {
+      material_id: { type: 'display', required: true },
+      company_id: { type: 'combo', required: true, options: getOptionsFromData('company_id') },
+      business_residence_id: { type: 'combo', required: true, options: getOptionsFromData('business_residence_id') },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+    GENERAL: {
+      material_id: { type: 'display', required: true },
+      material_desc: { type: 'display', required: true, maxLength: 40 },
+      full_material_desc: { type: 'display', required: true },
+      meterial_desc_th: { type: 'display', required: true },
+      product_category_id: { type: 'list', required: true, options: getOptionsFromData('product_category_id') },
+      mat_type: { type: 'display', required: true },
+      sub_type: { type: 'display', required: true, maxLength: 30 },
+      brand: { type: 'display', required: true },
+      base_uom: { type: 'display', required: true },
+      inv_valuation_uom: { type: 'text', required: false },
+      pillar: { type: 'list', required: true, options: getOptionsFromData('pillar') },
+      division: { type: 'combo', required: true, options: getOptionsFromData('division') },
+      department: { type: 'list', required: true, options: getOptionsFromData('department') },
+      sub_department: { type: 'list', required: false, options: getOptionsFromData('sub_department') },
+      class: { type: 'combo', required: true, maxLength: 30, options: getOptionsFromData('class') },
+      sub_class: { type: 'combo', required: true, maxLength: 30, options: getOptionsFromData('sub_class') },
+      section: { type: 'combo', required: true, maxLength: 30, options: getOptionsFromData('section') },
+      series: { type: 'combo', required: true, maxLength: 30, options: getOptionsFromData('series') },
+      attribute_1: { type: 'list', required: true, options: getOptionsFromData('attribute_1') },
+      register_off: { type: 'text', required: false, maxLength: 30 },
+      shelf_life: { type: 'text', required: true },
+      hs_code: { type: 'combo', required: true, options: getOptionsFromData('hs_code') },
+      country: { type: 'combo', required: true, maxLength: 30, options: getOptionsFromData('country') },
+      old_product_id: { type: 'text', required: false },
+      identified_stock_type: { type: 'text', required: false },
+      serial_number_profile: { type: 'text', required: false },
+      retail_sales_price: { type: 'text', required: false },
+      product_core: { type: 'text', required: false },
+      attribute_2: { type: 'combo', required: true, options: getOptionsFromData('attribute_2') },
+      detail_name: { type: 'display', required: false },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+    GTINS: {
+      material_id: { type: 'display', required: true },
+      trading_unit: { type: 'list', required: true, options: getOptionsFromData('trading_unit') },
+      gtin_number: { type: 'display', required: true },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+    LOGISTICS: {
+      material_id: { type: 'display', required: true },
+      site_id: { type: 'display', required: true },
+      status: { type: 'list', required: true, options: getOptionsFromData('status') },
+      storage_group_id: { type: 'combo', required: true, options: getOptionsFromData('storage_group_id') },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+    PLANNING: {
+      material_id: { type: 'display', required: true },
+      planning_area_id: { type: 'combo', required: true, options: getOptionsFromData('planning_area_id') },
+      status: { type: 'list', required: true, options: getOptionsFromData('status') },
+      planning_uom: { type: 'list', required: true, options: getOptionsFromData('planning_uom') },
+      demand_manage_procedure: { type: 'combo', required: true, options: getOptionsFromData('demand_manage_procedure') },
+      procurement_type: { type: 'combo', required: true, options: getOptionsFromData('procurement_type') },
+      planning_procedure: { type: 'combo', required: true, options: getOptionsFromData('planning_procedure') },
+      lot_sizing_method: { type: 'combo', required: true, options: getOptionsFromData('lot_sizing_method') },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+    QTY_CONVERS: {
+      material_id: { type: 'display', required: true },
+      quantity: { type: 'text', required: true },
+      quantity_uom: { type: 'list', required: true, options: getOptionsFromData('quantity_uom') },
+      corres_qty: { type: 'text', required: true },
+      corres_qty_uom: { type: 'list', required: true, options: getOptionsFromData('corres_qty_uom') },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+    SALES_DATA: {
+      material_id: { type: 'display', required: true },
+      sales_org_id: { type: 'list', required: true, options: getOptionsFromData('sales_org_id') },
+      distribution_channel: { type: 'combo', required: true, options: getOptionsFromData('distribution_channel') },
+      status: { type: 'list', required: true, options: getOptionsFromData('status') },
+      sales_uom: { type: 'list', required: true, options: getOptionsFromData('sales_uom') },
+      item_group: { type: 'combo', required: true, options: getOptionsFromData('item_group') },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+    SUPP_PART_NUM: {
+      material_id: { type: 'display', required: true },
+      supplier_id: { type: 'combo', required: true, options: getOptionsFromData('supplier_id') },
+      supplier_part_number: { type: 'combo', required: true, options: getOptionsFromData('supplier_part_number') },
+      supplier_lead_time: { type: 'text', required: false },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+    UOM_CHAR: {
+      material_id: { type: 'display', required: true },
+      unit_of_measure: { type: 'display', required: true },
+      net_weight: { type: 'text', required: false },
+      uom_net_weight: { type: 'text', required: false },
+      gross_weight: { type: 'text', required: false },
+      uom_gross_weight: { type: 'text', required: false },
+      net_volume: { type: 'text', required: false },
+      uom_net_volume: { type: 'text', required: false },
+      gross_volume: { type: 'text', required: false },
+      uom_gross_volume: { type: 'text', required: false },
+      lengths: { type: 'text', required: false },
+      uom_length: { type: 'text', required: false },
+      width: { type: 'text', required: false },
+      uom_width: { type: 'text', required: false },
+      height: { type: 'text', required: false },
+      uom_height: { type: 'text', required: false },
+      quantity: { type: 'text', required: false },
+      quantity_uom: { type: 'list', required: false, options: getOptionsFromData('quantity_uom') },
+      quantity_type_char: { type: 'text', required: false },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+    },
+  };
+  const getFieldConfig = (columnName) => {
+    return tabFieldConfigs[activeTab]?.[columnName] || { type: 'text', required: false };
+  };
+  const renderEditField = (column) => {
+    const fieldConfig = getFieldConfig(column.name);
+
+    if (fieldConfig.type === 'list') {
+      return (
+        <select
+          id={column.name}
+          className="mt-1 block w-full border-gray-300 rounded-md"
+          value={data[column.name] ?? ''}
+          required={fieldConfig.required}
+          maxLength={fieldConfig.maxLength}
+          onChange={(e) => setData(column.name, e.target.value)}
+        >
+          <option value="">---- Select ----</option>
+          {fieldConfig.options?.map((option) => (
+            <option key={`${column.name}-${option.value}`} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    if (fieldConfig.type === 'combo') {
+      return (
+        <SearchableCreatableInput
+          id={column.name}
+          className="mt-1 block w-full"
+          value={data[column.name] ?? ''}
+          options={fieldConfig.options || []}
+          required={fieldConfig.required}
+          maxLength={fieldConfig.maxLength}
+          onChange={(nextValue) => setData(column.name, nextValue)}
+        />
+      );
+    }
+
+    return (
+      <TextInput
+        id={column.name}
+        className={`mt-1 block w-full${fieldConfig.type === 'display' ? ' opacity-25' : ''}`}
+        value={data[column.name] ?? ''}
+        type={column?.hidden ? 'number' : 'text'}
+        maxLength={fieldConfig.maxLength || 100}
+        required={fieldConfig.required}
+        onChange={(e) => setData(column.name, e.target.value)}
+        disabled={fieldConfig.type === 'display'}
+      />
+    );
+  };
 
   const toggleActiveTab = tabInput => {
     router.visit(`/rm/report/${tabInput}`, {
@@ -55,6 +252,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
   };
 
   const closeModal = () => {
+      setFormErrors({});
       setConfirmingActive(false);
   };
 
@@ -73,6 +271,29 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
 
   const setActive = (e) => {
       e.preventDefault();
+
+      const nextErrors = {};
+      columns
+        .filter(column => !column?.hidden)
+        .forEach((column) => {
+          const fieldConfig = getFieldConfig(column.name);
+          const value = data[column.name];
+
+          if (fieldConfig.required && !String(value ?? '').trim()) {
+            nextErrors[column.name] = `${dataLabels[column.label] || column.label} is required.`;
+            return;
+          }
+
+          if (fieldConfig.maxLength && String(value ?? '').length > fieldConfig.maxLength) {
+            nextErrors[column.name] = `${dataLabels[column.label] || column.label} must be at most ${fieldConfig.maxLength} characters.`;
+          }
+        });
+
+      setFormErrors(nextErrors);
+
+      if (Object.keys(nextErrors).length > 0) {
+        return;
+      }
 
       patch(route('rm.confirm', { tab: activeTab }), {
           onSuccess: () => closeModal()
@@ -208,7 +429,6 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                             <td className="text-center px-6 py-3 w-[160px]">
                               <div className="flex flex-nowrap gap-1 items-center justify-center">
                                 <SecondaryButton disabled={o?.status_row === 'ETS'} onClick={() => toggleModal(o)}>Edit</SecondaryButton>
-                                <DangerButton disabled={o?.status_row === 'ETS'} onClick={() => toggleDelete(o)}>Delete</DangerButton>
                               </div>
                             </td>
                           </tr>
@@ -236,17 +456,9 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                         <div key={`form-input-${column.name}`} className={column?.hidden && 'hidden'}>
                           <InputLabel htmlFor={column.name} value={dataLabels[column.label] || column.label} />
 
-                          <TextInput
-                              id={column.name}
-                              className={`mt-1 block w-full${disabledColumn.includes(column.name) ? ' opacity-25' : ''}`}
-                              value={data[column.name]}
-                              type={column?.hidden ? 'number' : 'text'}
-                              maxLength="100"
-                              onChange={(e) => setData(column.name, e.target.value)}
-                              disabled={disabledColumn.includes(column.name)}
-                          />
+                          {renderEditField(column)}
 
-                          <InputError className="mt-2" message={errors[column.name]} />
+                          <InputError className="mt-2" message={formErrors[column.name] || errors[column.name]} />
                         </div>
                       ))}
                     </div>
