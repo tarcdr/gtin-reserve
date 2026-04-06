@@ -27,6 +27,8 @@ class MaterialLevelController extends Controller
     $this->subMattypes = [
       ["code" => "0", "label" => "0"],
       ["code" => "1", "label" => "1"],
+      ["code" => "2", "label" => "2"],
+      ["code" => "3", "label" => "3"],
     ];
     $this->uoms = MasterUOM::all()->map(function ($b) {
       return [
@@ -36,12 +38,25 @@ class MaterialLevelController extends Controller
     })->toArray();
   }
 
+  protected function persistFgDraft(Request $request, array $fgDetail): void
+  {
+    $key = $fgDetail['materialId'] ?? $request->get('fgMaterialId') ?? $fgDetail['bomId'] ?? $request->get('fgBomId');
+
+    if ($key) {
+      $request->session()->put("product_drafts.{$key}", $fgDetail);
+    }
+  }
+
   protected function baseInput(Request $request, string $table, string $mattype, string $subMattype): array
   {
     return [
+      'mode'         => $request->get('mode', $request->get('levelMaterialId') ? 'view' : 'create'),
+      'fgDetail'     => $request->get('fgDetail', []),
       'fgMaterialId' => $request->get('materialId') ?? $request->get('fgMaterialId'),
       'fgBomId'      => $request->get('bomId') ?? $request->get('fgBomId'),
       'fgBomDesc'    => $request->get('bomDesc') ?? $request->get('fgBomDesc'),
+      'parentMattype'=> $request->get('parentMattype') ?? $request->get('mattype'),
+      'parentSubMattype' => $request->get('parentSubMattype') ?? $request->get('subMattype'),
       'mattype'      => $mattype,
       'subMattype'   => $subMattype,
       'materialId'   => $request->get('levelMaterialId') ?? '',
@@ -51,6 +66,15 @@ class MaterialLevelController extends Controller
       'uom'          => $request->get('uom') ?? '',
       'storageTable' => $table,
     ];
+  }
+
+  protected function resolveComponents(Request $request, array $fallback = []): array
+  {
+    return collect($request->get('components', $fallback))
+      ->filter(fn($item) => is_array($item) && !empty($item['code']))
+      ->keyBy('code')
+      ->values()
+      ->all();
   }
 
   protected function mockComponents(string $level): array
@@ -96,7 +120,7 @@ class MaterialLevelController extends Controller
   public function semiFgLevel2(Request $request): Response
   {
     $InputData = $this->baseInput($request, 'proj1_semi_fg_lv2', '1', '2');
-    $components = $this->mockComponents('lv2');
+    $components = $this->resolveComponents($request);
     return Inertia::render('MaterialLevels/SemiFgLevel2', [
       'InputData' => $InputData,
       'mattypes' => $this->mattypes,
@@ -109,7 +133,7 @@ class MaterialLevelController extends Controller
   public function semiFgLevel1(Request $request): Response
   {
     $InputData = $this->baseInput($request, 'proj1_semi_fg_lv1', '1', '1');
-    $components = $this->mockComponents('lv1');
+    $components = $this->resolveComponents($request);
     return Inertia::render('MaterialLevels/SemiFgLevel1', [
       'InputData' => $InputData,
       'mattypes' => $this->mattypes,
@@ -122,7 +146,7 @@ class MaterialLevelController extends Controller
   public function businessSupply(Request $request): Response
   {
     $InputData = $this->baseInput($request, 'proj1_business_supply', '9', '0');
-    $components = $this->mockComponents('bns');
+    $components = $this->resolveComponents($request);
     return Inertia::render('MaterialLevels/BusinessSupply', [
       'InputData' => $InputData,
       'mattypes' => $this->mattypes,
@@ -139,17 +163,92 @@ class MaterialLevelController extends Controller
 
   public function saveSemiFgLevel2(Request $request): RedirectResponse
   {
-    return back()->with('success', 'Semi FG Lv.2 saved.');
+    $fgDetail = $request->get('fgDetail', []);
+    $detail = [
+      'id' => $request->get('materialId'),
+      'desc' => $request->get('searchDesc'),
+      'searchDesc' => $request->get('searchDesc'),
+      'fullDescEn' => $request->get('fullDescEn'),
+      'fullDescTh' => $request->get('fullDescTh'),
+      'uom' => $request->get('uom'),
+      'components' => $request->get('components', []),
+    ];
+    $fgDetail['semiFgLv2'] = $detail;
+    $this->persistFgDraft($request, $fgDetail);
+
+    return Redirect::route('material-levels.semi-fg-lv2.new', [
+      'mode' => 'view',
+      'fgDetail' => $fgDetail,
+      'materialId' => $fgDetail['materialId'] ?? null,
+      'bomId' => $fgDetail['bomId'] ?? null,
+      'bomDesc' => $fgDetail['bomDesc'] ?? null,
+      'levelMaterialId' => $detail['id'],
+      'searchDesc' => $detail['searchDesc'],
+      'fullDescEn' => $detail['fullDescEn'],
+      'fullDescTh' => $detail['fullDescTh'],
+      'uom' => $detail['uom'],
+      'components' => $detail['components'],
+    ]);
   }
 
   public function saveSemiFgLevel1(Request $request): RedirectResponse
   {
-    return back()->with('success', 'Semi FG Lv.1 saved.');
+    $fgDetail = $request->get('fgDetail', []);
+    $detail = [
+      'id' => $request->get('materialId'),
+      'desc' => $request->get('searchDesc'),
+      'searchDesc' => $request->get('searchDesc'),
+      'fullDescEn' => $request->get('fullDescEn'),
+      'fullDescTh' => $request->get('fullDescTh'),
+      'uom' => $request->get('uom'),
+      'components' => $request->get('components', []),
+    ];
+    $fgDetail['semiFgLv1'] = $detail;
+    $this->persistFgDraft($request, $fgDetail);
+
+    return Redirect::route('material-levels.semi-fg-lv1.new', [
+      'mode' => 'view',
+      'fgDetail' => $fgDetail,
+      'materialId' => $fgDetail['materialId'] ?? null,
+      'bomId' => $fgDetail['bomId'] ?? null,
+      'bomDesc' => $fgDetail['bomDesc'] ?? null,
+      'levelMaterialId' => $detail['id'],
+      'searchDesc' => $detail['searchDesc'],
+      'fullDescEn' => $detail['fullDescEn'],
+      'fullDescTh' => $detail['fullDescTh'],
+      'uom' => $detail['uom'],
+      'components' => $detail['components'],
+    ]);
   }
 
   public function saveBusinessSupply(Request $request): RedirectResponse
   {
-    return back()->with('success', 'Business supply saved.');
+    $fgDetail = $request->get('fgDetail', []);
+    $detail = [
+      'id' => $request->get('materialId'),
+      'desc' => $request->get('searchDesc'),
+      'searchDesc' => $request->get('searchDesc'),
+      'fullDescEn' => $request->get('fullDescEn'),
+      'fullDescTh' => $request->get('fullDescTh'),
+      'uom' => $request->get('uom'),
+      'components' => $request->get('components', []),
+    ];
+    $fgDetail['businessSupply'] = $detail;
+    $this->persistFgDraft($request, $fgDetail);
+
+    return Redirect::route('material-levels.business-supply.new', [
+      'mode' => 'view',
+      'fgDetail' => $fgDetail,
+      'materialId' => $fgDetail['materialId'] ?? null,
+      'bomId' => $fgDetail['bomId'] ?? null,
+      'bomDesc' => $fgDetail['bomDesc'] ?? null,
+      'levelMaterialId' => $detail['id'],
+      'searchDesc' => $detail['searchDesc'],
+      'fullDescEn' => $detail['fullDescEn'],
+      'fullDescTh' => $detail['fullDescTh'],
+      'uom' => $detail['uom'],
+      'components' => $detail['components'],
+    ]);
   }
 
   public function createComponentRaw(Request $request): RedirectResponse
@@ -159,16 +258,25 @@ class MaterialLevelController extends Controller
 
   public function createComponentSemiFgLevel2(Request $request): RedirectResponse
   {
-    return Redirect::route('material-levels.semi-fg-lv2.new', $request->all());
+    $payload = $request->all();
+    $payload['ownerLevel'] = 'semiFgLv2';
+    $payload['subMattype'] = '0';
+    return Redirect::route('packmaterial.new', $payload);
   }
 
   public function createComponentSemiFgLevel1(Request $request): RedirectResponse
   {
-    return Redirect::route('material-levels.semi-fg-lv1.new', $request->all());
+    $payload = $request->all();
+    $payload['ownerLevel'] = 'semiFgLv1';
+    $payload['subMattype'] = '0';
+    return Redirect::route('packmaterial.new', $payload);
   }
 
   public function createComponentBusinessSupply(Request $request): RedirectResponse
   {
-    return Redirect::route('material-levels.business-supply.new', $request->all());
+    $payload = $request->all();
+    $payload['ownerLevel'] = 'businessSupply';
+    $payload['subMattype'] = '0';
+    return Redirect::route('packmaterial.new', $payload);
   }
 }

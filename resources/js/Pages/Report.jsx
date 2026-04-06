@@ -1,4 +1,5 @@
 import InputError from '@/Components/InputError';
+import GtinCodeButton from '@/Components/GtinCodeButton';
 import InputLabel from '@/Components/InputLabel';
 import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -127,7 +128,9 @@ export default function Report({ auth, InputData, gtins = [] }) {
                                 {o.trading_unit}
                             </td>
                             <td className="px-6 py-4">
-                                {o.global_trade_item_number}
+                                <GtinCodeButton value={o.global_trade_item_number}>
+                                    {o.global_trade_item_number}
+                                </GtinCodeButton>
                             </td>
                             <td className="px-6 py-4">
                                 {o.user_last_update}

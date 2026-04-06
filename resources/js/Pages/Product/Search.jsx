@@ -7,6 +7,7 @@ import { useForm } from '@inertiajs/react';
 import SecondaryButton from '@/Components/SecondaryButton';
 
 export default function ProductSearch({ auth, brands = [], mattypes = [] }) {
+  const subMattypeOptions = ['0', '1', '2', '3'];
   const { data, setData, patch, errors, processing } = useForm({
     brand: '',
     mattype: '',
@@ -74,8 +75,8 @@ export default function ProductSearch({ auth, brands = [], mattypes = [] }) {
                     defaultValue={data?.subMattype}
                   >
                     <option value="">---- Select Sub Mattype ----</option>
-                    {brands?.map(o => (
-                      <option key={`subMattype-code-${o.code}`} value={o.code}>{`${o.code} - ${o?.label || o.code}`}</option>
+                    {subMattypeOptions.map(option => (
+                      <option key={`subMattype-code-${option}`} value={option}>{option}</option>
                     ))}
                   </select>
 

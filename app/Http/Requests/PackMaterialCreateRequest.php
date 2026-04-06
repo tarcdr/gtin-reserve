@@ -16,10 +16,10 @@ class PackMaterialCreateRequest extends FormRequest
   public function rules(): array
   {
     return [
-      'brand'        => ['required'],
       'mattype'      => ['required'],
       'subMattype'   => ['required'],
-      'componentId'  => ['required'],
+      'productCat'   => ['required'],
+      'productSubCat'=> ['required'],
       'searchDesc'   => ['required'],
       'fullDescEn'   => ['required'],
       'fullDescTh'   => ['required'],
@@ -30,9 +30,10 @@ class PackMaterialCreateRequest extends FormRequest
   public function attributes(): array
   {
     return [
-      'brand'        => 'Brand',
       'mattype'      => 'Mattye',
       'subMattype'   => 'Sub Mattype',
+      'productCat'   => 'Product Category',
+      'productSubCat'=> 'Product Sub Category',
       'componentId'  => 'Component ID',
       'searchDesc'   => 'Search Description',
       'fullDescEn'   => 'Full Description (EN)',

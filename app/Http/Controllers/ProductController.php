@@ -15,6 +15,8 @@ use App\Models\MasterUOM;
 use App\Models\MasterLogisitcSite;
 use App\Services\MasterCatLookup;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use PDO;
 
 class ProductController extends Controller
 {
@@ -112,6 +114,84 @@ class ProductController extends Controller
     "label" => "9"
   ]];
 
+  protected function draftKey(?string $materialId, ?string $bomId = null): ?string
+  {
+    $key = $materialId ?: $bomId;
+
+    return $key ? "product_drafts.{$key}" : null;
+  }
+
+  protected function mergeWithDraft(Request $request, array $inputData): array
+  {
+    $draftKey = $this->draftKey(
+      $request->get('materialId') ?: ($inputData['materialId'] ?? null),
+      $request->get('bomId') ?: ($inputData['bomId'] ?? null),
+    );
+
+    if (!$draftKey) {
+      return $inputData;
+    }
+
+    $draft = $request->session()->get($draftKey, []);
+
+    return array_replace($draft, array_filter($inputData, fn($value) => $value !== null));
+  }
+
+  protected function persistDraft(Request $request, array $inputData): void
+  {
+    $draftKey = $this->draftKey($inputData['materialId'] ?? null, $inputData['bomId'] ?? null);
+
+    if ($draftKey) {
+      $request->session()->put($draftKey, $inputData);
+    }
+  }
+
+  protected function buildProductInput(Request $request): array
+  {
+    $normalizeComponents = function ($items) {
+      return collect($items ?? [])
+        ->filter(fn($item) => is_array($item) && !empty($item['code']))
+        ->keyBy('code')
+        ->values()
+        ->all();
+    };
+
+    $semiFgLv2 = $request->get('semiFgLv2');
+    if (is_array($semiFgLv2)) {
+      $semiFgLv2['components'] = $normalizeComponents($semiFgLv2['components'] ?? []);
+    }
+
+    $semiFgLv1 = $request->get('semiFgLv1');
+    if (is_array($semiFgLv1)) {
+      $semiFgLv1['components'] = $normalizeComponents($semiFgLv1['components'] ?? []);
+    }
+
+    $businessSupply = $request->get('businessSupply');
+    if (is_array($businessSupply)) {
+      $businessSupply['components'] = $normalizeComponents($businessSupply['components'] ?? []);
+    }
+
+    return [
+      'brand'          => $request->brand,
+      'mattype'        => $request->mattype,
+      'subMattype'     => $request->subMattype,
+      'materialId'     => $request->materialId,
+      'fgStatus'       => $request->fgStatus ?: 'INS',
+      'bomId'          => $request->bomId,
+      'bomDesc'        => $request->bomDesc,
+      'finishGoods'    => $request->finishGoods,
+      'fullDescEn'     => $request->fullDescEn,
+      'fullDescTh'     => $request->fullDescTh,
+      'searchDesc'     => $request->searchDesc,
+      'site'           => $request->site,
+      'uom'            => $request->uom,
+      'fgComponents'   => $normalizeComponents($request->get('fgComponents', [])),
+      'semiFgLv2'      => $semiFgLv2,
+      'semiFgLv1'      => $semiFgLv1,
+      'businessSupply' => $businessSupply,
+    ];
+  }
+
   public function new(Request $request): Response
   {
     $brands = $this->brands;
@@ -129,47 +209,14 @@ class ProductController extends Controller
     $sites = $this->masterSite;
     $finishGoods = $this->mk->subcategoriesOf('10');
     $masterUom = $this->masterUom;
-    $InputData = [
-      'brand'        => $request->brand,
-      'mattype'      => $request->mattype,
-      'subMattype'   => $request->subMattype,
-      'materialId'   => $request->materialId,
-      'bomId'        => $request->bomId,
-      'bomDesc'      => $request->bomDesc,
-      'finishGoods'  => $request->finishGoods,
-      'fullDescEn'   => $request->fullDescEn,
-      'fullDescTh'   => $request->fullDescTh,
-      'searchDesc'   => $request->searchDesc,
-      'productGroup' => $request->productGroup,
-      'site'         => $request->site,
-      'uom'          => $request->uom,
-      'semiFgLv2'    => $request->semiFgLv2,
-      'semiFgLv1'    => $request->semiFgLv1,
-      'businessSupply' => $request->businessSupply,
-    ];
+    $InputData = $this->mergeWithDraft($request, $this->buildProductInput($request));
     return Inertia::render('Product/Detail', compact('InputData', 'brands', 'mattypes', 'sites', 'masterUom', 'finishGoods'));
   }
 
   public function create(ProductCreateRequest $request): RedirectResponse
   {
-    $InputData = [
-      'brand'        => $request->brand,
-      'mattype'      => $request->mattype,
-      'subMattype'   => $request->subMattype,
-      'materialId'   => $request->materialId,
-      'bomId'        => $request->bomId,
-      'bomDesc'      => $request->bomDesc,
-      'finishGoods'  => $request->finishGoods,
-      'fullDescEn'   => $request->fullDescEn,
-      'fullDescTh'   => $request->fullDescTh,
-      'searchDesc'   => $request->searchDesc,
-      'productGroup' => $request->productGroup,
-      'site'         => $request->site,
-      'uom'          => $request->uom,
-      'semiFgLv2'    => $request->semiFgLv2,
-      'semiFgLv1'    => $request->semiFgLv1,
-      'businessSupply' => $request->businessSupply,
-    ];
+    $InputData = $this->buildProductInput($request);
+    $this->persistDraft($request, $InputData);
     return Redirect::route('product.view', $InputData);
   }
 
@@ -201,21 +248,7 @@ class ProductController extends Controller
     $sites = $this->masterSite;
     $finishGoods = $this->mk->subcategoriesOf('10');
     $masterUom = $this->masterUom;
-    $InputData = [
-      'brand'        => $request->brand,
-      'mattype'      => $request->mattype,
-      'subMattype'   => $request->subMattype,
-      'materialId'   => $request->materialId,
-      'bomId'        => $request->bomId,
-      'bomDesc'      => $request->bomDesc,
-      'finishGoods'  => $request->finishGoods,
-      'fullDescEn'   => $request->fullDescEn,
-      'fullDescTh'   => $request->fullDescTh,
-      'searchDesc'   => $request->searchDesc,
-      'productGroup' => $request->productGroup,
-      'site'         => $request->site,
-      'uom'          => $request->uom,
-    ];
+    $InputData = $this->mergeWithDraft($request, $this->buildProductInput($request));
     $isDisabled = false;
     return Inertia::render('Product/Detail', compact('InputData', 'brands', 'mattypes', 'sites', 'masterUom', 'finishGoods', 'isDisabled'));
   }
@@ -237,16 +270,17 @@ class ProductController extends Controller
       'mattype'      => $request->mattype,
       'subMattype'   => $request->subMattype,
       'materialId'   => $request->materialId,
+      'fgStatus'     => $request->fgStatus ?: 'INS',
       'bomId'        => 'B10SW00727_RJ_01',
       'bomDesc'      => 'Description of BOM ID',
       'finishGoods'  => '10BR',
       'fullDescEn'   => 'Test',
       'fullDescTh'   => 'ทดสอบ',
       'searchDesc'   => 'ทดสอบ ค้นหา',
-      'productGroup' => 'AT HOME',
       'site'         => '01',
       'uom'          => 'Z06',
     ];
+    $InputData = $this->mergeWithDraft($request, $InputData);
     return Redirect::route('product.view', $InputData);
   }
 
@@ -271,28 +305,43 @@ class ProductController extends Controller
     ]);
   }
 
+  public function generateMaterialId(Request $request): JsonResponse
+  {
+    $validated = $request->validate([
+      'brand'      => ['required'],
+      'mattype'    => ['required'],
+      'subMattype' => ['required'],
+    ]);
+
+    $materialId = null;
+    $pdo = DB::getPdo();
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_MAT(:p_brand, :p_mattype, :p_sub_mattype, :p_suggest_material_id); END;');
+    $stmt->bindParam(':p_brand', $validated['brand'], PDO::PARAM_STR);
+    $stmt->bindParam(':p_mattype', $validated['mattype'], PDO::PARAM_STR);
+    $stmt->bindParam(':p_sub_mattype', $validated['subMattype'], PDO::PARAM_STR);
+    $stmt->bindParam(':p_suggest_material_id', $materialId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+    $stmt->execute();
+
+    return response()->json([
+      'program' => 'PROJ1_2_GEN_MAT',
+      'materialId' => $materialId,
+    ]);
+  }
+
   public function update(ProductCreateRequest $request): RedirectResponse
   {
-    $InputData = [
-      'brand'        => $request->brand,
-      'mattype'      => $request->mattype,
-      'subMattype'   => $request->subMattype,
-      'materialId'   => $request->materialId,
-      'bomId'        => $request->bomId,
-      'bomDesc'      => $request->bomDesc,
-      'finishGoods'  => $request->finishGoods,
-      'fullDescEn'   => $request->fullDescEn,
-      'fullDescTh'   => $request->fullDescTh,
-      'searchDesc'   => $request->searchDesc,
-      'productGroup' => $request->productGroup,
-      'site'         => $request->site,
-      'uom'          => $request->uom,
-    ];
+    $InputData = $this->buildProductInput($request);
+    $this->persistDraft($request, $InputData);
     return Redirect::route('product.view', $InputData);
   }
 
   public function delete(Request $request): RedirectResponse
   {
+    $draftKey = $this->draftKey($request->get('materialId'), $request->get('bomId'));
+    if ($draftKey) {
+      $request->session()->forget($draftKey);
+    }
+
     return Redirect::route('product.search');
   }
 }

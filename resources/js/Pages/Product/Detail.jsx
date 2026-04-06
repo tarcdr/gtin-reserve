@@ -14,11 +14,13 @@ import { useEffect } from 'react';
 export default function ProductDetail({ auth, InputData, isDisabled = true, brands = [], mattypes = [], sites = [], masterUom = [], finishGoods = [] }) {
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
+  const subMattypeOptions = ['0', '1', '2', '3'];
   const { data, setData, patch, errors, processing } = useForm({
     brand: InputData?.brand || '',
     mattype: InputData?.mattype || '',
     subMattype: InputData?.subMattype || '',
     materialId: InputData?.materialId || '',
+    fgStatus: InputData?.fgStatus || 'INS',
     bomId: InputData?.bomId || '',
     bomDesc: InputData?.bomDesc || '',
     uom: InputData?.uom || '',
@@ -26,15 +28,111 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
     fullDescEn: InputData?.fullDescEn || '',
     fullDescTh: InputData?.fullDescTh || '',
     searchDesc: InputData?.searchDesc || '',
-    productGroup: InputData?.productGroup || '',
-    site: InputData?.site || ''
+    site: InputData?.site || '',
+    fgComponents: InputData?.fgComponents || [],
+    semiFgLv2: InputData?.semiFgLv2 || null,
+    semiFgLv1: InputData?.semiFgLv1 || null,
+    businessSupply: InputData?.businessSupply || null,
   });
+  const fgComponents = data.fgComponents || [];
+  const semiFgLv2 = data.semiFgLv2 || null;
+  const semiFgLv1 = data.semiFgLv1 || null;
+  const hasSemiFgLv2 = !!(
+    semiFgLv2?.id ||
+    semiFgLv2?.searchDesc ||
+    semiFgLv2?.fullDescEn ||
+    semiFgLv2?.fullDescTh ||
+    semiFgLv2?.uom ||
+    semiFgLv2?.components?.length
+  );
+  const hasSemiFgLv1 = !!(
+    semiFgLv1?.id ||
+    semiFgLv1?.searchDesc ||
+    semiFgLv1?.fullDescEn ||
+    semiFgLv1?.fullDescTh ||
+    semiFgLv1?.uom ||
+    semiFgLv1?.components?.length
+  );
 
-  const goToPackMaterial = () => {
-    router.post('/packmaterial/new', { bomId: data.bomId, bomDesc: data.bomDesc });
+  const getFinishGoodsValue = (mattype, subMattype) => {
+    if (!mattype || subMattype === '') {
+      return '';
+    }
+
+    return mattype === '1' && subMattype === '0'
+      ? 'New Product'
+      : 'Non New Product';
   };
 
+  const goToPackMaterial = () => {
+    router.get(route('packmaterial.new'), {
+      ownerLevel: 'fg',
+      fgDetail: buildFgDetailPayload(),
+      ownerDetail: {
+        id: data.materialId,
+        desc: data.searchDesc,
+        searchDesc: data.searchDesc,
+        fullDescEn: data.fullDescEn,
+        fullDescTh: data.fullDescTh,
+        uom: data.uom,
+      },
+      components: fgComponents,
+      bomId: data.bomId,
+      bomDesc: data.bomDesc,
+      subMattype: '1',
+      actionMode: 'create',
+    });
+  };
+
+  const goToPackMaterialAction = (actionMode, item) => {
+    router.get(route('packmaterial.new'), {
+      ownerLevel: 'fg',
+      fgDetail: buildFgDetailPayload(),
+      ownerDetail: {
+        id: data.materialId,
+        desc: data.searchDesc,
+        searchDesc: data.searchDesc,
+        fullDescEn: data.fullDescEn,
+        fullDescTh: data.fullDescTh,
+        uom: data.uom,
+      },
+      components: fgComponents,
+      bomId: data.bomId,
+      bomDesc: data.bomDesc,
+      subMattype: '1',
+      actionMode,
+      componentId: item?.code || '',
+      searchDesc: item?.searchDesc || '',
+      fullDescEn: item?.fullDescEn || '',
+      fullDescTh: item?.fullDescTh || '',
+      uom: item?.uom || '',
+      productCat: item?.productCat || '',
+      productSubCat: item?.productSubCat || '',
+    });
+  };
+
+  const buildFgDetailPayload = () => ({
+    brand: data.brand,
+    mattype: data.mattype,
+    subMattype: data.subMattype,
+    materialId: data.materialId,
+    fgStatus: data.fgStatus,
+    bomId: data.bomId,
+    bomDesc: data.bomDesc,
+    finishGoods: data.finishGoods,
+    fullDescEn: data.fullDescEn,
+    fullDescTh: data.fullDescTh,
+    searchDesc: data.searchDesc,
+    site: data.site,
+    uom: data.uom,
+    fgComponents: data.fgComponents,
+    semiFgLv2: data.semiFgLv2,
+    semiFgLv1: data.semiFgLv1,
+    businessSupply: data.businessSupply,
+  });
+
   const materialLevelPayload = {
+    fgDetail: buildFgDetailPayload(),
     materialId: data.materialId,
     bomId: data.bomId,
     bomDesc: data.bomDesc,
@@ -43,15 +141,27 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
   };
 
   const goToSemiFgLv2 = (levelData = {}) => {
-    router.get(route('material-levels.semi-fg-lv2.new'), { ...materialLevelPayload, ...levelData });
+    router.get(route('material-levels.semi-fg-lv2.new'), {
+      ...materialLevelPayload,
+      mode: levelData.mode || (levelData.levelMaterialId ? 'view' : 'create'),
+      ...levelData,
+    });
   };
 
   const goToSemiFgLv1 = (levelData = {}) => {
-    router.get(route('material-levels.semi-fg-lv1.new'), { ...materialLevelPayload, ...levelData });
+    router.get(route('material-levels.semi-fg-lv1.new'), {
+      ...materialLevelPayload,
+      mode: levelData.mode || (levelData.levelMaterialId ? 'view' : 'create'),
+      ...levelData,
+    });
   };
 
   const goToBusinessSupply = (levelData = {}) => {
-    router.get(route('material-levels.business-supply.new'), { ...materialLevelPayload, ...levelData });
+    router.get(route('material-levels.business-supply.new'), {
+      ...materialLevelPayload,
+      mode: levelData.mode || (levelData.levelMaterialId ? 'view' : 'create'),
+      ...levelData,
+    });
   };
 
   const submit = (e) => {
@@ -63,7 +173,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
   };
 
   const goToEdit = () => {
-    router.get(route('product.edit'), data);
+    router.get(route('product.edit'), buildFgDetailPayload());
   };
 
   const handleDelete = () => {
@@ -78,6 +188,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
         subMattype: data.subMattype
       }
     });
+  };
+
+  const handleComplete = () => {
+    setData('fgStatus', 'COM');
   };
   
   useEffect(() => {
@@ -94,6 +208,13 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
     setShowSite(dispSite);
     setShowBomId(dispBomId);
   }, [data.mattype]);
+
+  useEffect(() => {
+    const nextFinishGoods = getFinishGoodsValue(data.mattype, data.subMattype);
+    if (data.finishGoods !== nextFinishGoods) {
+      setData('finishGoods', nextFinishGoods);
+    }
+  }, [data.mattype, data.subMattype, data.finishGoods]);
 
   return (
     <AuthenticatedLayout
@@ -153,47 +274,24 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                     disabled={isDisabled}
                   >
                     <option value="">---- Select Sub Mattype ----</option>
-                    {brands?.map(o => (
-                      <option key={`subMattype-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.code}`}</option>
+                    {subMattypeOptions.map(option => (
+                      <option key={`subMattype-code-${option}`} value={option}>{option}</option>
                     ))}
                   </select>
 
                   <InputError className="mt-2" message={errors.subMattype} />
-                </div>
-                <div>
-                  <InputLabel htmlFor="productGroup" value="Product Group" />
-                  <select
-                    id="productGroup"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
-                    onChange={(e) => setData('productGroup', e.target.value)}
-                    defaultValue={data.productGroup}
-                    disabled={isDisabled}
-                  >
-                    <option value="">---- Select Product Group ----</option>
-                    {brands?.map(o => (
-                      <option key={`productGroup-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.code}`}</option>
-                    ))}
-                  </select>
-
-                  <InputError className="mt-2" message={errors.productGroup} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <InputLabel htmlFor="finishGoods" value="Finish Goods" />
-                  <select
+                  <TextInput
                     id="finishGoods"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
-                    onChange={(e) => setData('finishGoods', e.target.value)}
-                    defaultValue={data.finishGoods}
-                    disabled={isDisabled}
-                  >
-                    <option value="">---- Select Finish Goods ----</option>
-                    {finishGoods?.map(o => (
-                      <option key={`finishGoods-code-${o.code}`} value={o.code}>{`${o.code} - ${o.name}`}</option>
-                    ))}
-                  </select>
+                    className="mt-1 block w-full bg-gray-100"
+                    value={data.finishGoods}
+                    readOnly
+                  />
 
                   <InputError className="mt-2" message={errors.finishGoods} />
                 </div>
@@ -228,6 +326,16 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                     disabled
                   />
                 </div>
+                <div>
+                  <InputLabel htmlFor="bomStatus" value="FG Status" />
+
+                  <TextInput
+                    id="bomStatus"
+                    className="mt-1 block w-full bg-gray-100"
+                    disabled
+                    value={data.fgStatus}
+                  />
+                </div>
               </div>
               {showBomId && (
                 <>
@@ -251,18 +359,6 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                         value={data.bomDesc}
                         onChange={(e) => setData('bomDesc', e.target.value)}
                         disabled={isDisabled}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <InputLabel htmlFor="bomStatus" value="BOM Status" />
-
-                      <TextInput
-                        id="bomStatus"
-                        className="mt-1 block w-full bg-gray-100"
-                        disabled
-                        defaultValue="INS"
                       />
                     </div>
                   </div>
@@ -334,129 +430,152 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   <InputError className="mt-2" message={errors.uom} />
                 </div>
               </div>
-              <fieldset className="border border-gray-300 rounded-md p-4 mt-8">
-                <legend className="px-2 text-gray-600">Components</legend>
-                <div className="flex items-center justify-end gap-4 mb-2">
-                    <SuccessButton type="button" onClick={goToPackMaterial} disabled={isDisabled}>Add Component</SuccessButton>
-                </div>
-                <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                  <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
-                    <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
-                        <tr>
-                            <th scope="col" className="px-6 py-3">
-                                #
-                            </th>
-                            <th scope="col" className="px-6 py-3">
-                                Component ID
-                            </th>
-                            <th scope="col" className="px-6 py-3">
-                                Description
-                            </th>
-                            <th scope="col" className="px-6 py-3" width="100">
-                                Action
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <th scope="row" className="px-6 py-4">
-                          1
-                        </th>
-                        <th scope="row" className="px-6 py-4">
-                          56000001
-                        </th>
-                        <th scope="row" className="px-6 py-4">
-                          LLLLLLLL
-                        </th>
-                        <td className="px-6 py-4 flex gap-2">
-                          <DangerButton type="button">DELETE</DangerButton>
-                          <PrimaryButton type="button">Edit</PrimaryButton>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </fieldset>
-              {data?.mattype === '1' && (
-                <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
-                  {InputData?.semiFgLv2 ? (
-                    <div className="space-y-3">
-                      <div className="text-sm text-gray-600">Semi FG Level 2</div>
-                      <div className="font-semibold">{InputData.semiFgLv2.id}</div>
-                      <div className="text-gray-500">{InputData.semiFgLv2.desc}</div>
-                      <PrimaryButton
-                        type="button"
-                        onClick={() => goToSemiFgLv2({
-                          levelMaterialId: InputData.semiFgLv2.id,
-                          searchDesc: InputData.semiFgLv2.searchDesc,
-                          fullDescEn: InputData.semiFgLv2.fullDescEn,
-                          fullDescTh: InputData.semiFgLv2.fullDescTh,
-                          uom: InputData.semiFgLv2.uom
-                        })}
-                        disabled={isDisabled}
-                      >
-                        Edit Semi FG Level 2
-                      </PrimaryButton>
+              {isDisabled && (
+                <>
+                  <fieldset className="border border-gray-300 rounded-md p-4 mt-8">
+                    <legend className="px-2 text-gray-600">Components</legend>
+                    <div className="flex items-center justify-end gap-4 mb-2">
+                        <SuccessButton type="button" onClick={goToPackMaterial} disabled={!isDisabled}>Add Component</SuccessButton>
                     </div>
-                  ) : (
-                    <SuccessButton type="button" onClick={() => goToSemiFgLv2()} disabled={isDisabled}>
-                      Create Semi FG Level 2
-                    </SuccessButton>
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                      <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
+                        <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+                            <tr>
+                                <th scope="col" className="px-6 py-3">
+                                    #
+                                </th>
+                                <th scope="col" className="px-6 py-3">
+                                    Component ID
+                                </th>
+                                <th scope="col" className="px-6 py-3">
+                                    Description
+                                </th>
+                                <th scope="col" className="px-6 py-3" width="100">
+                                    Action
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                          {fgComponents.length === 0 ? (
+                            <tr>
+                              <td colSpan="4" className="px-6 py-4 text-gray-500">No FG components yet.</td>
+                            </tr>
+                          ) : (
+                            fgComponents.map((item, index) => (
+                              <tr key={`fg-component-${item.code}`}>
+                                <th scope="row" className="px-6 py-4">
+                                  {index + 1}
+                                </th>
+                                <th scope="row" className="px-6 py-4">
+                                  {item.code}
+                                </th>
+                                <th scope="row" className="px-6 py-4">
+                                  {item.label}
+                                </th>
+                                <td className="px-6 py-4 flex gap-2">
+                                  <DangerButton type="button" onClick={() => goToPackMaterialAction('delete', item)}>DELETE</DangerButton>
+                                  <PrimaryButton type="button" onClick={() => goToPackMaterialAction('edit', item)}>Edit</PrimaryButton>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </fieldset>
+                  {data?.mattype === '1' && (
+                    <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
+                      {hasSemiFgLv2 ? (
+                        <div className="space-y-3">
+                          <div className="text-sm text-gray-600">Semi FG Level 2</div>
+                          <div className="font-semibold">{semiFgLv2.id}</div>
+                          <div className="text-gray-500">{semiFgLv2.desc}</div>
+                          <PrimaryButton
+                            type="button"
+                            onClick={() => goToSemiFgLv2({
+                              mode: 'view',
+                              levelMaterialId: semiFgLv2.id,
+                              searchDesc: semiFgLv2.searchDesc,
+                              fullDescEn: semiFgLv2.fullDescEn,
+                              fullDescTh: semiFgLv2.fullDescTh,
+                              uom: semiFgLv2.uom,
+                              components: semiFgLv2.components || [],
+                            })}
+                            disabled={!isDisabled}
+                          >
+                            View Semi FG Level 2
+                          </PrimaryButton>
+                        </div>
+                      ) : (
+                        <SuccessButton type="button" onClick={() => goToSemiFgLv2()} disabled={!isDisabled}>
+                          Create Semi FG Level 2
+                        </SuccessButton>
+                      )}
+                    </div>
                   )}
-                </div>
+                  {data?.mattype === '1' && (
+                    <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
+                      {hasSemiFgLv1 ? (
+                        <div className="space-y-3">
+                          <div className="text-sm text-gray-600">Semi FG Level 1</div>
+                          <div className="font-semibold">{semiFgLv1.id}</div>
+                          <div className="text-gray-500">{semiFgLv1.desc}</div>
+                          <PrimaryButton
+                            type="button"
+                            onClick={() => goToSemiFgLv1({
+                              mode: 'view',
+                              levelMaterialId: semiFgLv1.id,
+                              searchDesc: semiFgLv1.searchDesc,
+                              fullDescEn: semiFgLv1.fullDescEn,
+                              fullDescTh: semiFgLv1.fullDescTh,
+                              uom: semiFgLv1.uom,
+                              components: semiFgLv1.components || [],
+                            })}
+                            disabled={!isDisabled}
+                          >
+                            View Semi FG Level 1
+                          </PrimaryButton>
+                        </div>
+                      ) : (
+                        <SuccessButton type="button" onClick={() => goToSemiFgLv1()} disabled={!isDisabled || !hasSemiFgLv2}>
+                          Create Semi FG Level 1
+                        </SuccessButton>
+                      )}
+                      {!hasSemiFgLv2 && (
+                        <div className="text-sm text-gray-500">Create Semi FG Level 2 first.</div>
+                      )}
+                    </div>
+                  )}
+                  <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
+                    {data.businessSupply ? (
+                      <div className="space-y-3">
+                        <div className="text-sm text-gray-600">Business Supply</div>
+                        <div className="font-semibold">{data.businessSupply.id}</div>
+                        <div className="text-gray-500">{data.businessSupply.desc}</div>
+                        <PrimaryButton
+                          type="button"
+                          onClick={() => goToBusinessSupply({
+                            mode: 'view',
+                            levelMaterialId: data.businessSupply.id,
+                            searchDesc: data.businessSupply.searchDesc,
+                            fullDescEn: data.businessSupply.fullDescEn,
+                            fullDescTh: data.businessSupply.fullDescTh,
+                            uom: data.businessSupply.uom,
+                            components: data.businessSupply.components || [],
+                          })}
+                          disabled={!isDisabled}
+                        >
+                          View Business Supply
+                        </PrimaryButton>
+                      </div>
+                    ) : (
+                      <SuccessButton type="button" onClick={() => goToBusinessSupply()} disabled={!isDisabled}>
+                        Create Business Supply
+                      </SuccessButton>
+                    )}
+                  </div>
+                </>
               )}
-              <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
-                {InputData?.semiFgLv1 ? (
-                  <div className="space-y-3">
-                    <div className="text-sm text-gray-600">Semi FG Level 1</div>
-                    <div className="font-semibold">{InputData.semiFgLv1.id}</div>
-                    <div className="text-gray-500">{InputData.semiFgLv1.desc}</div>
-                    <PrimaryButton
-                      type="button"
-                      onClick={() => goToSemiFgLv1({
-                        levelMaterialId: InputData.semiFgLv1.id,
-                        searchDesc: InputData.semiFgLv1.searchDesc,
-                        fullDescEn: InputData.semiFgLv1.fullDescEn,
-                        fullDescTh: InputData.semiFgLv1.fullDescTh,
-                        uom: InputData.semiFgLv1.uom
-                      })}
-                      disabled={isDisabled}
-                    >
-                      Edit Semi FG Level 1
-                    </PrimaryButton>
-                  </div>
-                ) : (
-                  <SuccessButton type="button" onClick={() => goToSemiFgLv1()} disabled={isDisabled}>
-                    Create Semi FG Level 1
-                  </SuccessButton>
-                )}
-              </div>
-              <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
-                {InputData?.businessSupply ? (
-                  <div className="space-y-3">
-                    <div className="text-sm text-gray-600">Business Supply</div>
-                    <div className="font-semibold">{InputData.businessSupply.id}</div>
-                    <div className="text-gray-500">{InputData.businessSupply.desc}</div>
-                    <PrimaryButton
-                      type="button"
-                      onClick={() => goToBusinessSupply({
-                        levelMaterialId: InputData.businessSupply.id,
-                        searchDesc: InputData.businessSupply.searchDesc,
-                        fullDescEn: InputData.businessSupply.fullDescEn,
-                        fullDescTh: InputData.businessSupply.fullDescTh,
-                        uom: InputData.businessSupply.uom
-                      })}
-                      disabled={isDisabled}
-                    >
-                      Edit Business Supply
-                    </PrimaryButton>
-                  </div>
-                ) : (
-                  <SuccessButton type="button" onClick={() => goToBusinessSupply()} disabled={isDisabled}>
-                    Create Business Supply
-                  </SuccessButton>
-                )}
-              </div>
               <div className="flex items-center justify-center gap-4">
                 <SecondaryButton type="button" onClick={() => window.history.back()}>
                   Back
@@ -465,12 +584,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   <>
                     <PrimaryButton type="button" onClick={goToEdit}>Edit FG</PrimaryButton>
                     <DangerButton type="button" onClick={handleDelete}>DELETE FG</DangerButton>
+                    <SuccessButton type="button" onClick={handleComplete} disabled={data.fgStatus === 'COM'}>Complete</SuccessButton>
                   </>
                 ) : (
-                  <>
-                    <PrimaryButton disabled={processing}>Save FG</PrimaryButton>
-                    <DangerButton type="button" onClick={handleDelete}>DELETE FG</DangerButton>
-                  </>
+                  <PrimaryButton disabled={processing}>Save FG</PrimaryButton>
                 )}
               </div>
             </form>

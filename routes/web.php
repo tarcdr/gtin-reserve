@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/product/search/bom', [ProductController::class, 'findBom'])->name('product.search.bom');
     Route::get('/product/view', [ProductController::class, 'view'])->name('product.view');
     Route::get('/product/edit', [ProductController::class, 'edit'])->name('product.edit');
+    Route::get('/product/generate-material-id', [ProductController::class, 'generateMaterialId'])->name('product.generate-material-id');
     Route::get('/product/material-status', [ProductController::class, 'materialStatus'])->name('product.material-status');
     Route::patch('/product/update', [ProductController::class, 'update'])->name('product.update');
     Route::delete('/product/delete', [ProductController::class, 'delete'])->name('product.delete');

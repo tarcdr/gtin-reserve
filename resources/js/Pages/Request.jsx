@@ -59,7 +59,7 @@ export default function Request({ auth, InputData, brand, mattype, p_message_pcs
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <h2 className="font-semibold text-xl text-gray-800 leading-tight">GTIN/Request</h2>
                 <div className="justify-end flex my-auto">
-                    <PrimaryButton type="button" onClick={() => window.open('/material/request', '_self')}>Create Material ID</PrimaryButton>
+                    <PrimaryButton type="button" onClick={() => window.open('/dashboard', '_self')}>Create Material ID</PrimaryButton>
                 </div>
               </div>
             }

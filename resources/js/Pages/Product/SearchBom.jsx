@@ -10,6 +10,7 @@ import ReactSelect from 'react-select';
 import { useEffect } from 'react';
 
 export default function ProductSearchBom({ auth, InputData, isDisabled = true, brands = [], mattypes = [], materials = [] }) {
+  const subMattypeOptions = ['0', '1', '2', '3'];
   const { data, setData, patch, errors, processing } = useForm({
     brand: InputData?.brand || '',
     mattype: InputData?.mattype || '',
@@ -114,8 +115,8 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                     disabled={isDisabled}
                   >
                     <option value="">---- Select Sub Mattype ----</option>
-                    {brands?.map(o => (
-                      <option key={`subMattype-code-${o.code}`} value={o.code}>{`${o.code} - ${o?.label || o.code}`}</option>
+                    {subMattypeOptions.map(option => (
+                      <option key={`subMattype-code-${option}`} value={option}>{option}</option>
                     ))}
                   </select>
 
@@ -145,7 +146,7 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                   <InputError className="mt-2" message={errors?.materialId} />
                 </div>
                 <div>
-                  <InputLabel htmlFor="status" value="Status" />
+                  <InputLabel htmlFor="status" value="FG Status" />
 
                   <TextInput
                     id="status"

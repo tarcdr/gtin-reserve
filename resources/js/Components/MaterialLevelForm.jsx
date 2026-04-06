@@ -1,11 +1,13 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import SuccessButton from '@/Components/SuccessButton';
 import TextInput from '@/Components/TextInput';
+import DangerButton from '@/Components/DangerButton';
+import { useEffect, useState } from 'react';
 
 export default function MaterialLevelForm({
   auth,
@@ -18,19 +20,31 @@ export default function MaterialLevelForm({
   components = [],
   submitRoute,
   backRoute,
-  createComponentRoute
+  createComponentRoute,
+  levelKey,
+  levelRoute
 }) {
+  const [componentRows, setComponentRows] = useState(components);
+  const mode = InputData?.mode || (InputData?.materialId ? 'view' : 'create');
+  const isViewMode = mode === 'view';
+  const isEditMode = mode === 'edit';
+  const isCreateMode = mode === 'create';
   const { data, setData, patch, processing, errors } = useForm({
+    mode,
+    fgDetail: InputData?.fgDetail || {},
     fgMaterialId: InputData?.fgMaterialId || '',
     fgBomId: InputData?.fgBomId || '',
     fgBomDesc: InputData?.fgBomDesc || '',
+    parentMattype: InputData?.parentMattype || '',
+    parentSubMattype: InputData?.parentSubMattype || '',
     mattype: InputData?.mattype || '',
     subMattype: InputData?.subMattype || '',
     materialId: InputData?.materialId || '',
     searchDesc: InputData?.searchDesc || '',
     fullDescEn: InputData?.fullDescEn || '',
     fullDescTh: InputData?.fullDescTh || '',
-    uom: InputData?.uom || ''
+    uom: InputData?.uom || '',
+    components: components,
   });
 
   const submit = (e) => {
@@ -38,16 +52,145 @@ export default function MaterialLevelForm({
     patch(route(submitRoute));
   };
 
+  useEffect(() => {
+    setComponentRows(components);
+  }, [components]);
+
+  useEffect(() => {
+    setData('components', componentRows);
+  }, [componentRows]);
+
+  const buildNextFgDetail = () => {
+    const nextFgDetail = {
+      ...data.fgDetail,
+    };
+
+    const hasLevelDetail = !!(
+      data.materialId ||
+      data.searchDesc ||
+      data.fullDescEn ||
+      data.fullDescTh ||
+      data.uom ||
+      componentRows.length
+    );
+
+    if (levelKey && hasLevelDetail) {
+      nextFgDetail[levelKey] = {
+        id: data.materialId,
+        desc: data.searchDesc,
+        searchDesc: data.searchDesc,
+        fullDescEn: data.fullDescEn,
+        fullDescTh: data.fullDescTh,
+        uom: data.uom,
+        components: componentRows,
+      };
+    }
+
+    return nextFgDetail;
+  };
+
+  const buildLevelPayload = (nextMode = mode) => ({
+    mode: nextMode,
+    fgDetail: buildNextFgDetail(),
+    materialId: data.fgMaterialId,
+    bomId: data.fgBomId,
+    bomDesc: data.fgBomDesc,
+    levelMaterialId: data.materialId,
+    searchDesc: data.searchDesc,
+    fullDescEn: data.fullDescEn,
+    fullDescTh: data.fullDescTh,
+    uom: data.uom,
+    components: componentRows,
+  });
+
   const goCreateComponent = () => {
     if (!createComponentRoute) {
       return;
     }
-    window.open(route(createComponentRoute, {
+    router.get(route(createComponentRoute), {
       fgMaterialId: data.fgMaterialId,
       fgBomId: data.fgBomId,
-      fgBomDesc: data.fgBomDesc
-    }), '_self');
+      fgBomDesc: data.fgBomDesc,
+      materialId: data.materialId,
+      searchDesc: data.searchDesc,
+      fullDescEn: data.fullDescEn,
+      fullDescTh: data.fullDescTh,
+      uom: data.uom,
+      fgDetail: buildNextFgDetail(),
+      components: componentRows,
+      ownerDetail: {
+        id: data.materialId,
+        desc: data.searchDesc,
+        searchDesc: data.searchDesc,
+        fullDescEn: data.fullDescEn,
+        fullDescTh: data.fullDescTh,
+        uom: data.uom,
+      },
+      actionMode: 'create',
+    });
   };
+
+  const goComponentAction = (actionMode, item = {}) => {
+    if (!createComponentRoute) {
+      return;
+    }
+    router.get(route(createComponentRoute), {
+      fgMaterialId: data.fgMaterialId,
+      fgBomId: data.fgBomId,
+      fgBomDesc: data.fgBomDesc,
+      materialId: data.materialId,
+      searchDesc: data.searchDesc,
+      fullDescEn: data.fullDescEn,
+      fullDescTh: data.fullDescTh,
+      uom: data.uom,
+      fgDetail: buildNextFgDetail(),
+      components: componentRows,
+      ownerDetail: {
+        id: data.materialId,
+        desc: data.searchDesc,
+        searchDesc: data.searchDesc,
+        fullDescEn: data.fullDescEn,
+        fullDescTh: data.fullDescTh,
+        uom: data.uom,
+      },
+      actionMode,
+      componentId: item.code || '',
+      searchDesc: item.searchDesc || item.label || '',
+      fullDescEn: item.fullDescEn || item.label || '',
+      fullDescTh: item.fullDescTh || item.label || '',
+      uom: item.uom || '',
+      productCat: item.productCat || '',
+      productSubCat: item.productSubCat || '',
+    });
+  };
+
+  const goBack = () => {
+    if (isEditMode && levelRoute) {
+      router.get(route(levelRoute), buildLevelPayload('view'));
+      return;
+    }
+
+    if (backRoute === 'product.view') {
+      router.get(route(backRoute), data.materialId ? buildNextFgDetail() : (data.fgDetail || {}));
+      return;
+    }
+
+    window.history.back();
+  };
+
+  const goToEdit = () => {
+    if (!levelRoute) {
+      return;
+    }
+
+    router.get(route(levelRoute), buildLevelPayload('edit'));
+  };
+
+  const backLabel = isEditMode
+    ? `Back to ${title}`
+    : backRoute === 'product.view'
+      ? 'Back to FG'
+      : 'Back';
 
   return (
     <AuthenticatedLayout
@@ -113,7 +256,7 @@ export default function MaterialLevelForm({
                     className={`mt-1 block w-full border-gray-300 rounded-md ${data.mattype ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('mattype', e.target.value)}
                     defaultValue={data.mattype}
-                    disabled={!!data.mattype}
+                    disabled
                   >
                     <option value="">---- Select Mattype ----</option>
                     {mattypes?.map((o) => (
@@ -129,7 +272,7 @@ export default function MaterialLevelForm({
                     className={`mt-1 block w-full border-gray-300 rounded-md ${data.subMattype ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('subMattype', e.target.value)}
                     defaultValue={data.subMattype}
-                    disabled={!!data.subMattype}
+                    disabled
                   >
                     <option value="">---- Select Sub Mattype ----</option>
                     {subMattypes?.map((o) => (
@@ -157,10 +300,11 @@ export default function MaterialLevelForm({
                   <InputLabel htmlFor="searchDesc" value="Search Description" />
                   <TextInput
                     id="searchDesc"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isViewMode ? 'bg-gray-100' : ''}`}
                     value={data.searchDesc}
                     maxLength="40"
                     onChange={(e) => setData('searchDesc', e.target.value)}
+                    disabled={isViewMode}
                   />
                   <InputError className="mt-2" message={errors.searchDesc} />
                 </div>
@@ -171,10 +315,11 @@ export default function MaterialLevelForm({
                   <InputLabel htmlFor="fullDescEn" value="Full Description (EN)" />
                   <TextInput
                     id="fullDescEn"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isViewMode ? 'bg-gray-100' : ''}`}
                     value={data.fullDescEn}
                     maxLength="40"
                     onChange={(e) => setData('fullDescEn', e.target.value)}
+                    disabled={isViewMode}
                   />
                   <InputError className="mt-2" message={errors.fullDescEn} />
                 </div>
@@ -182,10 +327,11 @@ export default function MaterialLevelForm({
                   <InputLabel htmlFor="fullDescTh" value="Full Description (TH)" />
                   <TextInput
                     id="fullDescTh"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isViewMode ? 'bg-gray-100' : ''}`}
                     value={data.fullDescTh}
                     maxLength="40"
                     onChange={(e) => setData('fullDescTh', e.target.value)}
+                    disabled={isViewMode}
                   />
                   <InputError className="mt-2" message={errors.fullDescTh} />
                 </div>
@@ -196,9 +342,10 @@ export default function MaterialLevelForm({
                   <InputLabel htmlFor="uom" value="UOM" />
                   <select
                     id="uom"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isViewMode ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('uom', e.target.value)}
                     defaultValue={data.uom}
+                    disabled={isViewMode}
                   >
                     <option value="">---- Select UOM ----</option>
                     {uoms?.map((o) => {
@@ -213,48 +360,61 @@ export default function MaterialLevelForm({
                 </div>
               </div>
 
-              <fieldset className="border border-gray-300 rounded-md p-4">
-                <legend className="px-2 text-gray-600">{title} Components</legend>
-                <div className="flex items-center justify-end gap-4 mb-2">
-                  <SuccessButton type="button" onClick={goCreateComponent} disabled={!createComponentRoute}>
-                    Create Component
-                  </SuccessButton>
-                </div>
-                <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                  <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
-                    <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
-                      <tr>
-                        <th scope="col" className="px-6 py-3">#</th>
-                        <th scope="col" className="px-6 py-3">Component ID</th>
-                        <th scope="col" className="px-6 py-3">Description</th>
-                        <th scope="col" className="px-6 py-3" width="120">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {components.length === 0 ? (
+              {isViewMode && (
+                <fieldset className="border border-gray-300 rounded-md p-4">
+                  <legend className="px-2 text-gray-600">{title} Components</legend>
+                  <div className="flex items-center justify-end gap-4 mb-2">
+                    <SuccessButton type="button" onClick={goCreateComponent} disabled={!createComponentRoute}>
+                      Add Component
+                    </SuccessButton>
+                  </div>
+                  <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
+                      <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
                         <tr>
-                          <td colSpan="4" className="px-6 py-4 text-gray-500">No components yet. Create one to map with FG.</td>
+                          <th scope="col" className="px-6 py-3">#</th>
+                          <th scope="col" className="px-6 py-3">Component ID</th>
+                          <th scope="col" className="px-6 py-3">Description</th>
+                          <th scope="col" className="px-6 py-3" width="120">Status</th>
+                          <th scope="col" className="px-6 py-3" width="180">Action</th>
                         </tr>
-                      ) : (
-                        components.map((item, index) => (
-                          <tr key={`${title}-component-${item.code}`}>
-                            <th scope="row" className="px-6 py-4">{index + 1}</th>
-                            <td className="px-6 py-4">{item.code}</td>
-                            <td className="px-6 py-4">{item.label}</td>
-                            <td className="px-6 py-4">{item.status}</td>
+                      </thead>
+                      <tbody>
+                        {componentRows.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="px-6 py-4 text-gray-500">No components yet. Create one to map with FG.</td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </fieldset>
+                        ) : (
+                          componentRows.map((item, index) => (
+                            <tr key={`${title}-component-${item.code}`}>
+                              <th scope="row" className="px-6 py-4">{index + 1}</th>
+                              <td className="px-6 py-4">{item.code}</td>
+                              <td className="px-6 py-4">{item.label}</td>
+                              <td className="px-6 py-4">{item.status}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>Edit</PrimaryButton>
+                                  <DangerButton type="button" onClick={() => goComponentAction('delete', item)}>Delete</DangerButton>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </fieldset>
+              )}
 
               <div className="flex items-center justify-center gap-4">
-                <SecondaryButton type="button" onClick={() => window.history.back()}>
-                  Back
+                <SecondaryButton type="button" onClick={goBack}>
+                  {backLabel}
                 </SecondaryButton>
-                <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                {isViewMode ? (
+                  <PrimaryButton type="button" onClick={goToEdit}>Edit</PrimaryButton>
+                ) : (
+                  <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                )}
               </div>
             </form>
           </div>

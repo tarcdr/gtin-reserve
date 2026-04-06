@@ -7,9 +7,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
-import QRCode from 'qrcode';
-import JsBarcode from 'jsbarcode';
+import { useEffect, useState } from 'react';
 
 export default function Report({ auth, activeTab, columns = [], datas = [], labels = [] }) {
   const [confirmingActive, setConfirmingActive] = useState(false);
@@ -17,10 +15,6 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
   const [dataLabels, setDataLabels] = useState({});
   const [showGoToBottom, setShowGoToBottom] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [showGtinModal, setShowGtinModal] = useState(false);
-  const [activeGtin, setActiveGtin] = useState('');
-  const qrCanvasRef = useRef(null);
-  const barcodeCanvasRef = useRef(null);
 
   // เพิ่ม useState สำหรับ sidebar toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -42,8 +36,6 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
   }];
 
   const disabledColumn = ['status_row', 'user_create'];
-  const gtinColumnNames = new Set(['gtin_number', 'gtin_number_desc']);
-  const gtinColumnLabels = new Set(['GTIN_NUMBER_DESC']);
 
   const toggleActiveTab = tabInput => {
     router.visit(`/rm/report/${tabInput}`, {
@@ -77,25 +69,6 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
 
   const closeModalDelete = () => {
     setConfirmingDelete(false);
-  };
-
-  const openGtinModal = (value) => {
-    if (!value) return;
-    setActiveGtin(String(value));
-    setShowGtinModal(true);
-  };
-
-  const closeGtinModal = () => {
-    setShowGtinModal(false);
-    setActiveGtin('');
-  };
-
-  const downloadCanvas = (canvas, filename) => {
-    if (!canvas) return;
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = filename;
-    link.click();
   };
 
   const setActive = (e) => {
@@ -150,39 +123,6 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
     });
     setData(newData);
   }, [columns]);
-
-  useEffect(() => {
-    if (!showGtinModal || !activeGtin) return;
-
-    let timeoutId;
-    const renderCodes = () => {
-      if (!qrCanvasRef.current || !barcodeCanvasRef.current) {
-        timeoutId = setTimeout(renderCodes, 50);
-        return;
-      }
-
-      QRCode.toCanvas(qrCanvasRef.current, activeGtin, {
-        width: 220,
-        margin: 1,
-        errorCorrectionLevel: 'M',
-      });
-
-      JsBarcode(barcodeCanvasRef.current, activeGtin, {
-        format: 'CODE128',
-        width: 2,
-        height: 80,
-        margin: 0,
-        displayValue: true,
-        fontSize: 16,
-      });
-    };
-
-    renderCodes();
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [showGtinModal, activeGtin]);
 
   useEffect(() => {
       const newLabels = {};
@@ -262,18 +202,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                             <td scope="row" className="px-6 py-4">{index + 1}</td>
                             {columns.filter(column => !column?.hidden).map(column => (
                               <td scope="col" className="px-6 py-3" key={`${activeTab}-data-${column.name}`}>
-                                {activeTab === 'GTINS' && (gtinColumnNames.has(column.name) || gtinColumnLabels.has(column.label) || gtinColumnLabels.has(dataLabels[column.label]))
-                                  ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => openGtinModal(o[column.name])}
-                                      className="text-blue-600 hover:underline"
-                                    >
-                                      {o[column.name]}
-                                    </button>
-                                  ) : (
-                                    o[column.name]
-                                  )}
+                                {o[column.name]}
                               </td>
                             ))}
                             <td className="text-center px-6 py-3 w-[160px]">
@@ -328,31 +257,6 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                       <PrimaryButton disabled={processing}>Confirm</PrimaryButton>
                     </div>
                 </form>
-              </div>
-            </Modal>
-            <Modal show={showGtinModal} onClose={closeGtinModal}>
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden max-w-md mx-auto">
-                <div className="bg-slate-100 border-b border-slate-200 px-6 py-4">
-                  <h2 className="text-lg font-semibold text-slate-800">
-                    {activeGtin}
-                  </h2>
-                </div>
-                <div className="p-6 space-y-6">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="text-sm text-slate-600">QR Code</div>
-                    <canvas ref={qrCanvasRef} className="bg-white border border-slate-200 rounded p-2" />
-                    <SecondaryButton onClick={() => downloadCanvas(qrCanvasRef.current, `gtin-${activeGtin}-qr.png`)}>
-                      Download QR
-                    </SecondaryButton>
-                  </div>
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="text-sm text-slate-600">Bar Code</div>
-                    <canvas ref={barcodeCanvasRef} className="bg-white border border-slate-200 rounded p-2" />
-                    <SecondaryButton onClick={() => downloadCanvas(barcodeCanvasRef.current, `gtin-${activeGtin}-barcode.png`)}>
-                      Download Bar Code
-                    </SecondaryButton>
-                  </div>
-                </div>
               </div>
             </Modal>
             <Modal show={confirmingDelete} onClose={closeModalDelete}>

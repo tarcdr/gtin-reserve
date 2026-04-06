@@ -8,15 +8,16 @@ import { useEffect, useState } from 'react';
 import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
 
-export default function ProductNew({ auth, InputData, brands = [], mattypes = [], sites = [], masterUom = [], finishGoods = [] }) {
+export default function ProductNew({ auth, brands = [], mattypes = [], sites = [], masterUom = [] }) {
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
-  const [suggestSeed] = useState(() => Date.now().toString().slice(-6));
-  const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
+  const [step, setStep] = useState(1);
+  const [isGeneratingMaterialId, setIsGeneratingMaterialId] = useState(false);
+  const subMattypeOptions = ['0', '1', '2', '3'];
+  const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
     brand: '',
     mattype: '',
     subMattype: '',
-    productGroup: '',
     finishGoods: '',
     site: '',
     materialId: '',
@@ -24,19 +25,107 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
     searchDesc: '',
     fullDescEn: '',
     fullDescTh: '',
-    uom: ''
+    uom: '',
   });
 
-  const buildSuggestMaterialId = (brand, mattype, subMattype, finishGood, seed) => {
-    if (!brand || !mattype || !subMattype) {
+  const getFinishGoodsValue = (mattype, subMattype) => {
+    if (!mattype || subMattype === '') {
       return '';
     }
-    const compact = `${brand}${mattype}${subMattype}${finishGood || ''}`.replace(/[^a-zA-Z0-9]/g, '');
-    return `${compact}${seed}`;
+
+    return mattype === '1' && subMattype === '0'
+      ? 'New Product'
+      : 'Non New Product';
   };
 
-  const submit = (e) => {
+  const resetGeneratedFields = () => {
+    setData('finishGoods', '');
+    setData('site', '');
+    setData('materialId', '');
+    setData('bomId', '');
+    setData('searchDesc', '');
+    setData('fullDescEn', '');
+    setData('fullDescTh', '');
+    setData('uom', '');
+  };
+
+  const resetBrandMattype = () => {
+    setData('brand', '');
+    setData('mattype', '');
+    setData('subMattype', '');
+    resetGeneratedFields();
+    clearErrors();
+    setStep(1);
+  };
+
+  const resetSubMattype = () => {
+    setData('subMattype', '');
+    resetGeneratedFields();
+    clearErrors();
+    setStep(2);
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
+
+    if (step === 1) {
+      let hasError = false;
+
+      if (!data.brand) {
+        setError('brand', 'The Brand field is required.');
+        hasError = true;
+      }
+
+      if (!data.mattype) {
+        setError('mattype', 'The Mattype field is required.');
+        hasError = true;
+      }
+
+      if (hasError) {
+        return;
+      }
+
+      clearErrors('brand', 'mattype');
+      setStep(2);
+      return;
+    }
+
+    if (step === 2) {
+      if (!data.subMattype) {
+        setError('subMattype', 'The Sub Mattype field is required.');
+        return;
+      }
+
+      clearErrors('subMattype', 'materialId');
+      setIsGeneratingMaterialId(true);
+
+      try {
+        const response = await fetch(route('product.generate-material-id', {
+          brand: data.brand,
+          mattype: data.mattype,
+          subMattype: data.subMattype,
+        }), {
+          headers: {
+            Accept: 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Unable to generate Suggest Material ID.');
+        }
+
+        const payload = await response.json();
+        setData('materialId', payload?.materialId || '');
+        setStep(3);
+      } catch (error) {
+        setError('materialId', 'Unable to generate Suggest Material ID.');
+      } finally {
+        setIsGeneratingMaterialId(false);
+      }
+
+      return;
+    }
+
     patch(route('product.create'));
   };
 
@@ -46,35 +135,23 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
     if (mattype && mattype?.showSite) {
       dispSite = true;
     }
+
     let dispBomId = false;
     const mattype2 = mattypes.find(mat => mat.code === data.mattype);
     if (mattype2 && mattype2?.showBomId) {
       dispBomId = true;
     }
+
     setShowSite(dispSite);
     setShowBomId(dispBomId);
-  }, [data.mattype]);
+  }, [data.mattype, mattypes]);
 
   useEffect(() => {
-    const next = buildSuggestMaterialId(
-      data.brand,
-      data.mattype,
-      data.subMattype,
-      data.finishGoods,
-      suggestSeed
-    );
-    if (data.materialId !== next) {
-      setData('materialId', next);
+    const nextFinishGoods = getFinishGoodsValue(data.mattype, data.subMattype);
+    if (data.finishGoods !== nextFinishGoods) {
+      setData('finishGoods', nextFinishGoods);
     }
-  }, [data.brand, data.mattype, data.subMattype, data.finishGoods, suggestSeed]);
-
-  useEffect(() => {
-    if (recentlySuccessful && InputData?.success) {
-      setTimeout(() => {
-        window.open('/material/report', '_self');
-      }, 500);
-    }
-  }, [recentlySuccessful]);
+  }, [data.mattype, data.subMattype, data.finishGoods]);
 
   return (
     <AuthenticatedLayout
@@ -92,9 +169,10 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                   <InputLabel htmlFor="brand" value="Brand" />
                   <select
                     id="brand"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${step >= 2 ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('brand', e.target.value)}
-                    defaultValue={data.brand}
+                    value={data.brand}
+                    disabled={step >= 2}
                   >
                     <option value="">---- Select Brand ----</option>
                     {brands?.map(o => (
@@ -108,9 +186,10 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                   <InputLabel htmlFor="mattype" value="Mattype" />
                   <select
                     id="mattype"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${step >= 2 ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('mattype', e.target.value)}
-                    defaultValue={data.mattype}
+                    value={data.mattype}
+                    disabled={step >= 2}
                   >
                     <option value="">---- Select Mattype ----</option>
                     {mattypes?.map(o => (
@@ -121,178 +200,179 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                   <InputError className="mt-2" message={errors.mattype} />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <InputLabel htmlFor="subMattype" value="Sub Mattype" />
-                  <select
-                    id="subMattype"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
-                    onChange={(e) => setData('subMattype', e.target.value)}
-                    defaultValue={data.subMattype}
-                  >
-                    <option value="">---- Select Sub Mattype ----</option>
-                    {brands?.map(o => (
-                      <option key={`subMattype-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.code}`}</option>
-                    ))}
-                  </select>
 
-                  <InputError className="mt-2" message={errors.subMattype} />
-                </div>
-                <div>
-                  <InputLabel htmlFor="productGroup" value="Product Group" />
-                  <select
-                    id="productGroup"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
-                    onChange={(e) => setData('productGroup', e.target.value)}
-                    defaultValue={data.productGroup}
-                  >
-                    <option value="">---- Select Product Group ----</option>
-                    {brands?.map(o => (
-                      <option key={`productGroup-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.code}`}</option>
-                    ))}
-                  </select>
-
-                  <InputError className="mt-2" message={errors.productGroup} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <InputLabel htmlFor="finishGoods" value="Finish Goods" />
-                  <select
-                    id="finishGoods"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
-                    onChange={(e) => setData('finishGoods', e.target.value)}
-                    defaultValue={data.finishGoods}
-                  >
-                    <option value="">---- Select Finish Goods ----</option>
-                    {finishGoods?.map(o => (
-                      <option key={`finishGoods-code-${o.code}`} value={o.code}>{`${o.code} - ${o.name}`}</option>
-                    ))}
-                  </select>
-
-                  <InputError className="mt-2" message={errors.finishGoods} />
-                </div>
-                {showSite && (
+              {step >= 2 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <InputLabel htmlFor="site" value="Site" />
+                    <InputLabel htmlFor="subMattype" value="Sub Mattype" />
                     <select
-                      id="site"
-                      className="mt-1 block w-full border-gray-300 rounded-md"
-                      onChange={(e) => setData('site', e.target.value)}
-                      defaultValue={data.site}
+                      id="subMattype"
+                      className={`mt-1 block w-full border-gray-300 rounded-md ${step >= 3 ? 'bg-gray-100' : ''}`}
+                      onChange={(e) => setData('subMattype', e.target.value)}
+                      value={data.subMattype}
+                      disabled={step >= 3}
                     >
-                      <option value="">---- Select Site ----</option>
-                      {sites?.map(o => (
-                        <option key={`site-code-${o.value}`} value={o.value}>{`${o.value} - ${o.label}`}</option>
+                      <option value="">---- Select Sub Mattype ----</option>
+                      {subMattypeOptions.map(option => (
+                        <option key={`subMattype-code-${option}`} value={option}>{option}</option>
                       ))}
                     </select>
 
-                    <InputError className="mt-2" message={errors.site} />
+                    <InputError className="mt-2" message={errors.subMattype} />
+                    <InputError className="mt-2" message={errors.materialId} />
                   </div>
-                )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <InputLabel htmlFor="materialId" value="Suggest Material ID" />
-
-                  <TextInput
-                    id="materialId"
-                    className="mt-1 block w-full bg-gray-100"
-                    value={data.materialId}
-                    disabled
-                  />
                 </div>
-                {showBomId && (
+              )}
+
+              {step >= 3 && (
+                <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                      <InputLabel htmlFor="bomId" value="BOM ID For FG" />
+                      <InputLabel htmlFor="finishGoods" value="Finish Goods" />
+                      <TextInput
+                        id="finishGoods"
+                        className="mt-1 block w-full bg-gray-100"
+                        value={data.finishGoods}
+                        readOnly
+                      />
+
+                      <InputError className="mt-2" message={errors.finishGoods} />
+                    </div>
+                    {showSite && (
+                      <div>
+                        <InputLabel htmlFor="site" value="Site" />
+                        <select
+                          id="site"
+                          className="mt-1 block w-full border-gray-300 rounded-md"
+                          onChange={(e) => setData('site', e.target.value)}
+                          value={data.site}
+                        >
+                          <option value="">---- Select Site ----</option>
+                          {sites?.map(o => (
+                            <option key={`site-code-${o.value}`} value={o.value}>{`${o.value} - ${o.label}`}</option>
+                          ))}
+                        </select>
+
+                        <InputError className="mt-2" message={errors.site} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <InputLabel htmlFor="materialId" value="Suggest Material ID" />
 
                       <TextInput
-                        id="bomId"
+                        id="materialId"
                         className="mt-1 block w-full bg-gray-100"
+                        value={data.materialId}
                         disabled
                       />
                     </div>
+                    {showBomId && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                          <InputLabel htmlFor="bomId" value="BOM ID For FG" />
+
+                          <TextInput
+                            id="bomId"
+                            className="mt-1 block w-full bg-gray-100"
+                            disabled
+                          />
+                        </div>
+                        <div>
+                          <InputLabel htmlFor="bomId" value="Description of BOM ID" />
+
+                          <TextInput
+                            id="bomId"
+                            className="mt-1 block w-full bg-gray-100"
+                            disabled
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                      <InputLabel htmlFor="bomId" value="Description of BOM ID" />
+                      <InputLabel htmlFor="searchDesc" value="Search Description" />
 
                       <TextInput
-                        id="bomId"
-                        className="mt-1 block w-full bg-gray-100"
-                        disabled
+                        id="searchDesc"
+                        className="mt-1 block w-full border-gray-300 rounded-md"
+                        value={data.searchDesc}
+                        maxLength="40"
+                        onChange={(e) => setData('searchDesc', e.target.value)}
                       />
+
+                      <InputError className="mt-2" message={errors.searchDesc} />
                     </div>
                   </div>
-                )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <InputLabel htmlFor="searchDesc" value="Search Description" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <InputLabel htmlFor="fullDescEn" value="Full Description (EN)" />
 
-                  <TextInput
-                    id="searchDesc"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
-                    value={data.searchDesc}
-                    maxLength="40"
-                    onChange={(e) => setData('searchDesc', e.target.value)}
-                  />
+                      <TextInput
+                        id="fullDescEn"
+                        className="mt-1 block w-full border-gray-300 rounded-md"
+                        value={data.fullDescEn}
+                        maxLength="40"
+                        onChange={(e) => setData('fullDescEn', e.target.value)}
+                      />
 
-                  <InputError className="mt-2" message={errors.searchDesc} />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <InputLabel htmlFor="fullDescEn" value="Full Description (EN)" />
+                      <InputError className="mt-2" message={errors.fullDescEn} />
+                    </div>
+                    <div>
+                      <InputLabel htmlFor="fullDescTh" value="Full Description (TH)" />
 
-                  <TextInput
-                    id="fullDescEn"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
-                    value={data.fullDescEn}
-                    maxLength="40"
-                    onChange={(e) => setData('fullDescEn', e.target.value)}
-                  />
+                      <TextInput
+                        id="fullDescTh"
+                        className="mt-1 block w-full border-gray-300 rounded-md"
+                        value={data.fullDescTh}
+                        maxLength="40"
+                        onChange={(e) => setData('fullDescTh', e.target.value)}
+                      />
 
-                  <InputError className="mt-2" message={errors.fullDescEn} />
-                </div>
-                <div>
-                  <InputLabel htmlFor="fullDescTh" value="Full Description (TH)" />
+                      <InputError className="mt-2" message={errors.fullDescTh} />
+                    </div>
+                  </div>
 
-                  <TextInput
-                    id="fullDescTh"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
-                    value={data.fullDescTh}
-                    maxLength="40"
-                    onChange={(e) => setData('fullDescTh', e.target.value)}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <InputLabel htmlFor="uom" value="UOM" />
+                      <select
+                        id="uom"
+                        className="mt-1 block w-full border-gray-300 rounded-md"
+                        onChange={(e) => setData('uom', e.target.value)}
+                        value={data.uom}
+                      >
+                        <option value="">---- Select UOM ----</option>
+                        {masterUom?.map(o => (
+                          <option key={`uom-code-${o.value}`} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
 
-                  <InputError className="mt-2" message={errors.fullDescTh} />
-                </div>
-              </div>
+                      <InputError className="mt-2" message={errors.uom} />
+                    </div>
+                  </div>
+                </>
+              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <InputLabel htmlFor="uom" value="UOM" />
-                  <select
-                    id="uom"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
-                    onChange={(e) => setData('uom', e.target.value)}
-                    defaultValue={data.uom}
-                  >
-                    <option value="">---- Select UOM ----</option>
-                    {masterUom?.map(o => (
-                      <option key={`uom-code-${o.value}`} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-
-                  <InputError className="mt-2" message={errors.uom} />
-                </div>
-              </div>
               <div className="flex items-center justify-center gap-4">
+                {step >= 2 && (
+                  <SecondaryButton type="button" onClick={resetBrandMattype}>
+                    Change Brand / Mattype
+                  </SecondaryButton>
+                )}
+                {step >= 3 && (
+                  <SecondaryButton type="button" onClick={resetSubMattype}>
+                    Change Sub Mattype
+                  </SecondaryButton>
+                )}
                 <SecondaryButton type="button" onClick={() => window.history.back()}>
                   Back
                 </SecondaryButton>
-                <PrimaryButton disabled={processing}>Save FG</PrimaryButton>
+                <PrimaryButton disabled={processing || isGeneratingMaterialId}>
+                  {step === 1 ? 'Submit' : step === 2 ? 'Generate Suggest Material ID' : 'Save FG'}
+                </PrimaryButton>
               </div>
             </form>
           </div>

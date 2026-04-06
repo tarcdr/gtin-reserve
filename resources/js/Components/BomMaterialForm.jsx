@@ -1,10 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
+import { useEffect } from 'react';
 
 export default function BomMaterialForm({
   auth,
@@ -13,14 +14,31 @@ export default function BomMaterialForm({
   mattypes = [],
   subMattypes = [],
   uoms = [],
+  productCategories = [],
+  productSubCategories = [],
   submitRoute
 }) {
   const { data, setData, patch, errors, processing } = useForm({
+    actionMode: InputData?.actionMode || 'create',
+    ownerLevel: InputData?.ownerLevel || 'fg',
     bomId: InputData?.bomId || '',
     bomDesc: InputData?.bomDesc || '',
     mattype: InputData?.mattype || '',
     subMattype: InputData?.subMattype || '',
-    componentId: '',
+    fgDetail: InputData?.fgDetail || {},
+    ownerDetail: InputData?.ownerDetail || {},
+    components: InputData?.components || [],
+    fgMaterialId: InputData?.fgMaterialId || '',
+    fgBomId: InputData?.fgBomId || '',
+    fgBomDesc: InputData?.fgBomDesc || '',
+    levelMaterialId: InputData?.levelMaterialId || '',
+    levelSearchDesc: InputData?.levelSearchDesc || '',
+    levelFullDescEn: InputData?.levelFullDescEn || '',
+    levelFullDescTh: InputData?.levelFullDescTh || '',
+    levelUom: InputData?.levelUom || '',
+    productCat: InputData?.productCat || '',
+    productSubCat: InputData?.productSubCat || '',
+    componentId: InputData?.componentId || '',
     searchDesc: InputData?.searchDesc || '',
     fullDescEn: InputData?.fullDescEn || '',
     fullDescTh: InputData?.fullDescTh || '',
@@ -31,6 +49,93 @@ export default function BomMaterialForm({
     e.preventDefault();
     patch(route(submitRoute));
   };
+
+  const filteredProductSubCategories = productSubCategories.filter(
+    (option) => option.productCatCode === data.productCat
+  );
+
+  useEffect(() => {
+    if (!data.productCat && data.productSubCat) {
+      setData('productSubCat', '');
+      return;
+    }
+
+    const hasSelectedSubCategory = filteredProductSubCategories.some(
+      (option) => option.code === data.productSubCat
+    );
+
+    if (data.productSubCat && !hasSelectedSubCategory) {
+      setData('productSubCat', '');
+    }
+  }, [data.productCat, data.productSubCat]);
+
+  const backToSemiFgLv2 = () => {
+    if (data.ownerLevel === 'fg') {
+      router.get(route('product.view'), data.fgDetail);
+      return;
+    }
+
+    const levelRoute = data.ownerLevel === 'semiFgLv1'
+      ? 'material-levels.semi-fg-lv1.new'
+      : data.ownerLevel === 'businessSupply'
+        ? 'material-levels.business-supply.new'
+        : 'material-levels.semi-fg-lv2.new';
+
+    router.get(route(levelRoute), {
+      mode: 'view',
+      fgDetail: data.fgDetail,
+      materialId: data.fgDetail?.materialId,
+      bomId: data.fgDetail?.bomId,
+      bomDesc: data.fgDetail?.bomDesc,
+      levelMaterialId: data.ownerDetail?.id,
+      searchDesc: data.ownerDetail?.searchDesc,
+      fullDescEn: data.ownerDetail?.fullDescEn,
+      fullDescTh: data.ownerDetail?.fullDescTh,
+      uom: data.ownerDetail?.uom,
+      components: data.components,
+    });
+  };
+
+  const deleteFromSemiFgLv2 = () => {
+    const filteredComponents = data.components.filter((item) => item.code !== data.componentId);
+
+    if (data.ownerLevel === 'fg') {
+      router.get(route('product.view'), {
+        ...data.fgDetail,
+        fgComponents: filteredComponents,
+      });
+      return;
+    }
+
+    const levelRoute = data.ownerLevel === 'semiFgLv1'
+      ? 'material-levels.semi-fg-lv1.new'
+      : data.ownerLevel === 'businessSupply'
+        ? 'material-levels.business-supply.new'
+        : 'material-levels.semi-fg-lv2.new';
+
+    router.get(route(levelRoute), {
+      mode: 'view',
+      fgDetail: data.fgDetail,
+      materialId: data.fgDetail?.materialId,
+      bomId: data.fgDetail?.bomId,
+      bomDesc: data.fgDetail?.bomDesc,
+      levelMaterialId: data.ownerDetail?.id,
+      searchDesc: data.ownerDetail?.searchDesc,
+      fullDescEn: data.ownerDetail?.fullDescEn,
+      fullDescTh: data.ownerDetail?.fullDescTh,
+      uom: data.ownerDetail?.uom,
+      components: filteredComponents,
+    });
+  };
+
+  const primaryActionLabel = data.actionMode === 'edit' ? 'Update' : 'Save';
+  const backLabel = data.ownerLevel === 'fg'
+    ? 'Back to FG'
+    : data.ownerLevel === 'semiFgLv1'
+      ? 'Back to Semi FG Lv.1'
+      : data.ownerLevel === 'businessSupply'
+        ? 'Back to Business Supply'
+        : 'Back to Semi FG Lv.2';
 
   return (
     <AuthenticatedLayout
@@ -93,6 +198,46 @@ export default function BomMaterialForm({
                   </select>
 
                   <InputError className="mt-2" message={errors.subMattype} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <InputLabel htmlFor="productCat" value="Product Category" />
+                  <select
+                    id="productCat"
+                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    onChange={(e) => setData('productCat', e.target.value)}
+                    value={data.productCat}
+                  >
+                    <option value="">---- Select Product Category ----</option>
+                    {productCategories?.map((option) => (
+                      <option key={`productCat-code-${option.code}`} value={option.code}>
+                        {`${option.code} - ${option.label}`}
+                      </option>
+                    ))}
+                  </select>
+
+                  <InputError className="mt-2" message={errors.productCat} />
+                </div>
+                <div>
+                  <InputLabel htmlFor="productSubCat" value="Product SUB Category" />
+                  <select
+                    id="productSubCat"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${!data.productCat ? 'bg-gray-100' : ''}`}
+                    onChange={(e) => setData('productSubCat', e.target.value)}
+                    value={data.productSubCat}
+                    disabled={!data.productCat}
+                  >
+                    <option value="">---- Select Product SUB Category ----</option>
+                    {filteredProductSubCategories.map((option) => (
+                      <option key={`productSubCat-code-${option.code}`} value={option.code}>
+                        {`${option.code} - ${option.label}`}
+                      </option>
+                    ))}
+                  </select>
+
+                  <InputError className="mt-2" message={errors.productSubCat} />
                 </div>
               </div>
 
@@ -176,10 +321,17 @@ export default function BomMaterialForm({
                 </div>
               </div>
               <div className="flex items-center justify-center gap-4">
-                <SecondaryButton type="button" onClick={() => window.history.back()}>
-                  Back
+                <SecondaryButton type="button" onClick={backToSemiFgLv2}>
+                  {backLabel}
                 </SecondaryButton>
-                <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                {data.actionMode !== 'delete' && (
+                  <PrimaryButton disabled={processing}>{primaryActionLabel}</PrimaryButton>
+                )}
+                {data.actionMode !== 'create' && (
+                  <SecondaryButton type="button" onClick={deleteFromSemiFgLv2}>
+                    Delete
+                  </SecondaryButton>
+                )}
               </div>
             </form>
           </div>
