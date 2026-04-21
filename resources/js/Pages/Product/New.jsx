@@ -13,6 +13,8 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
   const [showBomId, setShowBomId] = useState(false);
   const [step, setStep] = useState(1);
   const [isGeneratingMaterialId, setIsGeneratingMaterialId] = useState(false);
+  const [isGeneratingBomId, setIsGeneratingBomId] = useState(false);
+  const [isBomIdReady, setIsBomIdReady] = useState(false);
   const subMattypeOptions = ['0', '1', '2', '3'];
   const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
     brand: '',
@@ -22,6 +24,7 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
     site: '',
     materialId: '',
     bomId: '',
+    bomDesc: '',
     searchDesc: '',
     fullDescEn: '',
     fullDescTh: '',
@@ -43,10 +46,12 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
     setData('site', '');
     setData('materialId', '');
     setData('bomId', '');
+    setData('bomDesc', '');
     setData('searchDesc', '');
     setData('fullDescEn', '');
     setData('fullDescTh', '');
     setData('uom', '');
+    setIsBomIdReady(false);
   };
 
   const resetBrandMattype = () => {
@@ -63,6 +68,55 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
     resetGeneratedFields();
     clearErrors();
     setStep(2);
+  };
+
+  const requiresSiteSubmit = data.mattype === '1';
+
+  const submitSiteId = async (siteValue = data.site) => {
+    if (!siteValue) {
+      setError('site', 'The Site field is required.');
+      return;
+    }
+
+    if (!data.materialId) {
+      setError('materialId', 'Unable to generate Suggest Material ID.');
+      return;
+    }
+
+    clearErrors('site', 'bomId');
+    setIsGeneratingBomId(true);
+
+    try {
+      const response = await fetch(route('product.generate-bom-id', {
+        suggestId: data.materialId,
+        site: siteValue,
+      }), {
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to generate BOM ID.');
+      }
+
+      const payload = await response.json();
+      const nextBomId = payload?.bomId || '';
+
+      if (!nextBomId) {
+        throw new Error('Empty BOM ID.');
+      }
+
+      setData('bomId', nextBomId);
+      setIsBomIdReady(true);
+      clearErrors('site', 'bomId', 'bomDesc');
+    } catch (error) {
+      setData('bomId', '');
+      setIsBomIdReady(false);
+      setError('bomId', 'Unable to generate BOM ID.');
+    } finally {
+      setIsGeneratingBomId(false);
+    }
   };
 
   const submit = async (e) => {
@@ -116,6 +170,9 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
 
         const payload = await response.json();
         setData('materialId', payload?.materialId || '');
+        setData('bomId', '');
+        setData('bomDesc', '');
+        setIsBomIdReady(false);
         setStep(3);
       } catch (error) {
         setError('materialId', 'Unable to generate Suggest Material ID.');
@@ -244,7 +301,19 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
                         <select
                           id="site"
                           className="mt-1 block w-full border-gray-300 rounded-md"
-                          onChange={(e) => setData('site', e.target.value)}
+                          onChange={(e) => {
+                            const nextSite = e.target.value;
+                            setData('site', nextSite);
+                            if (requiresSiteSubmit) {
+                              setData('bomId', '');
+                              setData('bomDesc', '');
+                              setIsBomIdReady(false);
+                              clearErrors('site', 'bomId', 'bomDesc');
+                              if (nextSite && data.materialId) {
+                                submitSiteId(nextSite);
+                              }
+                            }
+                          }}
                           value={data.site}
                         >
                           <option value="">---- Select Site ----</option>
@@ -276,21 +345,27 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
                           <TextInput
                             id="bomId"
                             className="mt-1 block w-full bg-gray-100"
+                            value={data.bomId}
                             disabled
                           />
                         </div>
                         <div>
-                          <InputLabel htmlFor="bomId" value="Description of BOM ID" />
+                          <InputLabel htmlFor="bomDesc" value="Description of BOM ID" />
 
                           <TextInput
-                            id="bomId"
-                            className="mt-1 block w-full bg-gray-100"
-                            disabled
+                            id="bomDesc"
+                            className={`mt-1 block w-full ${isBomIdReady ? 'border-gray-300 rounded-md' : 'bg-gray-100'}`}
+                            value={data.bomDesc}
+                            onChange={(e) => setData('bomDesc', e.target.value)}
+                            disabled={!isBomIdReady}
                           />
                         </div>
                       </div>
                     )}
                   </div>
+                  <InputError className="mt-2" message={errors.bomId} />
+                  <InputError className="mt-2" message={errors.bomDesc} />
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
                       <InputLabel htmlFor="searchDesc" value="Search Description" />
@@ -370,7 +445,7 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
                 <SecondaryButton type="button" onClick={() => window.history.back()}>
                   Back
                 </SecondaryButton>
-                <PrimaryButton disabled={processing || isGeneratingMaterialId}>
+                <PrimaryButton disabled={processing || isGeneratingMaterialId || isGeneratingBomId}>
                   {step === 1 ? 'Submit' : step === 2 ? 'Generate Suggest Material ID' : 'Save FG'}
                 </PrimaryButton>
               </div>

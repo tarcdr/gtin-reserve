@@ -11,6 +11,9 @@ use Inertia\Response;
 use App\Models\Brand;
 use App\Models\MasterUOM;
 use App\Services\MasterCatLookup;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use PDO;
 
 class PackMaterialController extends Controller
 {
@@ -266,5 +269,24 @@ class PackMaterialController extends Controller
       'subMattype' => $request->subMattype,
     ];
     return Redirect::route('packmaterial.new', $InputData);
+  }
+
+  public function generateComponentId(Request $request): JsonResponse
+  {
+    $validated = $request->validate([
+      'productSubCat' => ['required'],
+    ]);
+
+    $componentId = null;
+    $pdo = DB::getPdo();
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_COMP_BOMFG(:p_prd_sub_cat, :p_componenid); END;');
+    $stmt->bindParam(':p_prd_sub_cat', $validated['productSubCat'], PDO::PARAM_STR);
+    $stmt->bindParam(':p_componenid', $componentId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+    $stmt->execute();
+
+    return response()->json([
+      'program' => 'PROJ1_2_GEN_COMP_BOMFG',
+      'componentId' => $componentId,
+    ]);
   }
 }

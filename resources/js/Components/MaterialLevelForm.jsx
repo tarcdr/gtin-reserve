@@ -22,14 +22,31 @@ export default function MaterialLevelForm({
   backRoute,
   createComponentRoute,
   levelKey,
-  levelRoute
+  levelRoute,
+  fixedMattypeDisplayValue = '',
+  subMattypeOptions = null,
+  allowSubMattypeSelection = false,
+  enableSubMattypeGenerate = false,
+  generateRoute = '',
+  showLevelBomFields = false,
+  levelBomIdLabel = 'Level BOM ID',
+  levelBomDescLabel = 'Level BOM Description',
+  levelIdLabel = '',
+  searchDescLabel = 'Search Description',
+  fullDescEnLabel = 'Full Description (EN)',
+  fullDescThLabel = 'Full Description (TH)',
+  componentLegend = '',
+  createComponentLabel = 'Add Component',
+  showStorageTable = true,
+  showComponentSectionWhenNotView = false
 }) {
   const [componentRows, setComponentRows] = useState(components);
+  const [isGeneratingLevelData, setIsGeneratingLevelData] = useState(false);
   const mode = InputData?.mode || (InputData?.materialId ? 'view' : 'create');
   const isViewMode = mode === 'view';
   const isEditMode = mode === 'edit';
   const isCreateMode = mode === 'create';
-  const { data, setData, patch, processing, errors } = useForm({
+  const { data, setData, patch, processing, errors, setError, clearErrors } = useForm({
     mode,
     fgDetail: InputData?.fgDetail || {},
     fgMaterialId: InputData?.fgMaterialId || '',
@@ -39,6 +56,8 @@ export default function MaterialLevelForm({
     parentSubMattype: InputData?.parentSubMattype || '',
     mattype: InputData?.mattype || '',
     subMattype: InputData?.subMattype || '',
+    levelBomId: InputData?.levelBomId || InputData?.bomId || '',
+    levelBomDesc: InputData?.levelBomDesc || '',
     materialId: InputData?.materialId || '',
     searchDesc: InputData?.searchDesc || '',
     fullDescEn: InputData?.fullDescEn || '',
@@ -46,10 +65,60 @@ export default function MaterialLevelForm({
     uom: InputData?.uom || '',
     components: components,
   });
+  const effectiveSubMattypeOptions = subMattypeOptions || subMattypes;
 
   const submit = (e) => {
     e.preventDefault();
     patch(route(submitRoute));
+  };
+
+  const handleSubMattypeChange = async (nextSubMattype) => {
+    setData('subMattype', nextSubMattype);
+
+    if (!enableSubMattypeGenerate || !generateRoute || isViewMode) {
+      return;
+    }
+
+    setData('levelBomId', '');
+    setData('materialId', '');
+    clearErrors('subMattype', 'levelBomId', 'materialId');
+
+    if (!nextSubMattype) {
+      return;
+    }
+
+    setIsGeneratingLevelData(true);
+
+    try {
+      const response = await fetch(route(generateRoute, {
+        fgMaterialId: data.fgMaterialId,
+        fgBomId: data.fgBomId,
+        mattype: data.mattype || fixedMattypeDisplayValue || '',
+        subMattype: nextSubMattype,
+      }), {
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to generate Semi FG Lv.2 data.');
+      }
+
+      const payload = await response.json();
+      const nextLevelBomId = payload?.levelBomId || '';
+      const nextMaterialId = payload?.materialId || '';
+
+      setData('levelBomId', nextLevelBomId);
+      setData('materialId', nextMaterialId);
+      clearErrors('levelBomId', 'materialId');
+    } catch (error) {
+      setData('levelBomId', '');
+      setData('materialId', '');
+      setError('subMattype', 'Unable to generate Semi FG Lv.2 data.');
+    } finally {
+      setIsGeneratingLevelData(false);
+    }
   };
 
   useEffect(() => {
@@ -66,6 +135,8 @@ export default function MaterialLevelForm({
     };
 
     const hasLevelDetail = !!(
+      data.levelBomId ||
+      data.levelBomDesc ||
       data.materialId ||
       data.searchDesc ||
       data.fullDescEn ||
@@ -76,6 +147,8 @@ export default function MaterialLevelForm({
 
     if (levelKey && hasLevelDetail) {
       nextFgDetail[levelKey] = {
+        bomId: data.levelBomId,
+        bomDesc: data.levelBomDesc,
         id: data.materialId,
         desc: data.searchDesc,
         searchDesc: data.searchDesc,
@@ -95,6 +168,8 @@ export default function MaterialLevelForm({
     materialId: data.fgMaterialId,
     bomId: data.fgBomId,
     bomDesc: data.fgBomDesc,
+    levelBomId: data.levelBomId,
+    levelBomDesc: data.levelBomDesc,
     levelMaterialId: data.materialId,
     searchDesc: data.searchDesc,
     fullDescEn: data.fullDescEn,
@@ -107,27 +182,38 @@ export default function MaterialLevelForm({
     if (!createComponentRoute) {
       return;
     }
-    router.get(route(createComponentRoute), {
+    const createPayload = {
       fgMaterialId: data.fgMaterialId,
       fgBomId: data.fgBomId,
       fgBomDesc: data.fgBomDesc,
-      materialId: data.materialId,
-      searchDesc: data.searchDesc,
-      fullDescEn: data.fullDescEn,
-      fullDescTh: data.fullDescTh,
-      uom: data.uom,
       fgDetail: buildNextFgDetail(),
       components: componentRows,
-      ownerDetail: {
-        id: data.materialId,
-        desc: data.searchDesc,
+      actionMode: 'create',
+    };
+
+    if (!isCreateMode) {
+      Object.assign(createPayload, {
+        levelBomId: data.levelBomId,
+        levelBomDesc: data.levelBomDesc,
+        materialId: data.materialId,
         searchDesc: data.searchDesc,
         fullDescEn: data.fullDescEn,
         fullDescTh: data.fullDescTh,
         uom: data.uom,
-      },
-      actionMode: 'create',
-    });
+        ownerDetail: {
+          bomId: data.levelBomId,
+          bomDesc: data.levelBomDesc,
+          id: data.materialId,
+          desc: data.searchDesc,
+          searchDesc: data.searchDesc,
+          fullDescEn: data.fullDescEn,
+          fullDescTh: data.fullDescTh,
+          uom: data.uom,
+        },
+      });
+    }
+
+    router.get(route(createComponentRoute), createPayload);
   };
 
   const goComponentAction = (actionMode, item = {}) => {
@@ -138,14 +224,14 @@ export default function MaterialLevelForm({
       fgMaterialId: data.fgMaterialId,
       fgBomId: data.fgBomId,
       fgBomDesc: data.fgBomDesc,
+      levelBomId: data.levelBomId,
+      levelBomDesc: data.levelBomDesc,
       materialId: data.materialId,
-      searchDesc: data.searchDesc,
-      fullDescEn: data.fullDescEn,
-      fullDescTh: data.fullDescTh,
-      uom: data.uom,
       fgDetail: buildNextFgDetail(),
       components: componentRows,
       ownerDetail: {
+        bomId: data.levelBomId,
+        bomDesc: data.levelBomDesc,
         id: data.materialId,
         desc: data.searchDesc,
         searchDesc: data.searchDesc,
@@ -233,15 +319,17 @@ export default function MaterialLevelForm({
                     disabled
                   />
                 </div>
-                <div>
-                  <InputLabel htmlFor="storageTable" value="Storage Table" />
-                  <TextInput
-                    id="storageTable"
-                    className="mt-1 block w-full bg-gray-100"
-                    value={InputData?.storageTable || ''}
-                    disabled
-                  />
-                </div>
+                {showStorageTable && (
+                  <div>
+                    <InputLabel htmlFor="storageTable" value="Storage Table" />
+                    <TextInput
+                      id="storageTable"
+                      className="mt-1 block w-full bg-gray-100"
+                      value={InputData?.storageTable || ''}
+                      disabled
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -251,31 +339,40 @@ export default function MaterialLevelForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <InputLabel htmlFor="mattype" value="Mattype" />
-                  <select
-                    id="mattype"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${data.mattype ? 'bg-gray-100' : ''}`}
-                    onChange={(e) => setData('mattype', e.target.value)}
-                    defaultValue={data.mattype}
-                    disabled
-                  >
-                    <option value="">---- Select Mattype ----</option>
-                    {mattypes?.map((o) => (
-                      <option key={`mattype-code-${o.code}`} value={o.code}>{o.label}</option>
-                    ))}
-                  </select>
+                  {fixedMattypeDisplayValue ? (
+                    <TextInput
+                      id="mattype"
+                      className="mt-1 block w-full bg-gray-100"
+                      value={fixedMattypeDisplayValue}
+                      disabled
+                    />
+                  ) : (
+                    <select
+                      id="mattype"
+                      className={`mt-1 block w-full border-gray-300 rounded-md ${data.mattype ? 'bg-gray-100' : ''}`}
+                      onChange={(e) => setData('mattype', e.target.value)}
+                      defaultValue={data.mattype}
+                      disabled
+                    >
+                      <option value="">---- Select Mattype ----</option>
+                      {mattypes?.map((o) => (
+                        <option key={`mattype-code-${o.code}`} value={o.code}>{o.label}</option>
+                      ))}
+                    </select>
+                  )}
                   <InputError className="mt-2" message={errors.mattype} />
                 </div>
                 <div>
                   <InputLabel htmlFor="subMattype" value="Sub Mattype" />
                   <select
                     id="subMattype"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${data.subMattype ? 'bg-gray-100' : ''}`}
-                    onChange={(e) => setData('subMattype', e.target.value)}
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${(isViewMode || !allowSubMattypeSelection) ? 'bg-gray-100' : ''}`}
+                    onChange={(e) => handleSubMattypeChange(e.target.value)}
                     defaultValue={data.subMattype}
-                    disabled
+                    disabled={isViewMode || !allowSubMattypeSelection || isGeneratingLevelData}
                   >
                     <option value="">---- Select Sub Mattype ----</option>
-                    {subMattypes?.map((o) => (
+                    {effectiveSubMattypeOptions?.map((o) => (
                       <option key={`subMattype-code-${o.code}`} value={o.code}>{o.label}</option>
                     ))}
                   </select>
@@ -283,9 +380,36 @@ export default function MaterialLevelForm({
                 </div>
               </div>
 
+              {showLevelBomFields && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <InputLabel htmlFor="levelBomId" value={levelBomIdLabel} />
+                    <TextInput
+                      id="levelBomId"
+                      className="mt-1 block w-full bg-gray-100"
+                      value={data.levelBomId}
+                      disabled
+                    />
+                    <InputError className="mt-2" message={errors.levelBomId} />
+                  </div>
+                  <div>
+                    <InputLabel htmlFor="levelBomDesc" value={levelBomDescLabel} />
+                    <TextInput
+                      id="levelBomDesc"
+                      className={`mt-1 block w-full border-gray-300 rounded-md ${isViewMode ? 'bg-gray-100' : ''}`}
+                      value={data.levelBomDesc}
+                      maxLength="100"
+                      onChange={(e) => setData('levelBomDesc', e.target.value)}
+                      disabled={isViewMode}
+                    />
+                    <InputError className="mt-2" message={errors.levelBomDesc} />
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <InputLabel htmlFor="materialId" value={`${title} ID`} />
+                  <InputLabel htmlFor="materialId" value={levelIdLabel || `${title} ID`} />
                   <TextInput
                     id="materialId"
                     className="mt-1 block w-full bg-gray-100"
@@ -293,11 +417,8 @@ export default function MaterialLevelForm({
                     disabled
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <InputLabel htmlFor="searchDesc" value="Search Description" />
+                  <InputLabel htmlFor="searchDesc" value={searchDescLabel} />
                   <TextInput
                     id="searchDesc"
                     className={`mt-1 block w-full border-gray-300 rounded-md ${isViewMode ? 'bg-gray-100' : ''}`}
@@ -312,7 +433,7 @@ export default function MaterialLevelForm({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <InputLabel htmlFor="fullDescEn" value="Full Description (EN)" />
+                  <InputLabel htmlFor="fullDescEn" value={fullDescEnLabel} />
                   <TextInput
                     id="fullDescEn"
                     className={`mt-1 block w-full border-gray-300 rounded-md ${isViewMode ? 'bg-gray-100' : ''}`}
@@ -324,7 +445,7 @@ export default function MaterialLevelForm({
                   <InputError className="mt-2" message={errors.fullDescEn} />
                 </div>
                 <div>
-                  <InputLabel htmlFor="fullDescTh" value="Full Description (TH)" />
+                  <InputLabel htmlFor="fullDescTh" value={fullDescThLabel} />
                   <TextInput
                     id="fullDescTh"
                     className={`mt-1 block w-full border-gray-300 rounded-md ${isViewMode ? 'bg-gray-100' : ''}`}
@@ -360,14 +481,16 @@ export default function MaterialLevelForm({
                 </div>
               </div>
 
-              {isViewMode && (
+              {(isViewMode || showComponentSectionWhenNotView) && (
                 <fieldset className="border border-gray-300 rounded-md p-4">
-                  <legend className="px-2 text-gray-600">{title} Components</legend>
-                  <div className="flex items-center justify-end gap-4 mb-2">
-                    <SuccessButton type="button" onClick={goCreateComponent} disabled={!createComponentRoute}>
-                      Add Component
-                    </SuccessButton>
-                  </div>
+                  <legend className="px-2 text-gray-600">{componentLegend || `${title} Components`}</legend>
+                  {isViewMode && (
+                    <div className="flex items-center justify-end gap-4 mb-2">
+                      <SuccessButton type="button" onClick={goCreateComponent} disabled={!createComponentRoute}>
+                        {createComponentLabel}
+                      </SuccessButton>
+                    </div>
+                  )}
                   <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
                       <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
@@ -392,10 +515,14 @@ export default function MaterialLevelForm({
                               <td className="px-6 py-4">{item.label}</td>
                               <td className="px-6 py-4">{item.status}</td>
                               <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                  <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>Edit</PrimaryButton>
-                                  <DangerButton type="button" onClick={() => goComponentAction('delete', item)}>Delete</DangerButton>
-                                </div>
+                                {isViewMode ? (
+                                  <div className="flex items-center gap-2">
+                                    <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>Edit</PrimaryButton>
+                                    <DangerButton type="button" onClick={() => goComponentAction('delete', item)}>Delete</DangerButton>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400">View Only</span>
+                                )}
                               </td>
                             </tr>
                           ))
@@ -413,7 +540,7 @@ export default function MaterialLevelForm({
                 {isViewMode ? (
                   <PrimaryButton type="button" onClick={goToEdit}>Edit</PrimaryButton>
                 ) : (
-                  <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                  <PrimaryButton disabled={processing || isGeneratingLevelData}>Save</PrimaryButton>
                 )}
               </div>
             </form>

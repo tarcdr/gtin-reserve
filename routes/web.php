@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/product/view', [ProductController::class, 'view'])->name('product.view');
     Route::get('/product/edit', [ProductController::class, 'edit'])->name('product.edit');
     Route::get('/product/generate-material-id', [ProductController::class, 'generateMaterialId'])->name('product.generate-material-id');
+    Route::get('/product/generate-bom-id', [ProductController::class, 'generateBomId'])->name('product.generate-bom-id');
     Route::get('/product/material-status', [ProductController::class, 'materialStatus'])->name('product.material-status');
     Route::patch('/product/update', [ProductController::class, 'update'])->name('product.update');
     Route::delete('/product/delete', [ProductController::class, 'delete'])->name('product.delete');
@@ -58,6 +59,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/material-levels/semi-fg-lv2', [MaterialLevelController::class, 'semiFgLevel2'])->name('material-levels.semi-fg-lv2.new');
     Route::patch('/material-levels/semi-fg-lv2', [MaterialLevelController::class, 'saveSemiFgLevel2'])->name('material-levels.semi-fg-lv2.save');
     Route::get('/material-levels/semi-fg-lv2/create-component', [MaterialLevelController::class, 'createComponentSemiFgLevel2'])->name('material-levels.semi-fg-lv2.create-component');
+    Route::get('/material-levels/semi-fg-lv2/generate', [MaterialLevelController::class, 'generateSemiFgLevel2'])->name('material-levels.semi-fg-lv2.generate');
 
     Route::get('/material-levels/semi-fg-lv1', [MaterialLevelController::class, 'semiFgLevel1'])->name('material-levels.semi-fg-lv1.new');
     Route::patch('/material-levels/semi-fg-lv1', [MaterialLevelController::class, 'saveSemiFgLevel1'])->name('material-levels.semi-fg-lv1.save');
@@ -75,6 +77,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/packmaterial/new', [PackMaterialController::class, 'new'])->name('packmaterial.new');
     Route::post('/packmaterial/new', [PackMaterialController::class, 'callNew'])->name('packmaterial.new');
+    Route::get('/packmaterial/generate-component-id', [PackMaterialController::class, 'generateComponentId'])->name('packmaterial.generate-component-id');
     Route::patch('/packmaterial/create', [PackMaterialController::class, 'create'])->name('packmaterial.create');
 
     Route::get('/bom/create', [BomController::class, 'create'])->name('bom.create');

@@ -5,7 +5,7 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function BomMaterialForm({
   auth,
@@ -18,7 +18,8 @@ export default function BomMaterialForm({
   productSubCategories = [],
   submitRoute
 }) {
-  const { data, setData, patch, errors, processing } = useForm({
+  const [isGeneratingComponentId, setIsGeneratingComponentId] = useState(false);
+  const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
     actionMode: InputData?.actionMode || 'create',
     ownerLevel: InputData?.ownerLevel || 'fg',
     bomId: InputData?.bomId || '',
@@ -44,6 +45,7 @@ export default function BomMaterialForm({
     fullDescTh: InputData?.fullDescTh || '',
     uom: InputData?.uom || ''
   });
+  const isFgCreateMode = data.ownerLevel === 'fg' && data.actionMode === 'create';
 
   const submit = (e) => {
     e.preventDefault();
@@ -54,9 +56,58 @@ export default function BomMaterialForm({
     (option) => option.productCatCode === data.productCat
   );
 
+  const handleProductSubCategoryChange = async (nextProductSubCat) => {
+    setData('productSubCat', nextProductSubCat);
+
+    if (!isFgCreateMode) {
+      return;
+    }
+
+    setData('componentId', '');
+    clearErrors('componentId');
+
+    if (!nextProductSubCat) {
+      return;
+    }
+
+    setIsGeneratingComponentId(true);
+
+    try {
+      const response = await fetch(route('packmaterial.generate-component-id', {
+        productSubCat: nextProductSubCat,
+      }), {
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to generate Component ID.');
+      }
+
+      const payload = await response.json();
+      const nextComponentId = payload?.componentId || '';
+
+      if (!nextComponentId) {
+        throw new Error('Empty Component ID.');
+      }
+
+      setData('componentId', nextComponentId);
+      clearErrors('componentId');
+    } catch (error) {
+      setData('componentId', '');
+      setError('componentId', 'Unable to generate Component ID.');
+    } finally {
+      setIsGeneratingComponentId(false);
+    }
+  };
+
   useEffect(() => {
     if (!data.productCat && data.productSubCat) {
       setData('productSubCat', '');
+      if (isFgCreateMode) {
+        setData('componentId', '');
+      }
       return;
     }
 
@@ -66,6 +117,9 @@ export default function BomMaterialForm({
 
     if (data.productSubCat && !hasSelectedSubCategory) {
       setData('productSubCat', '');
+      if (isFgCreateMode) {
+        setData('componentId', '');
+      }
     }
   }, [data.productCat, data.productSubCat]);
 
@@ -225,7 +279,7 @@ export default function BomMaterialForm({
                   <select
                     id="productSubCat"
                     className={`mt-1 block w-full border-gray-300 rounded-md ${!data.productCat ? 'bg-gray-100' : ''}`}
-                    onChange={(e) => setData('productSubCat', e.target.value)}
+                    onChange={(e) => handleProductSubCategoryChange(e.target.value)}
                     value={data.productSubCat}
                     disabled={!data.productCat}
                   >
@@ -251,6 +305,8 @@ export default function BomMaterialForm({
                     disabled
                     value={data.componentId}
                   />
+
+                  <InputError className="mt-2" message={errors.componentId} />
                 </div>
               </div>
 
@@ -325,7 +381,7 @@ export default function BomMaterialForm({
                   {backLabel}
                 </SecondaryButton>
                 {data.actionMode !== 'delete' && (
-                  <PrimaryButton disabled={processing}>{primaryActionLabel}</PrimaryButton>
+                  <PrimaryButton disabled={processing || isGeneratingComponentId}>{primaryActionLabel}</PrimaryButton>
                 )}
                 {data.actionMode !== 'create' && (
                   <SecondaryButton type="button" onClick={deleteFromSemiFgLv2}>

@@ -315,7 +315,7 @@ class ProductController extends Controller
 
     $materialId = null;
     $pdo = DB::getPdo();
-    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_MAT(:p_brand, :p_mattype, :p_sub_mattype, :p_suggest_material_id); END;');
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_MATID(:p_brand, :p_mattype, :p_sub_mattype, :p_suggest_material_id); END;');
     $stmt->bindParam(':p_brand', $validated['brand'], PDO::PARAM_STR);
     $stmt->bindParam(':p_mattype', $validated['mattype'], PDO::PARAM_STR);
     $stmt->bindParam(':p_sub_mattype', $validated['subMattype'], PDO::PARAM_STR);
@@ -323,8 +323,29 @@ class ProductController extends Controller
     $stmt->execute();
 
     return response()->json([
-      'program' => 'PROJ1_2_GEN_MAT',
+      'program' => 'PROJ1_2_GEN_MATID',
       'materialId' => $materialId,
+    ]);
+  }
+
+  public function generateBomId(Request $request): JsonResponse
+  {
+    $validated = $request->validate([
+      'suggestId' => ['required'],
+      'site' => ['required'],
+    ]);
+
+    $bomId = null;
+    $pdo = DB::getPdo();
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_BOMID_FG(:p_suggest_id, :p_site, :p_out_bomid); END;');
+    $stmt->bindParam(':p_suggest_id', $validated['suggestId'], PDO::PARAM_STR);
+    $stmt->bindParam(':p_site', $validated['site'], PDO::PARAM_STR);
+    $stmt->bindParam(':p_out_bomid', $bomId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+    $stmt->execute();
+
+    return response()->json([
+      'program' => 'PROJ1_2_GEN_BOMID_FG',
+      'bomId' => $bomId,
     ]);
   }
 
