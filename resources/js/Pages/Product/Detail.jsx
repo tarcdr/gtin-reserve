@@ -156,13 +156,13 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
     });
   };
 
-  const goToBusinessSupply = (levelData = {}) => {
-    router.get(route('material-levels.business-supply.new'), {
-      ...materialLevelPayload,
-      mode: levelData.mode || (levelData.levelMaterialId ? 'view' : 'create'),
-      ...levelData,
-    });
-  };
+  // const goToBusinessSupply = (levelData = {}) => {
+  //   router.get(route('material-levels.business-supply.new'), {
+  //     ...materialLevelPayload,
+  //     mode: levelData.mode || (levelData.levelMaterialId ? 'view' : 'create'),
+  //     ...levelData,
+  //   });
+  // };
 
   const submit = (e) => {
     e.preventDefault();
@@ -546,7 +546,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                       )}
                     </div>
                   )}
-                  <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
+                  {/* <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
                     {data.businessSupply ? (
                       <div className="space-y-3">
                         <div className="text-sm text-gray-600">Business Supply</div>
@@ -573,7 +573,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                         Create Business Supply
                       </SuccessButton>
                     )}
-                  </div>
+                  </div> */}
                 </>
               )}
               <div className="flex items-center justify-center gap-4">

@@ -36,7 +36,7 @@ export default function Authenticated({ user, header, children }) {
                                                         type="button"
                                                         className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
                                                     >
-                                                        MMS
+                                                        Product(FG)-Report
 
                                                         <svg
                                                             className="ml-2 -mr-0.5 h-4 w-4"
@@ -55,9 +55,9 @@ export default function Authenticated({ user, header, children }) {
                                             </Dropdown.Trigger>
 
                                             <Dropdown.Content>
-                                                <Dropdown.Link href={route('material.request')}>
+                                                {/* <Dropdown.Link href={route('material.request')}>
                                                     Material Request
-                                                </Dropdown.Link>
+                                                </Dropdown.Link> */}
                                                 <Dropdown.Link href={route('material.report')}>
                                                     Material Confirm/Report
                                                 </Dropdown.Link>
@@ -65,6 +65,9 @@ export default function Authenticated({ user, header, children }) {
                                         </Dropdown>
                                     </div>
                                 </div>
+                                <NavLink href={route('material-levels.business-supply.new')} active={route().current('material-levels.business-supply.new')}>
+                                    Business Supply
+                                </NavLink>
                                 <div className="hidden sm:flex sm:items-center sm:ml-6">
                                     <div className="ml-3 relative">
                                         <Dropdown>
@@ -182,14 +185,17 @@ export default function Authenticated({ user, header, children }) {
                         <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
                             Dashboard
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('material.request')} active={route().current('material.request')}>
+                        {/* <ResponsiveNavLink href={route('material.request')} active={route().current('material.request')}>
                             Material/Request
-                        </ResponsiveNavLink>
+                        </ResponsiveNavLink> */}
                         <ResponsiveNavLink href={route('material.report')} active={route().current('material.report')}>
                             Material_Confirm/Report
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route('request')} active={route().current('request')}>
                             GTIN/Request
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('material-levels.business-supply.new')} active={route().current('material-levels.business-supply.new')}>
+                            Business Supply
                         </ResponsiveNavLink>
                         <ResponsiveNavLink href={route('report')} active={route().current('report')}>
                             GTIN_Confirm/Report
