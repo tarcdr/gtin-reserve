@@ -79,7 +79,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
       components: fgComponents,
       bomId: data.bomId,
       bomDesc: data.bomDesc,
-      subMattype: '1',
+      subMattype: '',
       actionMode: 'create',
     });
   };
@@ -99,7 +99,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
       components: fgComponents,
       bomId: data.bomId,
       bomDesc: data.bomDesc,
-      subMattype: '1',
+      subMattype: data.subMattype || '',
       actionMode,
       componentId: item?.code || '',
       searchDesc: item?.searchDesc || '',

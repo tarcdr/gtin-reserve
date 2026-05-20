@@ -5,18 +5,144 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { useForm } from '@inertiajs/react';
 import SecondaryButton from '@/Components/SecondaryButton';
+import { useState } from 'react';
 
-export default function ProductSearch({ auth, brands = [], mattypes = [] }) {
-  const subMattypeOptions = ['0', '1', '2', '3'];
-  const { data, setData, patch, errors, processing } = useForm({
-    brand: '',
-    mattype: '',
-    subMattype: ''
+const FLOW_KEY = 'product.search.flow';
+
+const readFlowState = () => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  try {
+    return JSON.parse(window.sessionStorage.getItem(FLOW_KEY) || '{}') || {};
+  } catch {
+    return {};
+  }
+};
+
+const writeFlowState = (state) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.setItem(FLOW_KEY, JSON.stringify(state));
+};
+
+export default function ProductSearch({ auth, InputData, brands = [], mattypes = [] }) {
+  const storedFlow = readFlowState();
+  const initialBrand = storedFlow.brand ?? InputData?.brand ?? '';
+  const initialMattype = storedFlow.mattype ?? InputData?.mattype ?? '';
+  const initialSubMattype = storedFlow.subMattype ?? InputData?.subMattype ?? '';
+  const initialOptions = storedFlow.subMattypeOptions ?? InputData?.subMattypeOptions ?? [];
+  const initialStep = storedFlow.step ? Number(storedFlow.step) : (InputData?.startStep ? Number(InputData.startStep) : (initialBrand && initialMattype ? 2 : 1));
+  const [step, setStep] = useState(initialStep);
+  const [subMattypeOptions, setSubMattypeOptions] = useState(initialOptions);
+  const [subMattypeLoadError, setSubMattypeLoadError] = useState('');
+  const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
+    brand: initialBrand,
+    mattype: initialMattype,
+    subMattype: initialSubMattype,
+    subMattypeOptions: initialOptions,
   });
 
-  const submit = (e) => {
+  const goBack = () => {
+    if (step >= 2) {
+      setSubMattypeLoadError('');
+      clearErrors('subMattype');
+      setStep(1);
+      writeFlowState({
+        brand: data.brand,
+        mattype: data.mattype,
+        subMattype: data.subMattype,
+        subMattypeOptions,
+        step: 1,
+      });
+      return;
+    }
+
+    window.history.back();
+  };
+
+  const loadSubMattypeOptions = async (mattypeValue) => {
+    const response = await fetch(route('product.sub-mattypes', { mattype: mattypeValue }), {
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Unable to load Sub Mattype options.');
+    }
+
+    const payload = await response.json();
+    const options = payload?.subMattypes || [];
+    setSubMattypeOptions(options);
+    setData('subMattypeOptions', options);
+    return options;
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
 
+    if (step === 1) {
+      let hasError = false;
+
+      if (!data.brand) {
+        setError('brand', 'The Brand field is required.');
+        hasError = true;
+      }
+
+      if (!data.mattype) {
+        setError('mattype', 'The Mattype field is required.');
+        hasError = true;
+      }
+
+      if (hasError) {
+        return;
+      }
+
+      clearErrors('brand', 'mattype', 'subMattype');
+      if (subMattypeOptions.length > 0) {
+        setData('subMattypeOptions', subMattypeOptions);
+        writeFlowState({
+          brand: data.brand,
+          mattype: data.mattype,
+          subMattype: data.subMattype,
+          subMattypeOptions,
+          step: 2,
+        });
+        setStep(2);
+        return;
+      }
+
+      setSubMattypeLoadError('');
+      try {
+        const options = await loadSubMattypeOptions(data.mattype);
+        setData('subMattypeOptions', options);
+        writeFlowState({
+          brand: data.brand,
+          mattype: data.mattype,
+          subMattype: data.subMattype,
+          subMattypeOptions: options,
+          step: 2,
+        });
+        setStep(2);
+      } catch (error) {
+        setSubMattypeLoadError('Unable to load Sub Mattype options.');
+        return;
+      }
+
+      return;
+    }
+
+    writeFlowState({
+      brand: data.brand,
+      mattype: data.mattype,
+      subMattype: data.subMattype,
+      subMattypeOptions,
+      step: 2,
+    });
     patch(route('product.search'));
   };
 
@@ -36,9 +162,10 @@ export default function ProductSearch({ auth, brands = [], mattypes = [] }) {
                   <InputLabel htmlFor="brand" value="Brand" />
                   <select
                     id="brand"
-                    className="mt-1 block w-full"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${step >= 2 ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('brand', e.target.value)}
-                    defaultValue={data?.brand}
+                    value={data.brand}
+                    disabled={step >= 2}
                   >
                     <option value="">---- Select Brand ----</option>
                     {brands?.map(o => (
@@ -52,9 +179,25 @@ export default function ProductSearch({ auth, brands = [], mattypes = [] }) {
                   <InputLabel htmlFor="mattype" value="Mattype" />
                   <select
                     id="mattype"
-                    className="mt-1 block w-full"
-                    onChange={(e) => setData('mattype', e.target.value)}
-                    defaultValue={data?.mattype}
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${step >= 2 ? 'bg-gray-100' : ''}`}
+                    onChange={(e) => {
+                      const nextMattype = e.target.value;
+                      setData('mattype', nextMattype);
+                      setData('subMattype', '');
+                      setData('subMattypeOptions', []);
+                      setSubMattypeOptions([]);
+                      setSubMattypeLoadError('');
+                      clearErrors('subMattype');
+                      writeFlowState({
+                        brand: data.brand,
+                        mattype: nextMattype,
+                        subMattype: '',
+                        subMattypeOptions: [],
+                        step,
+                      });
+                    }}
+                    value={data.mattype}
+                    disabled={step >= 2}
                   >
                     <option value="">---- Select Mattype ----</option>
                     {mattypes?.map(o => (
@@ -65,29 +208,46 @@ export default function ProductSearch({ auth, brands = [], mattypes = [] }) {
                   <InputError className="mt-2" message={errors.mattype} />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <InputLabel htmlFor="subMattype" value="Sub Mattype" />
-                  <select
-                    id="subMattype"
-                    className="mt-1 block w-full"
-                    onChange={(e) => setData('subMattype', e.target.value)}
-                    defaultValue={data?.subMattype}
-                  >
-                    <option value="">---- Select Sub Mattype ----</option>
-                    {subMattypeOptions.map(option => (
-                      <option key={`subMattype-code-${option}`} value={option}>{option}</option>
-                    ))}
-                  </select>
-
-                  <InputError className="mt-2" message={errors.subMattype} />
+              {subMattypeLoadError && (
+                <div className="text-sm text-red-600">
+                  {subMattypeLoadError}
                 </div>
-              </div>
+              )}
+              {step >= 2 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <InputLabel htmlFor="subMattype" value="Sub Mattype" />
+                    <select
+                      id="subMattype"
+                      className="mt-1 block w-full border-gray-300 rounded-md"
+                      onChange={(e) => {
+                        const nextSubMattype = e.target.value;
+                        setData('subMattype', nextSubMattype);
+                        writeFlowState({
+                          brand: data.brand,
+                          mattype: data.mattype,
+                          subMattype: nextSubMattype,
+                          subMattypeOptions,
+                          step,
+                        });
+                      }}
+                      value={data.subMattype}
+                    >
+                      <option value="">---- Select Sub Mattype ----</option>
+                      {subMattypeOptions.map(option => (
+                        <option key={`subMattype-code-${option.code}`} value={option.code}>{option.label}</option>
+                      ))}
+                    </select>
+
+                    <InputError className="mt-2" message={errors.subMattype} />
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-center gap-4">
-                <SecondaryButton type="button" onClick={() => window.history.back()}>
+                <SecondaryButton type="button" onClick={goBack}>
                   Back
                 </SecondaryButton>
-                <PrimaryButton disabled={processing}>Search FG</PrimaryButton>
+                <PrimaryButton disabled={processing}>{step === 1 ? 'Next' : 'Search FG'}</PrimaryButton>
               </div>
             </form>
           </div>

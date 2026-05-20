@@ -11,11 +11,11 @@ import SecondaryButton from '@/Components/SecondaryButton';
 export default function ProductNew({ auth, brands = [], mattypes = [], sites = [], masterUom = [] }) {
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
+  const [subMattypeOptions, setSubMattypeOptions] = useState([]);
   const [step, setStep] = useState(1);
   const [isGeneratingMaterialId, setIsGeneratingMaterialId] = useState(false);
   const [isGeneratingBomId, setIsGeneratingBomId] = useState(false);
   const [isBomIdReady, setIsBomIdReady] = useState(false);
-  const subMattypeOptions = ['0', '1', '2', '3'];
   const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
     brand: '',
     mattype: '',
@@ -58,13 +58,13 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
     setData('brand', '');
     setData('mattype', '');
     setData('subMattype', '');
+    setSubMattypeOptions([]);
     resetGeneratedFields();
     clearErrors();
     setStep(1);
   };
 
   const resetSubMattype = () => {
-    setData('subMattype', '');
     resetGeneratedFields();
     clearErrors();
     setStep(2);
@@ -140,6 +140,24 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
       }
 
       clearErrors('brand', 'mattype');
+      try {
+        const response = await fetch(route('product.sub-mattypes', { mattype: data.mattype }), {
+          headers: {
+            Accept: 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Unable to load Sub Mattype options.');
+        }
+
+        const payload = await response.json();
+        setSubMattypeOptions(payload?.subMattypes || []);
+      } catch (error) {
+        setError('subMattype', 'Unable to load Sub Mattype options.');
+        return;
+      }
+
       setStep(2);
       return;
     }
@@ -271,7 +289,7 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
                     >
                       <option value="">---- Select Sub Mattype ----</option>
                       {subMattypeOptions.map(option => (
-                        <option key={`subMattype-code-${option}`} value={option}>{option}</option>
+                        <option key={`subMattype-code-${option.code}`} value={option.code}>{option.label}</option>
                       ))}
                     </select>
 

@@ -107,7 +107,7 @@ class MaterialLevelController extends Controller
       'bomId'      => $request->get('bomId'),
       'bomDesc'    => $request->get('bomDesc'),
       'mattype'    => '5',
-      'subMattype' => '1',
+      'subMattype' => '',
       'storageTable' => 'proj1_raw_material',
     ];
     $components = $this->mockComponents('raw');

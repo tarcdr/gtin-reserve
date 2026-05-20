@@ -19,6 +19,8 @@ export default function BomMaterialForm({
   submitRoute
 }) {
   const [isGeneratingComponentId, setIsGeneratingComponentId] = useState(false);
+  const [productCategoryOptions, setProductCategoryOptions] = useState([]);
+  const [productSubCategoryOptions, setProductSubCategoryOptions] = useState([]);
   const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
     actionMode: InputData?.actionMode || 'create',
     ownerLevel: InputData?.ownerLevel || 'fg',
@@ -52,9 +54,54 @@ export default function BomMaterialForm({
     patch(route(submitRoute));
   };
 
-  const filteredProductSubCategories = productSubCategories.filter(
-    (option) => option.productCatCode === data.productCat
-  );
+  const filteredProductCategories = productCategoryOptions;
+  const filteredProductSubCategories = productSubCategoryOptions;
+  const selectedProductCategory = filteredProductCategories.find(
+    (option) => option.code === data.productCat
+  ) || null;
+
+  const getOptionLabel = (option) => `${option.code}${option.description ? ` - ${option.description}` : ''}`;
+
+  useEffect(() => {
+    if (!data.subMattype) {
+      setProductCategoryOptions([]);
+      setProductSubCategoryOptions([]);
+      if (data.productCat) {
+        setData('productCat', '');
+      }
+      if (data.productSubCat) {
+        setData('productSubCat', '');
+      }
+      return;
+    }
+
+    const controller = new AbortController();
+    fetch(route('packmaterial.product-categories', { subMattype: data.subMattype }), {
+      headers: {
+        Accept: 'application/json',
+      },
+      signal: controller.signal,
+      })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        const options = payload?.productCategories || [];
+        const subOptions = payload?.productSubCategories || [];
+        setProductCategoryOptions(options);
+        setProductSubCategoryOptions(subOptions);
+
+        const nextProductCat = payload?.productCat || options[0]?.code || '';
+        if (data.productCat !== nextProductCat) {
+          setData('productCat', nextProductCat);
+        }
+
+        if (data.productSubCat) {
+          setData('productSubCat', '');
+        }
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [data.subMattype]);
 
   const handleProductSubCategoryChange = async (nextProductSubCat) => {
     setData('productSubCat', nextProductSubCat);
@@ -102,26 +149,26 @@ export default function BomMaterialForm({
     }
   };
 
+  const handleSubMattypeChange = (nextSubMattype) => {
+    setData('subMattype', nextSubMattype);
+    setData('productCat', '');
+    setData('productSubCat', '');
+    clearErrors('productCat', 'productSubCat');
+
+    if (isFgCreateMode) {
+      setData('componentId', '');
+      clearErrors('componentId');
+    }
+  };
+
   useEffect(() => {
-    if (!data.productCat && data.productSubCat) {
-      setData('productSubCat', '');
-      if (isFgCreateMode) {
-        setData('componentId', '');
-      }
-      return;
-    }
-
-    const hasSelectedSubCategory = filteredProductSubCategories.some(
-      (option) => option.code === data.productSubCat
-    );
-
-    if (data.productSubCat && !hasSelectedSubCategory) {
+    if (!data.subMattype || !data.productCat) {
       setData('productSubCat', '');
       if (isFgCreateMode) {
         setData('componentId', '');
       }
     }
-  }, [data.productCat, data.productSubCat]);
+  }, [data.subMattype, data.productCat, data.productSubCat]);
 
   const backToSemiFgLv2 = () => {
     if (data.ownerLevel === 'fg') {
@@ -240,14 +287,13 @@ export default function BomMaterialForm({
                   <InputLabel htmlFor="subMattype" value="Sub Mattype" />
                   <select
                     id="subMattype"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${data?.subMattype !== '' ? 'bg-gray-100' : ''}`}
-                    onChange={(e) => setData('subMattype', e.target.value)}
-                    defaultValue={data.subMattype}
-                    disabled={data?.subMattype !== ''}
+                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    onChange={(e) => handleSubMattypeChange(e.target.value)}
+                    value={data.subMattype}
                   >
                     <option value="">---- Select Sub Mattype ----</option>
                     {subMattypes?.map((o) => (
-                      <option key={`subMattype-code-${o.code}`} value={o.code}>{`${o.label}`}</option>
+                      <option key={`subMattype-code-${o.code}`} value={o.code}>{getOptionLabel(o)}</option>
                     ))}
                   </select>
 
@@ -258,19 +304,12 @@ export default function BomMaterialForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <InputLabel htmlFor="productCat" value="Product Category" />
-                  <select
+                  <TextInput
                     id="productCat"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
-                    onChange={(e) => setData('productCat', e.target.value)}
-                    value={data.productCat}
-                  >
-                    <option value="">---- Select Product Category ----</option>
-                    {productCategories?.map((option) => (
-                      <option key={`productCat-code-${option.code}`} value={option.code}>
-                        {`${option.code} - ${option.label}`}
-                      </option>
-                    ))}
-                  </select>
+                    className={`mt-1 block w-full bg-gray-100 ${!data.subMattype ? 'opacity-60' : ''}`}
+                    disabled
+                    value={selectedProductCategory ? getOptionLabel(selectedProductCategory) : ''}
+                  />
 
                   <InputError className="mt-2" message={errors.productCat} />
                 </div>
@@ -286,7 +325,7 @@ export default function BomMaterialForm({
                     <option value="">---- Select Product SUB Category ----</option>
                     {filteredProductSubCategories.map((option) => (
                       <option key={`productSubCat-code-${option.code}`} value={option.code}>
-                        {`${option.code} - ${option.label}`}
+                        {getOptionLabel(option)}
                       </option>
                     ))}
                   </select>

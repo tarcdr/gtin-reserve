@@ -8,13 +8,38 @@ import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
 import ReactSelect from 'react-select';
 import { useEffect } from 'react';
+import { useState } from 'react';
+
+const FLOW_KEY = 'product.search.flow';
+
+const readFlowState = () => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  try {
+    return JSON.parse(window.sessionStorage.getItem(FLOW_KEY) || '{}') || {};
+  } catch {
+    return {};
+  }
+};
+
+const writeFlowState = (state) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.setItem(FLOW_KEY, JSON.stringify(state));
+};
 
 export default function ProductSearchBom({ auth, InputData, isDisabled = true, brands = [], mattypes = [], materials = [] }) {
-  const subMattypeOptions = ['0', '1', '2', '3'];
+  const storedFlow = readFlowState();
+  const initialOptions = storedFlow.subMattypeOptions ?? InputData?.subMattypeOptions ?? [];
+  const [subMattypeOptions, setSubMattypeOptions] = useState(initialOptions);
   const { data, setData, patch, errors, processing } = useForm({
-    brand: InputData?.brand || '',
-    mattype: InputData?.mattype || '',
-    subMattype: InputData?.subMattype || '',
+    brand: storedFlow.brand ?? InputData?.brand ?? '',
+    mattype: storedFlow.mattype ?? InputData?.mattype ?? '',
+    subMattype: storedFlow.subMattype ?? InputData?.subMattype ?? '',
     materialId: InputData?.materialId || '',
     status: InputData?.status || ''
   });
@@ -27,8 +52,30 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
   };
 
   useEffect(() => {
-    console.log(errors);
-  }, [errors]);
+    if (!data.mattype) {
+      setSubMattypeOptions([]);
+      return;
+    }
+
+    if (subMattypeOptions.length > 0) {
+      return;
+    }
+
+    const controller = new AbortController();
+    fetch(route('product.sub-mattypes', { mattype: data.mattype }), {
+      headers: {
+        Accept: 'application/json'
+      },
+      signal: controller.signal
+    })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        setSubMattypeOptions(payload?.subMattypes || []);
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [data.mattype]);
 
   useEffect(() => {
     if (!data.materialId) {
@@ -75,7 +122,7 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                     id="brand"
                     className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('brand', e.target.value)}
-                    defaultValue={data.brand}
+                    value={data.brand}
                     disabled={isDisabled}
                   >
                     <option value="">---- Select Brand ----</option>
@@ -92,7 +139,7 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                     id="mattype"
                     className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('mattype', e.target.value)}
-                    defaultValue={data.mattype}
+                    value={data.mattype}
                     disabled={isDisabled}
                   >
                     <option value="">---- Select Mattype ----</option>
@@ -111,12 +158,12 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                     id="subMattype"
                     className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('subMattype', e.target.value)}
-                    defaultValue={data.subMattype}
+                    value={data.subMattype}
                     disabled={isDisabled}
                   >
                     <option value="">---- Select Sub Mattype ----</option>
                     {subMattypeOptions.map(option => (
-                      <option key={`subMattype-code-${option}`} value={option}>{option}</option>
+                      <option key={`subMattype-code-${option.code}`} value={option.code}>{option.label}</option>
                     ))}
                   </select>
 
@@ -157,8 +204,38 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                 </div>
               </div>
               <div className="flex items-center justify-center gap-4">
-                <SecondaryButton type="button" onClick={() => window.history.back()}>
+                <SecondaryButton
+                  type="button"
+                  onClick={() => {
+                    writeFlowState({
+                      brand: data.brand,
+                      mattype: data.mattype,
+                      subMattype: data.subMattype,
+                      subMattypeOptions,
+                      step: 2,
+                    });
+                    window.history.back();
+                  }}
+                >
                   Back
+                </SecondaryButton>
+                <SecondaryButton
+                  type="button"
+                  onClick={() => {
+                    writeFlowState({
+                      brand: data.brand,
+                      mattype: data.mattype,
+                      subMattype: data.subMattype,
+                      subMattypeOptions,
+                      step: 1,
+                    });
+                    window.history.back();
+                  }}
+                >
+                  Change Brand / Mattype
+                </SecondaryButton>
+                <SecondaryButton type="button" onClick={() => window.history.back()}>
+                  Cancel
                 </SecondaryButton>
                 <PrimaryButton disabled={processing}>Submit</PrimaryButton>
               </div>

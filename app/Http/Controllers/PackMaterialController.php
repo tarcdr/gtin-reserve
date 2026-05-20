@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Brand;
+use App\Models\MasterMattypePack;
 use App\Models\MasterUOM;
-use App\Services\MasterCatLookup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use PDO;
@@ -20,10 +20,10 @@ class PackMaterialController extends Controller
   protected $brands;
   protected $materials;
   protected $uoms;
-  protected $productCategories;
   protected $productSubCategories;
+  protected $packSubMattypesList;
 
-  public function __construct(MasterCatLookup $mk)
+  public function __construct()
   {
     $this->brands = Brand::all()->map(function ($b) {
       return [
@@ -46,25 +46,8 @@ class PackMaterialController extends Controller
         "label" => $b->description_uom,
       ];
     })->toArray();
-    $allowedCategories = ['50', '51', '52'];
-    $this->productCategories = $mk->categories()
-      ->filter(fn($item) => in_array($item->code, $allowedCategories, true))
-      ->map(fn($item) => [
-        'code' => $item->code,
-        'label' => $item->name,
-      ])
-      ->values()
-      ->toArray();
-    $this->productSubCategories = collect($allowedCategories)
-      ->flatMap(function ($code) use ($mk) {
-        return $mk->subcategoriesOf($code)->map(fn($item) => [
-          'productCatCode' => $code,
-          'code' => $item->code,
-          'label' => $item->name,
-        ]);
-      })
-      ->values()
-      ->toArray();
+    $this->packSubMattypesList = $this->packSubMattypes();
+    $this->productSubCategories = $this->packProductSubCategories();
   }
 
   static $mattypes = [[
@@ -97,20 +80,6 @@ class PackMaterialController extends Controller
     "label" => "SN"
   ]];
 
-  static $subMattypes = [[
-    "code" => "0",
-    "label" => "0"
-  ], [
-    "code" => "1",
-    "label" => "1"
-  ], [
-    "code" => "2",
-    "label" => "2"
-  ], [
-    "code" => "3",
-    "label" => "3"
-  ]];
-
   protected function persistFgDraft(Request $request, array $fgDetail): void
   {
     $key = $fgDetail['materialId'] ?? $request->get('fgMaterialId') ?? $fgDetail['bomId'] ?? $request->get('fgBomId');
@@ -132,6 +101,93 @@ class PackMaterialController extends Controller
     }
 
     return $collection->values()->all();
+  }
+
+  protected function packSubMattypes(string $mattype = '5'): array
+  {
+    $mattype = (string) $mattype;
+
+    return MasterMattypePack::query()
+      ->selectRaw('TRIM(submattype) as code, TRIM(description) as description')
+      ->whereRaw('TRIM(mattype) = ?', [$mattype])
+      ->whereRaw('TRIM(submattype) IS NOT NULL')
+      ->whereRaw('TRIM(product_sub_cat) IS NULL')
+      ->groupByRaw('TRIM(submattype), TRIM(description)')
+      ->orderByRaw('TRIM(submattype)')
+      ->get()
+      ->map(function ($row) {
+        return [
+          'code' => (string) $row->code,
+          'description' => (string) $row->description,
+        ];
+      })
+      ->values()
+      ->toArray();
+  }
+
+  protected function packProductCategories(string $mattype = '5', ?string $subMattype = null): array
+  {
+    $mattype = (string) $mattype;
+
+    $query = MasterMattypePack::query()
+      ->selectRaw('TRIM(SUBMATTYPE) as subMattypeCode, TRIM(PRODUCT_CATEGORY) as code, MIN(TRIM(DESCRIPTION)) as description')
+      ->whereRaw('TRIM(mattype) = ?', [$mattype])
+      ->whereRaw('TRIM(PRODUCT_CATEGORY) IS NOT NULL')
+      ->whereRaw('TRIM(PRODUCT_SUB_CAT) IS NOT NULL')
+      ->groupByRaw('TRIM(SUBMATTYPE), TRIM(PRODUCT_CATEGORY)')
+      ->orderByRaw('TRIM(SUBMATTYPE), TRIM(PRODUCT_CATEGORY)');
+
+    if ($subMattype !== null && $subMattype !== '') {
+      $query->whereRaw('TRIM(SUBMATTYPE) = ?', [(string) $subMattype]);
+    } else {
+      return [];
+    }
+
+    return $query
+      ->get()
+      ->map(function ($row) {
+        return [
+          'subMattypeCode' => (string) $row->subMattypeCode,
+          'code' => (string) $row->code,
+          'description' => (string) $row->description,
+        ];
+      })
+      ->values()
+      ->toArray();
+  }
+
+  protected function packProductSubCategories(string $mattype = '5', ?string $subMattype = null, ?string $productCat = null): array
+  {
+    $mattype = (string) $mattype;
+
+    $query = MasterMattypePack::query()
+      ->selectRaw('TRIM(SUBMATTYPE) as subMattypeCode, TRIM(product_category) as productCatCode, TRIM(product_sub_cat) as code, TRIM(description) as description')
+      ->whereRaw('TRIM(mattype) = ?', [$mattype])
+      ->whereRaw('TRIM(product_category) IS NOT NULL')
+      ->whereRaw('TRIM(product_sub_cat) IS NOT NULL')
+      ->groupByRaw('TRIM(SUBMATTYPE), TRIM(product_category), TRIM(product_sub_cat), TRIM(description)')
+      ->orderByRaw('TRIM(SUBMATTYPE), TRIM(product_category), TRIM(product_sub_cat)');
+
+    if ($subMattype !== null && $subMattype !== '') {
+      $query->whereRaw('TRIM(SUBMATTYPE) = ?', [(string) $subMattype]);
+    }
+
+    if ($productCat !== null && $productCat !== '') {
+      $query->whereRaw('TRIM(product_category) = ?', [(string) $productCat]);
+    }
+
+    return $query
+      ->get()
+      ->map(function ($row) {
+        return [
+          'subMattypeCode' => (string) $row->subMattypeCode,
+          'productCatCode' => (string) $row->productCatCode,
+          'code' => (string) $row->code,
+          'description' => (string) $row->description,
+        ];
+      })
+      ->values()
+      ->toArray();
   }
 
   protected function redirectToOwner(Request $request, array $components): RedirectResponse
@@ -202,10 +258,10 @@ class PackMaterialController extends Controller
   public function new(Request $request): Response
   {
     $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] == '5'));
-    $subMattypes = self::$subMattypes;
+    $subMattypes = $this->packSubMattypesList;
     $InputData = [
       "mattype"    => "5",
-      "subMattype" => $request->subMattype ?: "0",
+      "subMattype" => $request->subMattype ?? '',
       'actionMode' => $request->actionMode ?: 'create',
       'ownerLevel' => $request->ownerLevel ?: 'fg',
       'bomId'      => $request->bomId,
@@ -231,9 +287,36 @@ class PackMaterialController extends Controller
     ];
 
     $uoms = $this->uoms;
-    $productCategories = $this->productCategories;
+    $productCategories = [];
     $productSubCategories = $this->productSubCategories;
     return Inertia::render('PackMaterial/New', compact('InputData', 'mattypes', 'subMattypes', 'uoms', 'productCategories', 'productSubCategories'));
+  }
+
+  public function productCategories(Request $request): JsonResponse
+  {
+    $validated = $request->validate([
+      'subMattype' => ['nullable'],
+    ]);
+
+    $subMattype = $validated['subMattype'] ?? null;
+
+    if ($subMattype === null || $subMattype === '') {
+      return response()->json([
+        'subMattype' => '',
+        'productCategories' => [],
+        'productSubCategories' => [],
+      ]);
+    }
+
+    $productCategories = $this->packProductCategories('5', (string) $subMattype);
+    $productCat = $productCategories[0]['code'] ?? '';
+
+    return response()->json([
+      'subMattype' => (string) $subMattype,
+      'productCategories' => $productCategories,
+      'productSubCategories' => $this->packProductSubCategories('5', (string) $subMattype, $productCat),
+      'productCat' => $productCat,
+    ]);
   }
 
   public function create(PackMaterialCreateRequest $request): RedirectResponse

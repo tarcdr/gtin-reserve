@@ -11,11 +11,13 @@ use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Brand;
+use App\Models\MasterMattypeFg;
 use App\Models\MasterUOM;
 use App\Models\MasterLogisitcSite;
 use App\Services\MasterCatLookup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use PDO;
 
 class ProductController extends Controller
@@ -114,6 +116,59 @@ class ProductController extends Controller
     "label" => "9"
   ]];
 
+  protected function fgMattypes(): array
+  {
+    return [[
+      "code" => "1",
+      "label" => "1",
+      "showSite" => true,
+      "showBomId" => true,
+    ]];
+  }
+
+  protected function fgSubMattypes(string $mattype = '1'): array
+  {
+    $mattype = (string) $mattype;
+
+    return MasterMattypeFg::query()
+      ->selectRaw('TRIM(submattype) as code')
+      ->whereRaw('TRIM(mattype) = ?', [$mattype])
+      ->whereRaw('TRIM(submattype) IS NOT NULL')
+      ->groupByRaw('TRIM(submattype)')
+      ->orderByRaw('TRIM(submattype)')
+      ->get()
+      ->map(function ($row) {
+        return [
+          'code' => (string) $row->code,
+          'label' => (string) $row->code,
+        ];
+      })
+      ->values()
+      ->all();
+  }
+
+  protected function normalizeSubMattypeOptions($options): array
+  {
+    if (is_string($options) && $options !== '') {
+      $decoded = json_decode($options, true);
+
+      if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+        $options = $decoded;
+      }
+    }
+
+    return collect($options ?? [])
+      ->filter(fn($item) => is_array($item) && array_key_exists('code', $item) && $item['code'] !== null && $item['code'] !== '')
+      ->map(function ($item) {
+        return [
+          'code' => (string) $item['code'],
+          'label' => (string) ($item['label'] ?? $item['code']),
+        ];
+      })
+      ->values()
+      ->all();
+  }
+
   protected function draftKey(?string $materialId, ?string $bomId = null): ?string
   {
     $key = $materialId ?: $bomId;
@@ -150,7 +205,7 @@ class ProductController extends Controller
   {
     $normalizeComponents = function ($items) {
       return collect($items ?? [])
-        ->filter(fn($item) => is_array($item) && !empty($item['code']))
+        ->filter(fn($item) => is_array($item) && array_key_exists('code', $item) && $item['code'] !== null && $item['code'] !== '')
         ->keyBy('code')
         ->values()
         ->all();
@@ -195,7 +250,7 @@ class ProductController extends Controller
   public function new(Request $request): Response
   {
     $brands = $this->brands;
-    $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
+    $mattypes = $this->fgMattypes();
     $masterUom = $this->masterUom;
     $sites = $this->masterSite;
     $finishGoods = $this->mk->subcategoriesOf('10');
@@ -223,14 +278,21 @@ class ProductController extends Controller
   public function search(Request $request): Response
   {
     $brands = $this->brands;
-    $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
-    return Inertia::render('Product/Search', compact('brands', 'mattypes'));
+    $mattypes = $this->fgMattypes();
+    $InputData = [
+      'brand' => $request->brand,
+      'mattype' => $request->mattype,
+      'subMattype' => $request->subMattype,
+      'subMattypeOptions' => $this->normalizeSubMattypeOptions($request->get('subMattypeOptions', [])),
+      'startStep' => $request->get('startStep'),
+    ];
+    return Inertia::render('Product/Search', compact('brands', 'mattypes', 'InputData'));
   }
 
   public function searchBom(Request $request): Response
   {
     $brands = $this->brands;
-    $mattypes = array_values(array_filter(self::$mattypes, fn($v) => $v['code'] != '5'));
+    $mattypes = $this->fgMattypes();
     $materials = $this->materials;
     $InputData = [
       'brand'      => $request->brand,
@@ -239,6 +301,60 @@ class ProductController extends Controller
       'status'     => '',
     ];
     return Inertia::render('Product/SearchBom', compact('InputData', 'brands', 'mattypes', 'materials'));
+  }
+
+  public function subMattypes(Request $request): JsonResponse
+  {
+    $validated = $request->validate([
+      'mattype' => ['required'],
+    ]);
+
+    $mattype = (string) $validated['mattype'];
+    $query = MasterMattypeFg::query()
+      ->selectRaw('TRIM(submattype) as code')
+      ->whereRaw('TRIM(mattype) = ?', [$mattype])
+      ->whereRaw('TRIM(submattype) IS NOT NULL')
+      ->groupByRaw('TRIM(submattype)')
+      ->orderByRaw('TRIM(submattype)');
+
+    DB::connection()->enableQueryLog();
+    $subMattypes = $query
+      ->get()
+      ->map(function ($row) {
+        return [
+          'code' => (string) $row->code,
+          'label' => (string) $row->code,
+        ];
+      })
+      ->values()
+      ->all();
+    $queryLog = DB::getQueryLog();
+
+    Log::debug('product.sub-mattypes', [
+      'mattype' => $mattype,
+      'sql' => $query->toSql(),
+      'bindings' => $query->getBindings(),
+      'query_log' => $queryLog,
+      'count' => count($subMattypes),
+    ]);
+
+    if ($request->boolean('debug')) {
+      return response()->json([
+        'mattype' => $mattype,
+        'subMattypes' => $subMattypes,
+        'debug' => [
+          'sql' => $query->toSql(),
+          'bindings' => $query->getBindings(),
+          'queryLog' => $queryLog,
+          'count' => count($subMattypes),
+        ],
+      ]);
+    }
+
+    return response()->json([
+      'mattype' => $mattype,
+      'subMattypes' => $subMattypes,
+    ]);
   }
 
   public function edit(Request $request): Response
@@ -255,12 +371,7 @@ class ProductController extends Controller
 
   public function find(ProductSearchRequest $request): RedirectResponse
   {
-    $InputData = [
-      'brand'      => $request->brand,
-      'mattype'    => $request->mattype,
-      'subMattype' => $request->subMattype,
-    ];
-    return Redirect::route('product.search.bom', $InputData);
+    return Redirect::route('product.search.bom');
   }
 
   public function findBom(ProductSearchBomRequest $request): RedirectResponse

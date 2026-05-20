@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/product/search/bom', [ProductController::class, 'findBom'])->name('product.search.bom');
     Route::get('/product/view', [ProductController::class, 'view'])->name('product.view');
     Route::get('/product/edit', [ProductController::class, 'edit'])->name('product.edit');
+    Route::get('/product/sub-mattypes', [ProductController::class, 'subMattypes'])->name('product.sub-mattypes');
     Route::get('/product/generate-material-id', [ProductController::class, 'generateMaterialId'])->name('product.generate-material-id');
     Route::get('/product/generate-bom-id', [ProductController::class, 'generateBomId'])->name('product.generate-bom-id');
     Route::get('/product/material-status', [ProductController::class, 'materialStatus'])->name('product.material-status');
@@ -77,6 +78,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/packmaterial/new', [PackMaterialController::class, 'new'])->name('packmaterial.new');
     Route::post('/packmaterial/new', [PackMaterialController::class, 'callNew'])->name('packmaterial.new');
+    Route::get('/packmaterial/product-categories', [PackMaterialController::class, 'productCategories'])->name('packmaterial.product-categories');
     Route::get('/packmaterial/generate-component-id', [PackMaterialController::class, 'generateComponentId'])->name('packmaterial.generate-component-id');
     Route::patch('/packmaterial/create', [PackMaterialController::class, 'create'])->name('packmaterial.create');
 
