@@ -13,6 +13,8 @@ use App\Models\SheetCustPartNum;
 use App\Models\SheetFinancial;
 use App\Models\SheetGeneral;
 use App\Models\SheetGtins;
+use App\Models\SheetBomGeneral;
+use App\Models\SheetInputProducts;
 use App\Models\SheetLogistics;
 use App\Models\SheetPlanning;
 use App\Models\SheetQtyConvers;
@@ -110,6 +112,9 @@ class RmController extends Controller
         'QTY_CONVERS' => [
           'quantity_uom' => $this->fetchMasterOptions('PROJ1_2_MASTER_UOM', 'QUANTITY_UOM_LIST', 'QUANTITY_UOM_LIST'),
           'corres_qty_uom' => $this->fetchMasterOptions('PROJ1_2_MASTER_CORRES_UOM', 'CORRES_QTY_UOM', 'CORRES_QTY_UOM'),
+        ],
+        'INPUT_PRODUCTS' => [
+          'quantity_uom' => $this->fetchMasterOptions('PROJ1_2_MASTER_UOM', 'QUANTITY_UOM_LIST', 'QUANTITY_UOM_LIST'),
         ],
         'SALES_DATA' => [
           'sales_org_id' => $this->fetchMasterOptions('PROJ1_2_MASTER_SALES_ORG', 'SALES_ORG_ID', 'SALES_ORG_ID'),
@@ -323,6 +328,101 @@ class RmController extends Controller
             ], [
               'name' => 'user_create',
               'label' => 'USER_CREATE',
+            ],
+          ],
+          'BOM_GENERAL'   => [
+            [
+              'name' => 'bom_id',
+              'label' => 'BOM_ID',
+            ], [
+              'name' => 'variant_id',
+              'label' => 'VARIANT_ID',
+            ], [
+              'name' => 'language',
+              'label' => 'LANGUAGE',
+            ], [
+              'name' => 'variant_desc',
+              'label' => 'VARIANT_DESC',
+            ], [
+              'name' => 'long_text',
+              'label' => 'LONG_TEXT',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
+            ], [
+              'name' => 'user_role',
+              'label' => 'USER_ROLE',
+              'hidden' => true,
+            ], [
+              'name' => 'create_date',
+              'label' => 'CREATE_DATE',
+              'hidden' => true,
+            ], [
+              'name' => 'user_update',
+              'label' => 'USER_UPDATE',
+              'hidden' => true,
+            ], [
+              'name' => 'update_date',
+              'label' => 'UPDATE_DATE',
+              'hidden' => true,
+            ],
+          ],
+          'INPUT_PRODUCTS' => [
+            [
+              'name' => 'bom_id',
+              'label' => 'BOM_ID',
+            ], [
+              'name' => 'variant_id',
+              'label' => 'VARIANT_ID',
+            ], [
+              'name' => 'line_item_grp_id',
+              'label' => 'LINE_ITEM_GRP_ID',
+            ], [
+              'name' => 'line_item_bom',
+              'label' => 'LINE_ITEM_BOM',
+            ], [
+              'name' => 'input_prod_id',
+              'label' => 'INPUT_PROD_ID',
+            ], [
+              'name' => 'quantity',
+              'label' => 'QUANTITY',
+            ], [
+              'name' => 'quantity_uom',
+              'label' => 'QUANTITY_UOM',
+            ], [
+              'name' => 'engr_chg_order_id',
+              'label' => 'ENGR_CHG_ORDER_ID',
+            ], [
+              'name' => 'fixed_qty_indi',
+              'label' => 'FIXED_QTY_INDI',
+            ], [
+              'name' => 'deleted',
+              'label' => 'DELETED',
+            ], [
+              'name' => 'status_row',
+              'label' => 'STATUS_ROW',
+            ], [
+              'name' => 'user_create',
+              'label' => 'USER_CREATE',
+            ], [
+              'name' => 'user_role',
+              'label' => 'USER_ROLE',
+              'hidden' => true,
+            ], [
+              'name' => 'create_date',
+              'label' => 'CREATE_DATE',
+              'hidden' => true,
+            ], [
+              'name' => 'user_update',
+              'label' => 'USER_UPDATE',
+              'hidden' => true,
+            ], [
+              'name' => 'update_date',
+              'label' => 'UPDATE_DATE',
+              'hidden' => true,
             ],
           ],
           'GTINS'         => [
@@ -570,8 +670,10 @@ class RmController extends Controller
         'AVAILABILITY'  => SheetAvailability::where('user_create', $user_login)->get(),
         'CUST_PART_NUM' => SheetCustPartNum::where('user_create', $user_login)->get(),
         'FINANCIAL'     => SheetFinancial::where('user_create', $user_login)->get(),
+        'BOM_GENERAL'   => SheetBomGeneral::where('user_create', $user_login)->get(),
         'GENERAL'       => SheetGeneral::where('user_create', $user_login)->get(),
         'GTINS'         => SheetGtins::where('user_create', $user_login)->get(),
+        'INPUT_PRODUCTS'=> SheetInputProducts::where('user_create', $user_login)->get(),
         'LOGISTICS'     => SheetLogistics::where('user_create', $user_login)->get(),
         'PLANNING'      => SheetPlanning::where('user_create', $user_login)->get(),
         'QTY_CONVERS'   => SheetQtyConvers::where('user_create', $user_login)->get(),
@@ -584,8 +686,10 @@ class RmController extends Controller
         'AVAILABILITY'  => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'AVAILABILITY')->get(),
         'CUST_PART_NUM' => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'CUST_PART_NUM')->get(),
         'FINANCIAL'     => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'FINANCIAL')->get(),
+        'BOM_GENERAL'   => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'BOM_GENERAL')->get(),
         'GENERAL'       => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'GENERAL')->get(),
         'GTINS'         => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'GTINS')->get(),
+        'INPUT_PRODUCTS'=> Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'INPUT_PRODUCTS')->get(),
         'LOGISTICS'     => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'LOGISTICS')->get(),
         'PLANNING'      => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'PLANNING')->get(),
         'QTY_CONVERS'   => Labels::where('label_page', 'TEMPLATE')->where('label_tab', 'QTY_CONVERS')->get(),
@@ -609,8 +713,10 @@ class RmController extends Controller
           'AVAILABILITY'  => SheetAvailability::class,
           'CUST_PART_NUM' => SheetCustPartNum::class,
           'FINANCIAL'     => SheetFinancial::class,
+          'BOM_GENERAL'   => SheetBomGeneral::class,
           'GENERAL'       => SheetGeneral::class,
           'GTINS'         => SheetGtins::class,
+          'INPUT_PRODUCTS'=> SheetInputProducts::class,
           'LOGISTICS'     => SheetLogistics::class,
           'PLANNING'      => SheetPlanning::class,
           'QTY_CONVERS'   => SheetQtyConvers::class,
@@ -639,15 +745,13 @@ class RmController extends Controller
         // ตรวจสอบว่า Primary Keys มีอยู่ใน Content
         $keys = is_array($primaryKeys) ? array_intersect_key($data, array_flip($primaryKeys)) : [$primaryKeys => $data[$primaryKeys] ?? null];
 
-        if (empty(array_filter($keys))) {
+        if (collect($keys)->every(fn ($value) => !filled($value))) {
             return redirect()
                 ->route('rm.report', ['tab' => $request->tab])
                 ->with('error', 'Primary keys are required for updating data.');
         }
 
-        $conditions = (is_array($keys) && count($keys) > 1)
-          ? array_intersect_key($data, array_flip($keys))
-          : $keys;
+        $conditions = $keys;
     
         $record = $modelClass::query()->where($conditions)->first();
 
@@ -673,8 +777,10 @@ class RmController extends Controller
           'AVAILABILITY'  => SheetAvailability::class,
           'CUST_PART_NUM' => SheetCustPartNum::class,
           'FINANCIAL'     => SheetFinancial::class,
+          'BOM_GENERAL'   => SheetBomGeneral::class,
           'GENERAL'       => SheetGeneral::class,
           'GTINS'         => SheetGtins::class,
+          'INPUT_PRODUCTS'=> SheetInputProducts::class,
           'LOGISTICS'     => SheetLogistics::class,
           'PLANNING'      => SheetPlanning::class,
           'QTY_CONVERS'   => SheetQtyConvers::class,
@@ -703,15 +809,13 @@ class RmController extends Controller
         // ตรวจสอบว่า Primary Keys มีอยู่ใน Content
         $keys = is_array($primaryKeys) ? array_intersect_key($data, array_flip($primaryKeys)) : [$primaryKeys => $data[$primaryKeys] ?? null];
 
-        if (empty(array_filter($keys))) {
+        if (collect($keys)->every(fn ($value) => !filled($value))) {
             return redirect()
                 ->route('rm.report', ['tab' => $request->tab])
                 ->with('error', 'Primary keys are required for updating data.');
         }
 
-        $conditions = (is_array($keys) && count($keys) > 1)
-          ? array_intersect_key($data, array_flip($keys))
-          : $keys;
+        $conditions = $keys;
     
         $record = $modelClass::query()->where($conditions)->first();
 
@@ -727,20 +831,22 @@ class RmController extends Controller
 
         return redirect()
             ->route('rm.report', ['tab' => $request->tab])
-            ->with('success', 'Data updated successfully.');
+            ->with('success', 'Data deleted successfully.');
     }
 
     public function export(Request $request)
     {
       $user_login = $request->user()->user_login;
-      $tabs = ['AVAILABILITY', 'CUST_PART_NUM', 'FINANCIAL', 'GENERAL', 'GTINS', 'LOGISTICS', 'PLANNING', 'QTY_CONVERS', 'SALES_DATA', 'SUPP_PART_NUM', 'UOM_CHAR'];
+      $tabs = ['AVAILABILITY', 'BOM_GENERAL', 'CUST_PART_NUM', 'FINANCIAL', 'GENERAL', 'GTINS', 'INPUT_PRODUCTS', 'LOGISTICS', 'PLANNING', 'QTY_CONVERS', 'SALES_DATA', 'SUPP_PART_NUM', 'UOM_CHAR'];
 
       $columnsConfig = [
         'AVAILABILITY'  => ['material_id', 'planning_area_id', 'status', 'availability_check_scope', 'status_row', 'user_create'],
+        'BOM_GENERAL'   => ['bom_id', 'variant_id', 'language', 'variant_desc', 'long_text', 'status_row', 'user_create'],
         'CUST_PART_NUM' => ['material_id', 'customer_id', 'customer_part_number', 'status_row', 'user_create'],
         'FINANCIAL'     => ['material_id', 'company_id', 'business_residence_id', 'status_row', 'user_create'],
         'GENERAL'       => ['material_id', 'material_desc', 'full_material_desc', 'meterial_desc_th', 'product_category_id', 'mat_type', 'sub_type', 'brand', 'base_uom', 'inv_valuation_uom', 'pillar', 'division', 'department', 'sub_department', 'class', 'sub_class', 'section', 'series', 'attribute_1', 'register_off', 'shelf_life', 'hs_code', 'country', 'old_product_id', 'identified_stock_type', 'serial_number_profile', 'retail_sales_price', 'product_core', 'attribute_2', 'detail_name', 'status_row', 'user_create'],
         'GTINS'         => ['material_id', 'trading_unit', 'gtin_number', 'status_row', 'user_create'],
+        'INPUT_PRODUCTS'=> ['bom_id', 'variant_id', 'line_item_grp_id', 'line_item_bom', 'input_prod_id', 'quantity', 'quantity_uom', 'engr_chg_order_id', 'fixed_qty_indi', 'deleted', 'status_row', 'user_create'],
         'LOGISTICS'     => ['material_id', 'planning_area_id', 'status', 'planning_uom', 'demand_manage_procedure', 'procurement_type', 'planning_procedure', 'lot_sizing_method', 'status_row', 'user_create'],
         'PLANNING'      => ['material_id', 'planning_area_id', 'status', 'planning_uom', 'procurement_type', 'status_row', 'user_create'],
         'QTY_CONVERS'   => ['material_id', 'quantity', 'quantity_uom', 'corres_qty', 'corres_qty_uom', 'status_row', 'user_create'],

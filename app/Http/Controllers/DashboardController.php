@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\Dash;
+use App\Models\Proj12SummaryDetail;
+use App\Models\Proj12SummaryHead;
 
 class DashboardController extends Controller
 {
@@ -42,10 +44,10 @@ class DashboardController extends Controller
     private function fetchSummaryHead(): array
     {
       try {
-        return DB::connection('oracle')
-          ->table('proj1_2_summary_head')
+        return Proj12SummaryHead::query()
           ->select(['NO', 'HEAD_LABEL'])
           ->orderBy('NO')
+          ->toBase()
           ->get()
           ->map(function ($row) {
             $data = array_change_key_case((array) $row, CASE_LOWER);
@@ -78,8 +80,7 @@ class DashboardController extends Controller
       ];
 
       try {
-        $rows = DB::connection('oracle')
-          ->table('proj1_2_summary_detail')
+        $rows = Proj12SummaryDetail::query()
           ->select([
             'DATA_YEAR',
             'DATA_MONTH',
@@ -95,6 +96,7 @@ class DashboardController extends Controller
           ->orderByDesc('DATA_YEAR')
           ->orderByDesc('DATA_MONTH_ORDER')
           ->limit(12)
+          ->toBase()
           ->get()
           ->map(function ($row) {
             $data = array_change_key_case((array) $row, CASE_LOWER);
@@ -123,7 +125,7 @@ class DashboardController extends Controller
     public function view(Request $request): Response
     {
       return Inertia::render('Dashboard', [
-        'message' => DB::connection('oracle')->table('proj1_dash')->value('message') ?: '',
+        'message' => Dash::query()->value('message') ?: '',
         'summaryHead' => $this->fetchSummaryHead(),
         'summaryRows' => $this->fetchSummaryDetail(),
       ]);

@@ -16,7 +16,7 @@ const summaryFields = [
 ];
 
 function headLabel(summaryHeadMap, no) {
-    return summaryHeadMap?.[no] || '-';
+    return parse(summaryHeadMap?.[no] || '-');
 }
 
 export default function Dashboard({ auth, message = '', summaryHead = [], summaryRows = [] }) {

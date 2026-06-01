@@ -64,6 +64,19 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
     },
+    BOM_GENERAL: {
+      bom_id: { type: 'display', required: true },
+      variant_id: { type: 'display', required: true },
+      language: { type: 'display', required: true },
+      variant_desc: { type: 'text', required: true, maxLength: 255 },
+      long_text: { type: 'text', required: true },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+      user_role: { type: 'display', required: false, hidden: true },
+      create_date: { type: 'display', required: false, hidden: true },
+      user_update: { type: 'display', required: false, hidden: true },
+      update_date: { type: 'display', required: false, hidden: true },
+    },
     CUST_PART_NUM: {
       material_id: { type: 'display', required: true },
       customer_id: { type: 'combo', required: true, options: getFieldOptions('customer_id') },
@@ -118,6 +131,24 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
       gtin_number: { type: 'display', required: true },
       status_row: { type: 'display', required: false },
       user_create: { type: 'display', required: false },
+    },
+    INPUT_PRODUCTS: {
+      bom_id: { type: 'display', required: true },
+      variant_id: { type: 'text', required: true, numericOnly: true },
+      line_item_grp_id: { type: 'text', required: true, numericOnly: true },
+      line_item_bom: { type: 'text', required: true, numericOnly: true },
+      input_prod_id: { type: 'display', required: true },
+      quantity: { type: 'text', required: true, numericOnly: true },
+      quantity_uom: { type: 'list', required: true, options: getFieldOptions('quantity_uom') },
+      engr_chg_order_id: { type: 'text', required: true },
+      fixed_qty_indi: { type: 'text', required: true },
+      deleted: { type: 'text', required: true },
+      status_row: { type: 'display', required: false },
+      user_create: { type: 'display', required: false },
+      user_role: { type: 'display', required: false, hidden: true },
+      create_date: { type: 'display', required: false, hidden: true },
+      user_update: { type: 'display', required: false, hidden: true },
+      update_date: { type: 'display', required: false, hidden: true },
     },
     LOGISTICS: {
       material_id: { type: 'display', required: true },
@@ -195,6 +226,10 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
   };
   const renderEditField = (column) => {
     const fieldConfig = getFieldConfig(column.name);
+    const handleChange = (nextValue) => {
+      const value = fieldConfig.numericOnly ? String(nextValue ?? '').replace(/\D+/g, '') : nextValue;
+      setData(column.name, value);
+    };
 
     if (fieldConfig.type === 'list') {
       return (
@@ -225,7 +260,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
           options={fieldConfig.options || []}
           required={fieldConfig.required}
           maxLength={fieldConfig.maxLength}
-          onChange={(nextValue) => setData(column.name, nextValue)}
+          onChange={handleChange}
         />
       );
     }
@@ -237,8 +272,10 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
         value={data[column.name] ?? ''}
         type={column?.hidden ? 'number' : 'text'}
         maxLength={fieldConfig.maxLength || 100}
+        inputMode={fieldConfig.numericOnly ? 'numeric' : undefined}
+        pattern={fieldConfig.numericOnly ? '[0-9]*' : undefined}
         required={fieldConfig.required}
-        onChange={(e) => setData(column.name, e.target.value)}
+        onChange={(e) => handleChange(e.target.value)}
         disabled={fieldConfig.type === 'display'}
       />
     );
@@ -255,7 +292,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
   const toggleModal = dataSet => {
     const newData = { ...data };
     Object.keys(data).forEach(o => {
-      newData[o] = dataSet[o] || '';
+      newData[o] = dataSet[o] ?? '';
     });
     setData(newData);
     setConfirmingActive(true);
@@ -269,7 +306,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
   const toggleDelete = dataSet => {
     const newData = { ...data };
     Object.keys(data).forEach(o => {
-      newData[o] = dataSet[o] || '';
+      newData[o] = dataSet[o] ?? '';
     });
     setData(newData);
     setConfirmingDelete(true);
@@ -386,7 +423,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                   {[
                     'AVAILABILITY', 'CUST_PART_NUM', 'FINANCIAL', 'GENERAL',
                     'GTINS', 'LOGISTICS', 'PLANNING', 'QTY_CONVERS',
-                    'SALES_DATA', 'SUPP_PART_NUM', 'UOM_CHAR',
+                    'SALES_DATA', 'SUPP_PART_NUM', 'UOM_CHAR', 'BOM_GENERAL', 'INPUT_PRODUCTS',
                   ].map((tab) => (
                     <button
                       key={`sidebar-tab-${tab}`}
