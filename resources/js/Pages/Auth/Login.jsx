@@ -31,16 +31,16 @@ export default function Login({ status, canResetPassword, connection = '' }) {
         <div className="min-h-screen overflow-hidden bg-[#eef3f8]">
             <Head title="Log in" />
 
-            <div className="flex min-h-screen flex-col lg:flex-row">
-                <div className="hidden min-h-[40vh] overflow-hidden bg-[#eef3f8] lg:block lg:w-1/2">
+            <div className="flex min-h-screen flex-col lg:flex-row lg:items-stretch">
+                <div className="relative hidden overflow-hidden bg-[#eef3f8] lg:block lg:flex-1">
                     <img
                         src={loginImage}
                         alt="Login illustration"
-                        className="h-full w-full object-cover object-center"
+                        className="absolute inset-y-0 right-0 h-full w-auto max-w-none object-contain object-right"
                     />
                 </div>
 
-                <div className="flex w-full items-center justify-center px-4 py-8 sm:px-8 lg:w-1/2 lg:px-12">
+                <div className="flex w-full items-center justify-center px-4 py-8 sm:px-8 lg:w-[42rem] lg:px-12">
                     <div className="w-full max-w-md rounded-[1.25rem] bg-white px-6 py-8 shadow-[0_14px_40px_rgba(15,23,42,0.12)] sm:px-8 sm:py-10">
                         <div className="flex justify-center">
                             <img
