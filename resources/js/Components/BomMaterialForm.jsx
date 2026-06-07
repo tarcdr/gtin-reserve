@@ -24,6 +24,8 @@ export default function BomMaterialForm({
   const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
     actionMode: InputData?.actionMode || 'create',
     ownerLevel: InputData?.ownerLevel || 'fg',
+    backRoute: InputData?.backRoute || 'product.view',
+    backMaterialId: InputData?.backMaterialId || InputData?.materialId || InputData?.fgMaterialId || '',
     bomId: InputData?.bomId || '',
     bomDesc: InputData?.bomDesc || '',
     mattype: InputData?.mattype || '',
@@ -172,7 +174,10 @@ export default function BomMaterialForm({
 
   const backToSemiFgLv2 = () => {
     if (data.ownerLevel === 'fg') {
-      router.get(route('product.view'), data.fgDetail);
+      router.get(route(data.backRoute || 'product.view'), {
+        ...data.fgDetail,
+        materialId: data.backMaterialId || data.fgDetail?.materialId || data.fgMaterialId || data.materialId,
+      });
       return;
     }
 
@@ -201,8 +206,9 @@ export default function BomMaterialForm({
     const filteredComponents = data.components.filter((item) => item.code !== data.componentId);
 
     if (data.ownerLevel === 'fg') {
-      router.get(route('product.view'), {
+      router.get(route(data.backRoute || 'product.view'), {
         ...data.fgDetail,
+        materialId: data.backMaterialId || data.fgDetail?.materialId || data.fgMaterialId || data.materialId,
         fgComponents: filteredComponents,
       });
       return;

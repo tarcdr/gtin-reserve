@@ -1,4 +1,3 @@
-import PrimaryButton from '@/Components/PrimaryButton';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import parse from 'html-react-parser';
@@ -25,6 +24,12 @@ export default function Dashboard({ auth, message = '', summaryHead = [], summar
         return acc;
     }, {});
 
+    const dashboardButtonBase =
+        'relative inline-flex flex-none w-[240px] sm:w-[320px] items-center justify-center overflow-hidden rounded-full px-7 py-5 text-xl sm:text-3xl font-black tracking-[0.08em] uppercase text-white transition-transform duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-offset-4 focus:ring-offset-white hover:-translate-y-1';
+
+    const buttonGloss =
+        'before:pointer-events-none before:absolute before:inset-x-4 before:top-3 before:h-1/2 before:rounded-full before:bg-white/35 before:blur-2xl before:content-[""] after:pointer-events-none after:absolute after:inset-0 after:rounded-full after:bg-gradient-to-b after:from-white/25 after:via-transparent after:to-transparent after:content-[""]';
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -35,20 +40,22 @@ export default function Dashboard({ auth, message = '', summaryHead = [], summar
             <div className="py-12 space-y-8">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="my-12 flex justify-center">
-                            <Link href={route('product.new')}>
-                                <PrimaryButton className="ml-3 font-bold py-4 px-8">
-                                  <span className="text-3xl">
+                        <div className="my-12 flex flex-col items-center justify-center gap-5 px-4 sm:flex-row sm:gap-6">
+                            <Link
+                                href={route('product.new')}
+                                className={`${dashboardButtonBase} ${buttonGloss} border border-cyan-200/60 bg-[linear-gradient(180deg,_#9fe7f6_0%,_#55b6ee_45%,_#68d9e7_100%)] shadow-[0_0_0_8px_rgba(142,228,247,0.35),_0_18px_45px_rgba(59,130,246,0.35),_inset_0_2px_10px_rgba(255,255,255,0.55)] focus:ring-cyan-300`}
+                            >
+                                <span className="relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.15)]">
                                     NPD
-                                  </span>
-                                </PrimaryButton>
+                                </span>
                             </Link>
-                            <Link href={route('product.search')}>
-                                <PrimaryButton className="ml-3 font-bold py-4 px-8">
-                                  <span className="text-3xl">
+                            <Link
+                                href={route('product.search')}
+                                className={`${dashboardButtonBase} ${buttonGloss} border border-blue-300/50 bg-[linear-gradient(180deg,_#1d4ed8_0%,_#0b2aa8_52%,_#0a1b87_100%)] shadow-[0_0_0_8px_rgba(59,130,246,0.28),_0_20px_50px_rgba(29,78,216,0.45),_inset_0_2px_12px_rgba(255,255,255,0.18)] focus:ring-blue-400`}
+                            >
+                                <span className="relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.2)]">
                                     Existing
-                                  </span>
-                                </PrimaryButton>
+                                </span>
                             </Link>
                         </div>
 

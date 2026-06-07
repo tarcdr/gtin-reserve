@@ -264,6 +264,8 @@ class PackMaterialController extends Controller
       "subMattype" => $request->subMattype ?? '',
       'actionMode' => $request->actionMode ?: 'create',
       'ownerLevel' => $request->ownerLevel ?: 'fg',
+      'backRoute' => $request->backRoute ?: 'product.view',
+      'backMaterialId' => $request->backMaterialId ?: $request->materialId ?: $request->fgMaterialId,
       'bomId'      => $request->bomId,
       'bomDesc'    => $request->bomDesc,
       'fgDetail'   => $request->get('fgDetail', []),

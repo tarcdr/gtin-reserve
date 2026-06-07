@@ -11,7 +11,7 @@ import DangerButton from '@/Components/DangerButton';
 import { useState } from 'react';
 import { useEffect } from 'react';
 
-export default function ProductDetail({ auth, InputData, isDisabled = true, brands = [], mattypes = [], sites = [], masterUom = [], finishGoods = [] }) {
+export default function ProductDetail({ auth, InputData, isDisabled = true, isEditMode = false, brands = [], mattypes = [], sites = [], masterUom = [], finishGoods = [] }) {
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
   const subMattypeOptions = ['0', '1', '2', '3'];
@@ -67,6 +67,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
   const goToPackMaterial = () => {
     router.get(route('packmaterial.new'), {
       ownerLevel: 'fg',
+      backRoute: 'product.view',
+      backMaterialId: data.materialId,
       fgDetail: buildFgDetailPayload(),
       ownerDetail: {
         id: data.materialId,
@@ -87,6 +89,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
   const goToPackMaterialAction = (actionMode, item) => {
     router.get(route('packmaterial.new'), {
       ownerLevel: 'fg',
+      backRoute: 'product.view',
+      backMaterialId: data.materialId,
       fgDetail: buildFgDetailPayload(),
       ownerDetail: {
         id: data.materialId,
@@ -173,7 +177,9 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
   };
 
   const goToEdit = () => {
-    router.get(route('product.edit'), buildFgDetailPayload());
+    router.get(route('product.edit'), {
+      materialId: data.materialId,
+    });
   };
 
   const handleDelete = () => {
@@ -193,6 +199,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
   const handleComplete = () => {
     setData('fgStatus', 'COM');
   };
+
+  const lockedIdentityFields = isEditMode || isDisabled;
   
   useEffect(() => {
     let dispSite = false;
@@ -232,10 +240,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   <InputLabel htmlFor="brand" value="Brand" />
                   <select
                     id="brand"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${lockedIdentityFields ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('brand', e.target.value)}
-                    defaultValue={data.brand}
-                    disabled={isDisabled}
+                    value={data.brand}
+                    disabled={lockedIdentityFields}
                   >
                     <option value="">---- Select Brand ----</option>
                     {brands?.map(o => (
@@ -249,10 +257,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   <InputLabel htmlFor="mattype" value="Mattype" />
                   <select
                     id="mattype"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${lockedIdentityFields ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('mattype', e.target.value)}
-                    defaultValue={data.mattype}
-                    disabled={isDisabled}
+                    value={data.mattype}
+                    disabled={lockedIdentityFields}
                   >
                     <option value="">---- Select Mattype ----</option>
                     {mattypes?.map(o => (
@@ -268,10 +276,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   <InputLabel htmlFor="subMattype" value="Sub Mattype" />
                   <select
                     id="subMattype"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${lockedIdentityFields ? 'bg-gray-100' : ''}`}
                     onChange={(e) => setData('subMattype', e.target.value)}
-                    defaultValue={data.subMattype}
-                    disabled={isDisabled}
+                    value={data.subMattype}
+                    disabled={lockedIdentityFields}
                   >
                     <option value="">---- Select Sub Mattype ----</option>
                     {subMattypeOptions.map(option => (
@@ -280,6 +288,19 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   </select>
 
                   <InputError className="mt-2" message={errors.subMattype} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <InputLabel htmlFor="materialId" value="Material ID FG" />
+
+                  <TextInput
+                    id="materialId"
+                    className="mt-1 block w-full bg-gray-100"
+                    value={data.materialId}
+                    disabled
+                  />
                 </div>
               </div>
 
@@ -300,10 +321,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                     <InputLabel htmlFor="site" value="Site" />
                     <select
                       id="site"
-                      className={`mt-1 block w-full border-gray-300 rounded-md ${isDisabled ? 'bg-gray-100' : ''}`}
+                      className={`mt-1 block w-full border-gray-300 rounded-md ${lockedIdentityFields ? 'bg-gray-100' : ''}`}
                       onChange={(e) => setData('site', e.target.value)}
-                      defaultValue={data.site}
-                      disabled={isDisabled}
+                      value={data.site}
+                      disabled={lockedIdentityFields}
                     >
                       <option value="">---- Select Site ----</option>
                       {sites?.map(o => (
@@ -314,28 +335,6 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                     <InputError className="mt-2" message={errors.site} />
                   </div>
                 )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <InputLabel htmlFor="materialId" value="Material ID" />
-
-                  <TextInput
-                    id="materialId"
-                    className="mt-1 block w-full bg-gray-100"
-                    value={data.materialId}
-                    disabled
-                  />
-                </div>
-                <div>
-                  <InputLabel htmlFor="bomStatus" value="FG Status" />
-
-                  <TextInput
-                    id="bomStatus"
-                    className="mt-1 block w-full bg-gray-100"
-                    disabled
-                    value={data.fgStatus}
-                  />
-                </div>
               </div>
               {showBomId && (
                 <>
@@ -378,6 +377,16 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, bran
                   />
 
                   <InputError className="mt-2" message={errors.searchDesc} />
+                </div>
+                <div>
+                  <InputLabel htmlFor="bomStatus" value="FG Status" />
+
+                  <TextInput
+                    id="bomStatus"
+                    className="mt-1 block w-full bg-gray-100"
+                    disabled
+                    value={data.fgStatus}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

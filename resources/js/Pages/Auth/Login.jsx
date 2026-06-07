@@ -6,7 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 import logo from '../../../assets/images/logo.png';
-import loginImage from '../../../assets/images/login03.png';
+import loginImage from '../../../assets/images/login_image.png';
 
 export default function Login({ status, canResetPassword, connection = '' }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -28,20 +28,20 @@ export default function Login({ status, canResetPassword, connection = '' }) {
     };
 
     return (
-        <div className="min-h-screen overflow-hidden bg-[#eef3f8]">
+        <div className="min-h-screen overflow-hidden bg-[#e9eff5]">
             <Head title="Log in" />
 
-            <div className="flex min-h-screen flex-col lg:flex-row lg:items-stretch">
-                <div className="relative hidden overflow-hidden bg-[#eef3f8] lg:block lg:flex-1">
+            <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[minmax(0,1fr)_26rem] xl:grid-cols-[minmax(0,1fr)_30rem]">
+                <div className="relative hidden overflow-hidden lg:block">
                     <img
                         src={loginImage}
                         alt="Login illustration"
-                        className="absolute inset-y-0 right-0 h-full w-auto max-w-none object-contain object-right"
+                        className="absolute inset-0 h-full w-full object-contain object-center"
                     />
                 </div>
 
-                <div className="flex w-full items-center justify-center px-4 py-8 sm:px-8 lg:w-[42rem] lg:px-12">
-                    <div className="w-full max-w-md rounded-[1.25rem] bg-white px-6 py-8 shadow-[0_14px_40px_rgba(15,23,42,0.12)] sm:px-8 sm:py-10">
+                <div className="flex items-center justify-center px-4 py-8 sm:px-8 lg:px-10">
+                    <div className="w-full max-w-[24rem] rounded-[1.25rem] bg-white px-6 py-8 shadow-[0_16px_42px_rgba(15,23,42,0.12)] sm:px-8 sm:py-10">
                         <div className="flex justify-center">
                             <img
                                 src={logo}
@@ -85,7 +85,7 @@ export default function Login({ status, canResetPassword, connection = '' }) {
                                 <InputError message={errors.password} className="mt-2" />
                             </div>
 
-                            <div className="block mt-4">
+                            <div className="mt-4 block">
                                 <label className="flex items-center">
                                     <Checkbox
                                         name="remember"
@@ -96,7 +96,7 @@ export default function Login({ status, canResetPassword, connection = '' }) {
                                 </label>
                             </div>
 
-                            <div className="mt-4 flex items-center justify-end">
+                            <div className="mt-5 flex items-center justify-end">
                                 {canResetPassword && (
                                     <Link
                                         href={route('password.request')}

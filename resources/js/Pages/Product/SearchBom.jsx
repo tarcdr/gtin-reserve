@@ -6,9 +6,9 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import { useForm } from '@inertiajs/react';
 import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
+import { usePage } from '@inertiajs/react';
 import ReactSelect from 'react-select';
-import { useEffect } from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const FLOW_KEY = 'product.search.flow';
 
@@ -33,6 +33,8 @@ const writeFlowState = (state) => {
 };
 
 export default function ProductSearchBom({ auth, InputData, isDisabled = true, brands = [], mattypes = [], materials = [] }) {
+  const { flash } = usePage().props;
+  const alertedMessageRef = useRef('');
   const storedFlow = readFlowState();
   const initialOptions = storedFlow.subMattypeOptions ?? InputData?.subMattypeOptions ?? [];
   const [subMattypeOptions, setSubMattypeOptions] = useState(initialOptions);
@@ -40,11 +42,28 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
     brand: storedFlow.brand ?? InputData?.brand ?? '',
     mattype: storedFlow.mattype ?? InputData?.mattype ?? '',
     subMattype: storedFlow.subMattype ?? InputData?.subMattype ?? '',
-    materialId: InputData?.materialId || '',
-    status: InputData?.status || ''
+    materialId: InputData?.materialId || ''
   });
 
   const selectedMaterial = materials.find(item => item.code === data.materialId) || null;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fallbackMessage = params.get('flashError') || '';
+    const message = flash?.error || fallbackMessage;
+
+    if (message && alertedMessageRef.current !== message) {
+      alertedMessageRef.current = message;
+      alert(message);
+
+      if (params.has('flashError')) {
+        params.delete('flashError');
+        const nextQuery = params.toString();
+        const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+        window.history.replaceState({}, '', nextUrl);
+      }
+    }
+  }, [flash?.error]);
 
   const submit = (e) => {
     e.preventDefault();
@@ -76,33 +95,6 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
 
     return () => controller.abort();
   }, [data.mattype]);
-
-  useEffect(() => {
-    if (!data.materialId) {
-      if (data.status) {
-        setData('status', '');
-      }
-      return;
-    }
-    const controller = new AbortController();
-    const url = route('product.material-status', { materialId: data.materialId });
-    fetch(url, {
-      headers: {
-        Accept: 'application/json'
-      },
-      signal: controller.signal
-    })
-      .then((response) => response.ok ? response.json() : null)
-      .then((payload) => {
-        if (!payload) {
-          return;
-        }
-        setData('status', payload.status || '');
-      })
-      .catch(() => {});
-
-    return () => controller.abort();
-  }, [data.materialId]);
 
   return (
     <AuthenticatedLayout
@@ -182,7 +174,6 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                     value={selectedMaterial}
                     onChange={(option) => {
                       setData('materialId', option?.code || '');
-                      setData('status', option?.status || '');
                     }}
                     getOptionLabel={(option) => option.label}
                     getOptionValue={(option) => option.code}
@@ -191,16 +182,6 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                     }}
                   />
                   <InputError className="mt-2" message={errors?.materialId} />
-                </div>
-                <div>
-                  <InputLabel htmlFor="status" value="FG Status" />
-
-                  <TextInput
-                    id="status"
-                    className="mt-1 block w-full bg-gray-100"
-                    disabled
-                    value={data.status}
-                  />
                 </div>
               </div>
               <div className="flex items-center justify-center gap-4">
