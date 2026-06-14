@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Employee;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -22,11 +23,27 @@ class UserManagementController extends Controller
     {
         $users = User::query()
             ->orderBy('user_login')
-            ->get(['user_login', 'employee_name', 'role', 'is_active']);
+            ->get(['user_login', 'employee_id', 'employee_name', 'role', 'is_active']);
+
+        $usedEmployeeIds = User::query()
+            ->whereNotNull('employee_id')
+            ->pluck('employee_id')
+            ->map(fn ($employeeId) => trim((string) $employeeId))
+            ->filter()
+            ->values()
+            ->all();
+
+        $employees = Employee::query()
+            ->orderBy('code')
+            ->when(! empty($usedEmployeeIds), function ($query) use ($usedEmployeeIds) {
+                $query->whereNotIn('code', $usedEmployeeIds);
+            })
+            ->get(['code', 'first_name', 'last_name']);
 
         return Inertia::render('Admin/UserManagement', [
             'users' => $users,
             'roles' => self::ROLES,
+            'employees' => $employees,
         ]);
     }
 
@@ -36,6 +53,7 @@ class UserManagementController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'employee_id' => ['required', 'string', 'max:255'],
             'employee_name' => ['required', 'string', 'max:255'],
             'user_login' => ['required', 'string', 'max:255', 'unique:proj1_user,user_login'],
             'role' => ['required', Rule::in(self::ROLES)],
@@ -44,6 +62,7 @@ class UserManagementController extends Controller
         ]);
 
         User::create([
+            'employee_id' => $validated['employee_id'],
             'employee_name' => $validated['employee_name'],
             'user_login' => $validated['user_login'],
             'role' => $validated['role'],

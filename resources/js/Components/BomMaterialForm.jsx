@@ -135,6 +135,10 @@ export default function BomMaterialForm({
       }
 
       const payload = await response.json();
+      const payloadError = (payload?.error || '').trim();
+      if (payloadError) {
+        throw new Error(payloadError);
+      }
       const nextComponentId = payload?.componentId || '';
 
       if (!nextComponentId) {
@@ -184,7 +188,7 @@ export default function BomMaterialForm({
     const levelRoute = data.ownerLevel === 'semiFgLv1'
       ? 'material-levels.semi-fg-lv1.new'
       : data.ownerLevel === 'businessSupply'
-        ? 'material-levels.business-supply.new'
+        ? 'business-supply.new'
         : 'material-levels.semi-fg-lv2.new';
 
     router.get(route(levelRoute), {
@@ -217,7 +221,7 @@ export default function BomMaterialForm({
     const levelRoute = data.ownerLevel === 'semiFgLv1'
       ? 'material-levels.semi-fg-lv1.new'
       : data.ownerLevel === 'businessSupply'
-        ? 'material-levels.business-supply.new'
+        ? 'business-supply.new'
         : 'material-levels.semi-fg-lv2.new';
 
     router.get(route(levelRoute), {

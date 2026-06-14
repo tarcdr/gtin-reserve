@@ -77,7 +77,6 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
       setError('site', 'The Site field is required.');
       return;
     }
-
     if (!data.materialId) {
       setError('materialId', 'Unable to generate Suggest Material ID.');
       return;
@@ -101,7 +100,12 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
       }
 
       const payload = await response.json();
-      const nextBomId = payload?.bomId || '';
+      const payloadError = (payload?.error || '').trim();
+      if (payloadError) {
+        throw new Error(payloadError);
+      }
+
+      const nextBomId = (payload?.bomId || '').trim();
 
       if (!nextBomId) {
         throw new Error('Empty BOM ID.');
@@ -111,9 +115,14 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
       setIsBomIdReady(true);
       clearErrors('site', 'bomId', 'bomDesc');
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to generate BOM ID.';
       setData('bomId', '');
       setIsBomIdReady(false);
-      setError('bomId', 'Unable to generate BOM ID.');
+      if (message === 'ERR-005') {
+        setError('site', 'Unable to generate BOM ID for the selected site.');
+      } else {
+        setError('bomId', message || 'Unable to generate BOM ID.');
+      }
     } finally {
       setIsGeneratingBomId(false);
     }
@@ -187,13 +196,28 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
         }
 
         const payload = await response.json();
-        setData('materialId', payload?.materialId || '');
+        const payloadError = (payload?.error || '').trim();
+        if (payloadError) {
+          throw new Error(payloadError);
+        }
+
+        const nextMaterialId = (payload?.materialId || '').trim();
+        if (!nextMaterialId) {
+          throw new Error('Empty Suggest Material ID.');
+        }
+
+        setData('materialId', nextMaterialId);
         setData('bomId', '');
         setData('bomDesc', '');
         setIsBomIdReady(false);
         setStep(3);
       } catch (error) {
-        setError('materialId', 'Unable to generate Suggest Material ID.');
+        const message = error instanceof Error ? error.message : 'Unable to generate Suggest Material ID.';
+        setData('materialId', '');
+        setData('bomId', '');
+        setData('bomDesc', '');
+        setIsBomIdReady(false);
+        setError('materialId', message || 'Unable to generate Suggest Material ID.');
       } finally {
         setIsGeneratingMaterialId(false);
       }

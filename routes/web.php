@@ -66,9 +66,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/material-levels/semi-fg-lv1', [MaterialLevelController::class, 'saveSemiFgLevel1'])->name('material-levels.semi-fg-lv1.save');
     Route::get('/material-levels/semi-fg-lv1/create-component', [MaterialLevelController::class, 'createComponentSemiFgLevel1'])->name('material-levels.semi-fg-lv1.create-component');
 
-    Route::get('/material-levels/business-supply', [MaterialLevelController::class, 'businessSupply'])->name('material-levels.business-supply.new');
-    Route::patch('/material-levels/business-supply', [MaterialLevelController::class, 'saveBusinessSupply'])->name('material-levels.business-supply.save');
-    Route::get('/material-levels/business-supply/create-component', [MaterialLevelController::class, 'createComponentBusinessSupply'])->name('material-levels.business-supply.create-component');
+    Route::get('/business-supply/new', [BusinessSupplyController::class, 'new'])->name('business-supply.new');
+    Route::get('/business-supply/existing', [BusinessSupplyController::class, 'existing'])->name('business-supply.existing');
+    Route::get('/business-supply/edit', [BusinessSupplyController::class, 'edit'])->name('business-supply.edit');
+    Route::get('/business-supply/generate', [BusinessSupplyController::class, 'generate'])->name('business-supply.generate');
+    Route::patch('/business-supply/save', [BusinessSupplyController::class, 'save'])->name('business-supply.save');
+    Route::patch('/business-supply/existing', [BusinessSupplyController::class, 'updateExisting'])->name('business-supply.existing.update');
+    Route::get('/business-supply/create-component', [BusinessSupplyController::class, 'createComponent'])->name('business-supply.create-component');
     Route::get('/rm/material_create', [RmController::class, 'view'])->name('rm.material_create');
     Route::get('/rm/component_request', [RmController::class, 'viewComponentRequest'])->name('rm.component_request');
     Route::get('/rm/report/{tab?}', [RmController::class, 'report'])->name('rm.report');

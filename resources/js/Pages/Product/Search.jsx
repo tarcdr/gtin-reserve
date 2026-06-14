@@ -29,8 +29,21 @@ const writeFlowState = (state) => {
   window.sessionStorage.setItem(FLOW_KEY, JSON.stringify(state));
 };
 
+const clearFlowState = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.removeItem(FLOW_KEY);
+};
+
 export default function ProductSearch({ auth, InputData, brands = [], mattypes = [] }) {
-  const storedFlow = readFlowState();
+  const shouldResetFlow = !InputData?.brand && !InputData?.mattype && !InputData?.subMattype && !InputData?.startStep;
+  if (shouldResetFlow) {
+    clearFlowState();
+  }
+
+  const storedFlow = shouldResetFlow ? {} : readFlowState();
   const initialBrand = storedFlow.brand ?? InputData?.brand ?? '';
   const initialMattype = storedFlow.mattype ?? InputData?.mattype ?? '';
   const initialSubMattype = storedFlow.subMattype ?? InputData?.subMattype ?? '';

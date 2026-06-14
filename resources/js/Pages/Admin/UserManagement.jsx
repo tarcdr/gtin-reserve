@@ -10,19 +10,21 @@ import SuccessButton from '@/Components/SuccessButton';
 import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import { Head, router, useForm } from '@inertiajs/react';
+import ReactSelect from 'react-select';
 
 const formatRoleLabel = (role) => (role ? role.toUpperCase() : '-');
 
-export default function UserManagement({ auth, users = [], roles = [] }) {
+export default function UserManagement({ auth, users = [], roles = [], employees = [] }) {
     const [editingUser, setEditingUser] = useState(null);
     const [passwordUser, setPasswordUser] = useState(null);
     const [deletingUser, setDeletingUser] = useState(null);
     const currentLogin = auth?.user?.user_login;
 
     const createForm = useForm({
+        employee_id: '',
         employee_name: '',
         user_login: '',
-        role: roles[0] || 'rd',
+        role: 'rd',
         is_active: true,
         password: '',
         password_confirmation: '',
@@ -30,7 +32,7 @@ export default function UserManagement({ auth, users = [], roles = [] }) {
 
     const editForm = useForm({
         employee_name: '',
-        role: roles[0] || 'rd',
+        role: 'rd',
         is_active: true,
     });
 
@@ -41,6 +43,13 @@ export default function UserManagement({ auth, users = [], roles = [] }) {
 
     const deleteForm = useForm({});
 
+    const employeeOptions = employees.map((employee) => ({
+        value: employee.code,
+        label: `${employee.code} - ${[employee.first_name, employee.last_name].filter(Boolean).join(' ')}`.trim(),
+        employeeName: [employee.first_name, employee.last_name].filter(Boolean).join(' ').trim(),
+    }));
+    const selectedEmployeeOption = employeeOptions.find((item) => item.value === createForm.data.employee_id) || null;
+
     const submitCreate = (e) => {
         e.preventDefault();
         createForm.post(route('admin.users.store'), {
@@ -49,11 +58,19 @@ export default function UserManagement({ auth, users = [], roles = [] }) {
         });
     };
 
+    const handleEmployeeChange = (employeeId) => {
+        const employee = employees.find((item) => item.code === employeeId);
+        const employeeName = employee ? `${employee.first_name || ''} ${employee.last_name || ''}`.trim() : '';
+
+        createForm.setData('employee_id', employeeId);
+        createForm.setData('employee_name', employeeName);
+    };
+
     const openEdit = (user) => {
         setEditingUser(user);
         editForm.setData({
             employee_name: user.employee_name || '',
-            role: user.role || roles[0] || 'rd',
+            role: user.role || 'rd',
             is_active: Boolean(user.is_active),
         });
     };
@@ -121,7 +138,7 @@ export default function UserManagement({ auth, users = [], roles = [] }) {
             route('admin.users.update', user.user_login),
             {
                 employee_name: user.employee_name || '',
-                role: user.role || roles[0] || 'rd',
+                role: user.role || 'rd',
                 is_active: !user.is_active,
             },
             { preserveScroll: true }
@@ -139,88 +156,115 @@ export default function UserManagement({ auth, users = [], roles = [] }) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     <div className="bg-white shadow-sm sm:rounded-lg p-6">
                         <h3 className="text-lg font-medium text-gray-900">Create User</h3>
-                        <form onSubmit={submitCreate} className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <InputLabel htmlFor="employee_name" value="Employee Name" />
-                                <TextInput
-                                    id="employee_name"
-                                    name="employee_name"
-                                    className="mt-1 block w-full"
-                                    value={createForm.data.employee_name}
-                                    onChange={(e) => createForm.setData('employee_name', e.target.value)}
-                                    required
-                                />
-                                <InputError className="mt-2" message={createForm.errors.employee_name} />
+                        <form onSubmit={submitCreate} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <InputLabel htmlFor="employee_id" value="Employee ID" />
+                                    <ReactSelect
+                                        inputId="employee_id"
+                                        name="employee_id"
+                                        className="mt-1"
+                                        classNames={{
+                                            control: () => 'border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500',
+                                        }}
+                                        options={employeeOptions}
+                                        value={selectedEmployeeOption}
+                                        onChange={(option) => handleEmployeeChange(option?.value || '')}
+                                        isSearchable
+                                        placeholder="---- Select Employee ID ----"
+                                        isClearable
+                                    />
+                                    <InputError className="mt-2" message={createForm.errors.employee_id} />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="employee_name" value="Employee Name" />
+                                    <TextInput
+                                        id="employee_name"
+                                        name="employee_name"
+                                        className="mt-1 block w-full"
+                                        value={createForm.data.employee_name}
+                                        onChange={(e) => createForm.setData('employee_name', e.target.value)}
+                                        required
+                                    />
+                                    <InputError className="mt-2" message={createForm.errors.employee_name} />
+                                </div>
                             </div>
 
-                            <div>
-                                <InputLabel htmlFor="user_login" value="User Login" />
-                                <TextInput
-                                    id="user_login"
-                                    name="user_login"
-                                    className="mt-1 block w-full"
-                                    value={createForm.data.user_login}
-                                    onChange={(e) => createForm.setData('user_login', e.target.value)}
-                                    required
-                                />
-                                <InputError className="mt-2" message={createForm.errors.user_login} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <InputLabel htmlFor="user_login" value="User Login" />
+                                    <TextInput
+                                        id="user_login"
+                                        name="user_login"
+                                        className="mt-1 block w-full"
+                                        value={createForm.data.user_login}
+                                        onChange={(e) => createForm.setData('user_login', e.target.value)}
+                                        required
+                                    />
+                                    <InputError className="mt-2" message={createForm.errors.user_login} />
+                                </div>
                             </div>
 
-                            <div>
-                                <InputLabel htmlFor="role" value="Role" />
-                                <select
-                                    id="role"
-                                    name="role"
-                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    value={createForm.data.role}
-                                    onChange={(e) => createForm.setData('role', e.target.value)}
-                                >
-                                    {roles.map((role) => (
-                                        <option key={role} value={role}>
-                                            {formatRoleLabel(role)}
-                                        </option>
-                                    ))}
-                                </select>
-                                <InputError className="mt-2" message={createForm.errors.role} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <InputLabel htmlFor="role" value="Role" />
+                                    <select
+                                        id="role"
+                                        name="role"
+                                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        value={createForm.data.role}
+                                        onChange={(e) => createForm.setData('role', e.target.value)}
+                                    >
+                                        {roles.map((role) => (
+                                            <option key={role} value={role}>
+                                                {formatRoleLabel(role)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <InputError className="mt-2" message={createForm.errors.role} />
+                                </div>
+
+                                <div className="flex items-center space-x-3">
+                                    <Checkbox
+                                        id="is_active"
+                                        name="is_active"
+                                        checked={createForm.data.is_active}
+                                        onChange={(e) => createForm.setData('is_active', e.target.checked)}
+                                    />
+                                    <InputLabel htmlFor="is_active" value="Active" />
+                                    <InputError className="mt-2" message={createForm.errors.is_active} />
+                                </div>
                             </div>
 
-                            <div className="flex items-center space-x-3">
-                                <Checkbox
-                                    id="is_active"
-                                    name="is_active"
-                                    checked={createForm.data.is_active}
-                                    onChange={(e) => createForm.setData('is_active', e.target.checked)}
-                                />
-                                <InputLabel htmlFor="is_active" value="Active" />
-                                <InputError className="mt-2" message={createForm.errors.is_active} />
-                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <InputLabel htmlFor="password" value="Password" />
+                                    <TextInput
+                                        id="password"
+                                        type="password"
+                                        name="password"
+                                        className="mt-1 block w-full"
+                                        value={createForm.data.password}
+                                        onChange={(e) => createForm.setData('password', e.target.value)}
+                                        required
+                                    />
+                                    <InputError className="mt-2" message={createForm.errors.password} />
+                                </div>
 
-                            <div>
-                                <InputLabel htmlFor="password" value="Password" />
-                                <TextInput
-                                    id="password"
-                                    type="password"
-                                    name="password"
-                                    className="mt-1 block w-full"
-                                    value={createForm.data.password}
-                                    onChange={(e) => createForm.setData('password', e.target.value)}
-                                    required
-                                />
-                                <InputError className="mt-2" message={createForm.errors.password} />
-                            </div>
-
-                            <div>
-                                <InputLabel htmlFor="password_confirmation" value="Confirm Password" />
-                                <TextInput
-                                    id="password_confirmation"
-                                    type="password"
-                                    name="password_confirmation"
-                                    className="mt-1 block w-full"
-                                    value={createForm.data.password_confirmation}
-                                    onChange={(e) => createForm.setData('password_confirmation', e.target.value)}
-                                    required
-                                />
-                                <InputError className="mt-2" message={createForm.errors.password_confirmation} />
+                                <div>
+                                    <InputLabel htmlFor="password_confirmation" value="Confirm Password" />
+                                    <TextInput
+                                        id="password_confirmation"
+                                        type="password"
+                                        name="password_confirmation"
+                                        className="mt-1 block w-full"
+                                        value={createForm.data.password_confirmation}
+                                        onChange={(e) => createForm.setData('password_confirmation', e.target.value)}
+                                        required
+                                    />
+                                    <InputError className="mt-2" message={createForm.errors.password_confirmation} />
+                                </div>
                             </div>
 
                             <div className="md:col-span-2 flex justify-end">
@@ -236,6 +280,7 @@ export default function UserManagement({ auth, users = [], roles = [] }) {
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Login</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -245,7 +290,7 @@ export default function UserManagement({ auth, users = [], roles = [] }) {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {users.length === 0 && (
                                         <tr>
-                                            <td className="px-4 py-4 text-sm text-gray-500" colSpan="5">
+                                            <td className="px-4 py-4 text-sm text-gray-500" colSpan="6">
                                                 No users found.
                                             </td>
                                         </tr>
@@ -256,6 +301,7 @@ export default function UserManagement({ auth, users = [], roles = [] }) {
                                         return (
                                         <tr key={user.user_login}>
                                             <td className="px-4 py-4 text-sm text-gray-900">{user.user_login}</td>
+                                            <td className="px-4 py-4 text-sm text-gray-900">{user.employee_id || '-'}</td>
                                             <td className="px-4 py-4 text-sm text-gray-900">{user.employee_name || '-'}</td>
                                             <td className="px-4 py-4 text-sm text-gray-900">{formatRoleLabel(user.role)}</td>
                                             <td className="px-4 py-4 text-sm">

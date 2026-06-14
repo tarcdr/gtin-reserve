@@ -161,7 +161,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   };
 
   // const goToBusinessSupply = (levelData = {}) => {
-  //   router.get(route('material-levels.business-supply.new'), {
+  //   router.get(route('business-supply.new'), {
   //     ...materialLevelPayload,
   //     mode: levelData.mode || (levelData.levelMaterialId ? 'view' : 'create'),
   //     ...levelData,

@@ -152,19 +152,6 @@ class MaterialLevelController extends Controller
     ]);
   }
 
-  public function businessSupply(Request $request): Response
-  {
-    $InputData = $this->baseInput($request, 'proj1_business_supply', '9', '0');
-    $components = $this->resolveComponents($request);
-    return Inertia::render('MaterialLevels/BusinessSupply', [
-      'InputData' => $InputData,
-      'mattypes' => $this->mattypes,
-      'subMattypes' => $this->subMattypes,
-      'uoms' => $this->uoms,
-      'components' => $components,
-    ]);
-  }
-
   public function saveRaw(Request $request): RedirectResponse
   {
     return back()->with('success', 'Raw material saved.');
@@ -278,36 +265,6 @@ class MaterialLevelController extends Controller
     ]);
   }
 
-  public function saveBusinessSupply(Request $request): RedirectResponse
-  {
-    $fgDetail = $request->get('fgDetail', []);
-    $detail = [
-      'id' => $request->get('materialId'),
-      'desc' => $request->get('searchDesc'),
-      'searchDesc' => $request->get('searchDesc'),
-      'fullDescEn' => $request->get('fullDescEn'),
-      'fullDescTh' => $request->get('fullDescTh'),
-      'uom' => $request->get('uom'),
-      'components' => $request->get('components', []),
-    ];
-    $fgDetail['businessSupply'] = $detail;
-    $this->persistFgDraft($request, $fgDetail);
-
-    return Redirect::route('material-levels.business-supply.new', [
-      'mode' => 'view',
-      'fgDetail' => $fgDetail,
-      'materialId' => $fgDetail['materialId'] ?? null,
-      'bomId' => $fgDetail['bomId'] ?? null,
-      'bomDesc' => $fgDetail['bomDesc'] ?? null,
-      'levelMaterialId' => $detail['id'],
-      'searchDesc' => $detail['searchDesc'],
-      'fullDescEn' => $detail['fullDescEn'],
-      'fullDescTh' => $detail['fullDescTh'],
-      'uom' => $detail['uom'],
-      'components' => $detail['components'],
-    ]);
-  }
-
   public function createComponentRaw(Request $request): RedirectResponse
   {
     return Redirect::route('material-levels.raw.new', $request->all());
@@ -329,11 +286,4 @@ class MaterialLevelController extends Controller
     return Redirect::route('packmaterial.new', $payload);
   }
 
-  public function createComponentBusinessSupply(Request $request): RedirectResponse
-  {
-    $payload = $request->all();
-    $payload['ownerLevel'] = 'businessSupply';
-    $payload['subMattype'] = '0';
-    return Redirect::route('packmaterial.new', $payload);
-  }
 }

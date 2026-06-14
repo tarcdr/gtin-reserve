@@ -223,7 +223,8 @@ class PackMaterialController extends Controller
     if ($ownerLevel === 'businessSupply') {
       $fgDetail['businessSupply'] = array_merge($fgDetail['businessSupply'] ?? [], $ownerDetail, ['components' => $components]);
       $this->persistFgDraft($request, $fgDetail);
-      return Redirect::route('material-levels.business-supply.new', [
+      $backRoute = $request->get('backRoute', 'business-supply.new');
+      return Redirect::route($backRoute, [
         'mode' => 'view',
         'fgDetail' => $fgDetail,
         'materialId' => $fgDetail['materialId'] ?? null,
@@ -235,6 +236,7 @@ class PackMaterialController extends Controller
         'fullDescTh' => $ownerDetail['fullDescTh'] ?? null,
         'uom' => $ownerDetail['uom'] ?? null,
         'components' => $components,
+        'bizsupId' => $ownerDetail['id'] ?? null,
       ]);
     }
 
@@ -363,15 +365,18 @@ class PackMaterialController extends Controller
     ]);
 
     $componentId = null;
+    $error = null;
     $pdo = DB::getPdo();
-    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_COMP_BOMFG(:p_prd_sub_cat, :p_componenid); END;');
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_COMP_BOMFG(:p_prd_sub_cat, :p_componenid, :p_error); END;');
     $stmt->bindParam(':p_prd_sub_cat', $validated['productSubCat'], PDO::PARAM_STR);
     $stmt->bindParam(':p_componenid', $componentId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+    $stmt->bindParam(':p_error', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
     $stmt->execute();
 
     return response()->json([
       'program' => 'PROJ1_2_GEN_COMP_BOMFG',
       'componentId' => $componentId,
+      'error' => $this->resolveProcedureErrorMessage($error),
     ]);
   }
 }

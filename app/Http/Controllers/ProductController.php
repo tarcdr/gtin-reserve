@@ -13,7 +13,6 @@ use Inertia\Response;
 use App\Models\Brand;
 use App\Models\FgBomDml;
 use App\Models\FgMaterialDml;
-use App\Models\ExistingMaterial;
 use App\Models\MasterMattypeFg;
 use App\Models\MasterUOM;
 use App\Models\MasterLogisitcSite;
@@ -327,74 +326,6 @@ class ProductController extends Controller
     return (string) Str::uuid();
   }
 
-  protected function saveFgMaterial(array $inputData, ?string $userLogin = null, ?string $userRole = null): void
-  {
-    $materialId = trim((string) ($inputData['materialId'] ?? ''));
-    if ($materialId === '') {
-      return;
-    }
-
-    $now = now();
-    $userLogin = $userLogin ?: 'system';
-    $userRole = $userRole ?: 'GTIN';
-
-    $existingMaterial = FgMaterialDml::query()
-      ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId])
-      ->first();
-
-    $materialPayload = [
-      'NO' => $existingMaterial?->NO ?? $existingMaterial?->no ?? $this->nextFgNo(),
-      'MATERIAL_ID_FG_1' => $materialId,
-      'SEARCH_DESCRIPTION' => $inputData['searchDesc'] ?? '',
-      'FULL_DESCRIPTION_EN' => $inputData['fullDescEn'] ?? '',
-      'FULL_DESCRIPTION_TH' => $inputData['fullDescTh'] ?? '',
-      'SITE' => $inputData['site'] ?? '',
-      'FG_BOM_ID' => $inputData['bomId'] ?? '',
-      'DESC_FG_BOM_ID' => $inputData['bomDesc'] ?? '',
-      'BRAND' => $inputData['brand'] ?? '',
-      'MATTYPE' => $inputData['mattype'] ?? '',
-      'SUB_MATTYPE' => $inputData['subMattype'] ?? '',
-      'FINISH_GOODS' => $inputData['finishGoods'] ?? '',
-      'UOM' => $inputData['uom'] ?? '',
-      'STATUS' => $inputData['fgStatus'] ?? 'INS',
-      'STATUS_ROW' => $inputData['statusRow'] ?? ($inputData['fgStatus'] ?? 'INS'),
-      'USER_ROLE' => $existingMaterial?->USER_ROLE ?? $existingMaterial?->user_role ?? $userRole,
-      'USER_CREATE' => $existingMaterial?->USER_CREATE ?? $existingMaterial?->user_create ?? $userLogin,
-      'CREATE_DATE' => $existingMaterial?->CREATE_DATE ?? $existingMaterial?->create_date ?? $now,
-      'USER_UPDATE' => $userLogin,
-      'UPDATE_DATE' => $now,
-    ];
-
-    $materialModel = $existingMaterial ?: new FgMaterialDml();
-    $materialModel->fill($materialPayload);
-    $materialModel->save();
-
-    if (!empty($materialPayload['FG_BOM_ID'])) {
-      $existingBom = FgBomDml::query()
-        ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId])
-        ->first();
-
-      $bomPayload = [
-        'NO' => $existingBom?->NO ?? $existingBom?->no ?? $this->nextFgNo(),
-        'FG_BOM_ID' => $materialPayload['FG_BOM_ID'],
-        'DESC_FG_BOM_ID' => $materialPayload['DESC_FG_BOM_ID'],
-        'MATERIAL_ID_FG_1' => $materialId,
-        'SITE' => $materialPayload['SITE'],
-        'STATUS' => $materialPayload['STATUS'],
-        'STATUS_ROW' => $materialPayload['STATUS_ROW'],
-        'USER_ROLE' => $existingBom?->USER_ROLE ?? $existingBom?->user_role ?? $userRole,
-        'USER_CREATE' => $existingBom?->USER_CREATE ?? $existingBom?->user_create ?? $userLogin,
-        'CREATE_DATE' => $existingBom?->CREATE_DATE ?? $existingBom?->create_date ?? $now,
-        'USER_UPDATE' => $userLogin,
-        'UPDATE_DATE' => $now,
-      ];
-
-      $bomModel = $existingBom ?: new FgBomDml();
-      $bomModel->fill($bomPayload);
-      $bomModel->save();
-    }
-  }
-
   protected function saveFgBom(array $inputData, ?string $userLogin = null, ?string $userRole = null): void
   {
     $materialId = trim((string) ($inputData['materialId'] ?? ''));
@@ -630,15 +561,15 @@ class ProductController extends Controller
 
     if ($brand !== '' && $mattype !== '' && $subMattype !== '') {
       try {
-        $materials = ExistingMaterial::query()
-          ->whereRaw('TRIM(brand) = ?', [$brand])
-          ->whereRaw('TRIM(mat_type) = ?', [$mattype])
-          ->whereRaw('TRIM(sub_type) = ?', [$subMattype])
-          ->orderBy('material_id')
+        $materials = FgMaterialDml::query()
+          ->whereRaw('TRIM(BRAND) = ?', [$brand])
+          ->whereRaw('TRIM(MATTYPE) = ?', [$mattype])
+          ->whereRaw('TRIM(SUB_MATTYPE) = ?', [$subMattype])
+          ->orderByRaw('TRIM(MATERIAL_ID_FG_1)')
           ->get()
           ->map(function ($row) {
-            $materialId = trim((string) ($row->material_id ?? ''));
-            $materialDesc = trim((string) ($row->material_desc ?? ''));
+            $materialId = trim((string) ($row->material_id_fg_1 ?? $row->MATERIAL_ID_FG_1 ?? ''));
+            $materialDesc = trim((string) ($row->search_description ?? $row->SEARCH_DESCRIPTION ?? ''));
 
             return [
               'code' => $materialId,
@@ -797,17 +728,20 @@ class ProductController extends Controller
     ]);
 
     $materialId = null;
+    $error = null;
     $pdo = DB::getPdo();
-    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_MATID(:p_brand, :p_mattype, :p_sub_mattype, :p_suggest_material_id); END;');
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_MATID(:p_brand, :p_mattype, :p_sub_mattype, :p_suggest_material_id, :p_error); END;');
     $stmt->bindParam(':p_brand', $validated['brand'], PDO::PARAM_STR);
     $stmt->bindParam(':p_mattype', $validated['mattype'], PDO::PARAM_STR);
     $stmt->bindParam(':p_sub_mattype', $validated['subMattype'], PDO::PARAM_STR);
     $stmt->bindParam(':p_suggest_material_id', $materialId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+    $stmt->bindParam(':p_error', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
     $stmt->execute();
 
     return response()->json([
       'program' => 'PROJ1_2_GEN_MATID',
       'materialId' => $materialId,
+      'error' => $this->resolveProcedureErrorMessage($error),
     ]);
   }
 
@@ -819,16 +753,19 @@ class ProductController extends Controller
     ]);
 
     $bomId = null;
+    $error = null;
     $pdo = DB::getPdo();
-    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_BOMID_FG(:p_suggest_id, :p_site, :p_out_bomid); END;');
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_BOMID_FG(:p_suggest_id, :p_site, :p_out_bomid, :p_error); END;');
     $stmt->bindParam(':p_suggest_id', $validated['suggestId'], PDO::PARAM_STR);
     $stmt->bindParam(':p_site', $validated['site'], PDO::PARAM_STR);
     $stmt->bindParam(':p_out_bomid', $bomId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+    $stmt->bindParam(':p_error', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
     $stmt->execute();
 
     return response()->json([
       'program' => 'PROJ1_2_GEN_BOMID_FG',
       'bomId' => $bomId,
+      'error' => $this->resolveProcedureErrorMessage($error),
     ]);
   }
 
@@ -840,13 +777,15 @@ class ProductController extends Controller
       'userLogin' => $request->user()?->user_login,
       'userRole' => $request->user()?->role,
     ]);
-    $this->saveFgMaterial($InputData, $request->user()?->user_login, $request->user()?->role);
+    $this->callSaveMatIdProcedure($InputData, $request->user()?->user_login, $request->user()?->role);
+    $savedInputData = $this->assertFgMaterialSaved((string) ($InputData['materialId'] ?? ''));
+    $this->saveFgBom($InputData, $request->user()?->user_login, $request->user()?->role);
     $this->persistDraft($request, $InputData);
     Log::debug('product.update.redirect', [
-      'materialId' => $InputData['materialId'] ?? null,
+      'materialId' => $savedInputData['materialId'] ?? ($InputData['materialId'] ?? null),
     ]);
     return Redirect::route('product.view', [
-      'materialId' => $InputData['materialId'] ?? null,
+      'materialId' => $savedInputData['materialId'] ?? ($InputData['materialId'] ?? null),
     ]);
   }
 
