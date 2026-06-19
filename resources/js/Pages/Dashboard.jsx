@@ -34,6 +34,9 @@ export default function Dashboard({ auth, message = '', summaryHead = [], summar
         <AuthenticatedLayout
             user={auth.user}
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Dashboard</h2>}
+            pageIdentity={{
+                pageId: '1D',
+            }}
         >
             <Head title="Dashboard" />
 

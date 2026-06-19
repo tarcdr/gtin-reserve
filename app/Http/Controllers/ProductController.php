@@ -12,6 +12,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Brand;
 use App\Models\FgBomDml;
+use App\Models\Proj12DmlFgComp;
 use App\Models\FgMaterialDml;
 use App\Models\MasterMattypeFg;
 use App\Models\MasterUOM;
@@ -22,7 +23,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use PDO;
-use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -238,6 +238,146 @@ class ProductController extends Controller
     ];
   }
 
+  protected function loadSemiFgLv2ByFgBomId(?string $fgBomId): ?array
+  {
+    $fgBomId = trim((string) $fgBomId);
+
+    if ($fgBomId === '') {
+      return null;
+    }
+
+    $row = DB::connection('oracle')
+      ->table('PROJ1_2_DML_SEMI_L2_ID')
+      ->selectRaw('
+        TRIM(FG_BOM_ID) as fg_bom_id,
+        TRIM(SEMI_FG_LV2_ID) as semi_fg_lv2_id,
+        TRIM(DESC_SEMI_FG_LV2_ID) as desc_semi_fg_lv2_id,
+        TRIM(FULL_DESC_SEMI_FG_LV2_EN) as full_desc_semi_fg_lv2_en,
+        TRIM(FULL_DESC_SEMI_FG_LV2_TH) as full_desc_semi_fg_lv2_th,
+        TRIM(MATTYPE_SEMI_FG_L2ID) as mattype_semi_fg_l2id,
+        TRIM(SUB_MATTYPE_SEMI_FG_L2ID) as sub_mattype_semi_fg_l2id,
+        TRIM(UOM_SEMI_FG_L2ID) as uom_semi_fg_l2id,
+        TRIM(MATERIAL_ID_FG_1) as material_id_fg_1,
+        TRIM(SITE) as site,
+        TRIM(STATUS_ROW) as status_row
+      ')
+      ->whereRaw('TRIM(FG_BOM_ID) = ?', [$fgBomId])
+      ->first();
+
+    if (!$row) {
+      Log::debug('product.load-semi-fg-lv2.not-found', [
+        'fgBomId' => $fgBomId,
+      ]);
+      return null;
+    }
+
+    $semiFgLv2 = [
+      'id' => trim((string) ($row->semi_fg_lv2_id ?? '')),
+      'desc' => trim((string) ($row->desc_semi_fg_lv2_id ?? '')),
+      'searchDesc' => trim((string) ($row->desc_semi_fg_lv2_id ?? '')),
+      'fullDescEn' => trim((string) ($row->full_desc_semi_fg_lv2_en ?? '')),
+      'fullDescTh' => trim((string) ($row->full_desc_semi_fg_lv2_th ?? '')),
+      'uom' => trim((string) ($row->uom_semi_fg_l2id ?? '')),
+      'mattype' => trim((string) ($row->mattype_semi_fg_l2id ?? '')),
+      'subMattype' => trim((string) ($row->sub_mattype_semi_fg_l2id ?? '')),
+      'materialIdFg1' => trim((string) ($row->material_id_fg_1 ?? '')),
+      'site' => trim((string) ($row->site ?? '')),
+      'components' => [],
+      'statusRow' => trim((string) ($row->status_row ?? '')),
+    ];
+
+    Log::debug('product.load-semi-fg-lv2.found', [
+      'fgBomId' => $fgBomId,
+      'semiFgLv2' => $semiFgLv2,
+    ]);
+
+    return $semiFgLv2;
+  }
+
+  protected function loadSemiFgLv1DraftByFgMaterialId(?string $fgMaterialId): ?array
+  {
+    $fgMaterialId = trim((string) $fgMaterialId);
+
+    if ($fgMaterialId === '') {
+      return null;
+    }
+
+    $draft = session()->get("product_drafts.{$fgMaterialId}.semiFgLv1");
+
+    if (!is_array($draft)) {
+      return null;
+    }
+
+    return [
+      'id' => trim((string) ($draft['id'] ?? '')),
+      'desc' => trim((string) ($draft['desc'] ?? '')),
+      'searchDesc' => trim((string) ($draft['searchDesc'] ?? $draft['desc'] ?? '')),
+      'fullDescEn' => trim((string) ($draft['fullDescEn'] ?? '')),
+      'fullDescTh' => trim((string) ($draft['fullDescTh'] ?? '')),
+      'uom' => trim((string) ($draft['uom'] ?? '')),
+      'components' => is_array($draft['components'] ?? null) ? $draft['components'] : [],
+    ];
+  }
+
+  protected function loadFgComponentsByMaterialId(?string $materialId, ?string $bomId = null): array
+  {
+    $materialId = trim((string) $materialId);
+    $bomId = trim((string) $bomId);
+
+    if ($materialId === '' && $bomId === '') {
+      return [];
+    }
+
+    $query = Proj12DmlFgComp::query();
+
+    if ($bomId !== '') {
+      $query->whereRaw('TRIM(BOM_FG_ID) = ?', [$bomId]);
+    } elseif ($materialId !== '') {
+      $query->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId]);
+    }
+
+    return $query
+      ->orderByRaw('TRIM(COMPONENT_ID)')
+      ->get()
+      ->map(function ($row) {
+        $record = $row instanceof \Illuminate\Database\Eloquent\Model
+          ? $row->getAttributes()
+          : (array) $row;
+
+        $source = array_change_key_case($record, CASE_LOWER);
+        $pick = function (array $source, array $keys, string $default = ''): string {
+          foreach ($keys as $key) {
+            if (array_key_exists($key, $source) && trim((string) $source[$key]) !== '') {
+              return trim((string) $source[$key]);
+            }
+          }
+
+          return $default;
+        };
+
+        $code = $pick($source, ['component_id', 'comp_id', 'code']);
+        $searchDesc = $pick($source, ['search_desc', 'search_description', 'desc_search']);
+        $compDescEn = $pick($source, ['comp_desc_en', 'full_description_en', 'description_en']);
+        $compDescTh = $pick($source, ['comp_desc_th', 'full_description_th', 'description_th']);
+
+        return [
+          'code' => $code,
+          'label' => $searchDesc !== '' ? $searchDesc : ($compDescEn !== '' ? $compDescEn : $code),
+          'status' => $pick($source, ['status_row', 'status', 'row_status'], 'INS'),
+          'bomId' => $pick($source, ['bom_fg_id', 'fg_bom_id']),
+          'searchDesc' => $searchDesc,
+          'fullDescEn' => $compDescEn,
+          'fullDescTh' => $compDescTh,
+          'uom' => $pick($source, ['uom', 'uom_code', 'code_uom']),
+          'productCat' => $pick($source, ['product_cat', 'product_category']),
+          'productSubCat' => $pick($source, ['prod_sub_cat', 'product_sub_cat']),
+        ];
+      })
+      ->filter(fn ($item) => trim((string) ($item['code'] ?? '')) !== '')
+      ->values()
+      ->all();
+  }
+
   protected function loadFgMaterialInput(Request $request): ?array
   {
     return $this->loadFgMaterialInputByMaterialId((string) $request->get('materialId', ''));
@@ -274,10 +414,18 @@ class ProductController extends Controller
       ->first();
 
     $inputData = $this->fgMaterialToInputData($materialRow, $bomRow);
+    $inputData['fgComponents'] = $this->loadFgComponentsByMaterialId(
+      $inputData['materialId'] ?? '',
+      $inputData['bomId'] ?? null
+    );
+    $inputData['semiFgLv2'] = $this->loadSemiFgLv2ByFgBomId($inputData['bomId'] ?? null);
+    $inputData['semiFgLv1'] = $this->loadSemiFgLv1DraftByFgMaterialId($inputData['materialId'] ?? null);
 
     Log::debug('product.load-fg-material-input.found', [
       'materialId' => $materialId,
       'hasBom' => (bool) $bomRow,
+      'hasSemiFgLv2' => (bool) $inputData['semiFgLv2'],
+      'hasSemiFgLv1' => (bool) $inputData['semiFgLv1'],
       'inputData' => $inputData,
     ]);
 
@@ -321,57 +469,12 @@ class ProductController extends Controller
     ]))->with('error', $message);
   }
 
-  protected function nextFgNo(): string
-  {
-    return (string) Str::uuid();
-  }
-
-  protected function saveFgBom(array $inputData, ?string $userLogin = null, ?string $userRole = null): void
-  {
-    $materialId = trim((string) ($inputData['materialId'] ?? ''));
-    if ($materialId === '') {
-      return;
-    }
-
-    $fgBomId = trim((string) ($inputData['bomId'] ?? ''));
-    if ($fgBomId === '') {
-      return;
-    }
-
-    $now = now();
-    $userLogin = $userLogin ?: 'system';
-    $userRole = $userRole ?: 'GTIN';
-
-    $existingBom = FgBomDml::query()
-      ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId])
-      ->first();
-
-    $bomPayload = [
-      'NO' => $existingBom?->NO ?? $existingBom?->no ?? $this->nextFgNo(),
-      'FG_BOM_ID' => $fgBomId,
-      'DESC_FG_BOM_ID' => (string) ($inputData['bomDesc'] ?? ''),
-      'MATERIAL_ID_FG_1' => $materialId,
-      'SITE' => (string) ($inputData['site'] ?? ''),
-      'STATUS' => (string) ($inputData['fgStatus'] ?? 'INS'),
-      'STATUS_ROW' => (string) ($inputData['statusRow'] ?? ($inputData['fgStatus'] ?? 'INS')),
-      'USER_ROLE' => $existingBom?->USER_ROLE ?? $existingBom?->user_role ?? $userRole,
-      'USER_CREATE' => $existingBom?->USER_CREATE ?? $existingBom?->user_create ?? $userLogin,
-      'CREATE_DATE' => $existingBom?->CREATE_DATE ?? $existingBom?->create_date ?? $now,
-      'USER_UPDATE' => $userLogin,
-      'UPDATE_DATE' => $now,
-    ];
-
-    $bomModel = $existingBom ?: new FgBomDml();
-    $bomModel->fill($bomPayload);
-    $bomModel->save();
-  }
-
   protected function callSaveMatIdProcedure(array $inputData, ?string $userLogin = null, ?string $userRole = null): void
   {
     $userLogin = $userLogin ?: 'system';
     $userRole = $userRole ?: 'GTIN';
     $pdo = DB::connection('oracle')->getPdo();
-    $finish = null;
+    $error = null;
 
     Log::debug('product.save-matid.start', [
       'inputData' => $inputData,
@@ -379,7 +482,7 @@ class ProductController extends Controller
       'userRole' => $userRole,
     ]);
 
-    $stmt = $pdo->prepare('BEGIN proj1_2_save_matid(:p_mat_id_fg_1, :p_search_desc, :p_full_desc_en, :p_full_desc_th, :p_site, :p_fg_bom_id, :p_desc_fg_bom_id, :p_brand, :p_mattype, :p_sub_mattype, :p_finish_goods, :p_uom, :p_user_role, :p_user_create, :p_user_update, :p_finish); END;');
+    $stmt = $pdo->prepare('BEGIN proj1_2_Save_MATID(:p_mat_id_fg_1, :p_search_desc, :p_full_desc_en, :p_full_desc_th, :p_site, :p_fg_bom_id, :p_desc_fg_bom_id, :p_brand, :p_mattype, :p_sub_mattype, :p_finish_goods, :p_uom, :p_user_role, :p_user_create, :p_user_update, :p_error); END;');
     $stmt->bindValue(':p_mat_id_fg_1', trim((string) ($inputData['materialId'] ?? '')), PDO::PARAM_STR);
     $stmt->bindValue(':p_search_desc', (string) ($inputData['searchDesc'] ?? ''), PDO::PARAM_STR);
     $stmt->bindValue(':p_full_desc_en', (string) ($inputData['fullDescEn'] ?? ''), PDO::PARAM_STR);
@@ -395,21 +498,24 @@ class ProductController extends Controller
     $stmt->bindValue(':p_user_role', (string) $userRole, PDO::PARAM_STR);
     $stmt->bindValue(':p_user_create', (string) $userLogin, PDO::PARAM_STR);
     $stmt->bindValue(':p_user_update', (string) $userLogin, PDO::PARAM_STR);
-    $stmt->bindParam(':p_finish', $finish, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 10);
+    $stmt->bindParam(':p_error', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
     $stmt->execute();
 
+    $resolvedError = $this->resolveProcedureErrorMessage($error);
     Log::debug('product.save-matid.finish', [
       'materialId' => $inputData['materialId'] ?? null,
-      'finish' => $finish,
+      'error' => $error,
+      'resolvedError' => $resolvedError,
     ]);
 
-    if (trim((string) $finish) !== 'YES') {
+    if (trim($resolvedError) !== '') {
       Log::warning('product.save-matid.failed', [
         'materialId' => $inputData['materialId'] ?? null,
-        'finish' => $finish,
+        'error' => $error,
+        'resolvedError' => $resolvedError,
       ]);
       throw ValidationException::withMessages([
-        'materialId' => 'Unable to save FG Material.',
+        'materialId' => $resolvedError ?: 'Unable to save FG Material.',
       ]);
     }
   }
@@ -526,7 +632,6 @@ class ProductController extends Controller
     ]);
     $this->callSaveMatIdProcedure($InputData, $request->user()?->user_login, $request->user()?->role);
     $savedInputData = $this->assertFgMaterialSaved((string) ($InputData['materialId'] ?? ''));
-    $this->saveFgBom($InputData, $request->user()?->user_login, $request->user()?->role);
     $this->persistDraft($request, $InputData);
     Log::debug('product.create.redirect', [
       'materialId' => $InputData['materialId'] ?? null,
@@ -779,7 +884,6 @@ class ProductController extends Controller
     ]);
     $this->callSaveMatIdProcedure($InputData, $request->user()?->user_login, $request->user()?->role);
     $savedInputData = $this->assertFgMaterialSaved((string) ($InputData['materialId'] ?? ''));
-    $this->saveFgBom($InputData, $request->user()?->user_login, $request->user()?->role);
     $this->persistDraft($request, $InputData);
     Log::debug('product.update.redirect', [
       'materialId' => $savedInputData['materialId'] ?? ($InputData['materialId'] ?? null),

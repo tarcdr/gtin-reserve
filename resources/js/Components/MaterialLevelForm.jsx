@@ -13,6 +13,7 @@ export default function MaterialLevelForm({
   auth,
   title,
   headerTitle,
+  pageIdentity = null,
   InputData,
   mattypes = [],
   subMattypes = [],
@@ -38,7 +39,9 @@ export default function MaterialLevelForm({
   componentLegend = '',
   createComponentLabel = 'Add Component',
   showStorageTable = true,
-  showComponentSectionWhenNotView = false
+  showComponentSectionWhenNotView = false,
+  hideSubMattypeOnView = false,
+  disableSubMattypeOnEdit = false
 }) {
   const [componentRows, setComponentRows] = useState(components);
   const [isGeneratingLevelData, setIsGeneratingLevelData] = useState(false);
@@ -46,10 +49,12 @@ export default function MaterialLevelForm({
   const isViewMode = mode === 'view';
   const isEditMode = mode === 'edit';
   const isCreateMode = mode === 'create';
+  const isSubMattypeReadOnly = isViewMode || (disableSubMattypeOnEdit && isEditMode);
   const { data, setData, patch, processing, errors, setError, clearErrors } = useForm({
     mode,
     fgDetail: InputData?.fgDetail || {},
-    fgMaterialId: InputData?.fgMaterialId || '',
+    fgMaterialId: InputData?.fgMaterialId || InputData?.referentMaterialId || '',
+    referentMaterialId: InputData?.referentMaterialId || InputData?.fgMaterialId || '',
     fgBomId: InputData?.fgBomId || '',
     fgBomDesc: InputData?.fgBomDesc || '',
     parentMattype: InputData?.parentMattype || '',
@@ -66,6 +71,7 @@ export default function MaterialLevelForm({
     components: components,
   });
   const effectiveSubMattypeOptions = subMattypeOptions || subMattypes;
+  const subMattypeDisplayValue = effectiveSubMattypeOptions?.find((item) => String(item.code) === String(data.subMattype))?.label || data.subMattype || '';
 
   const submit = (e) => {
     e.preventDefault();
@@ -162,34 +168,42 @@ export default function MaterialLevelForm({
     return nextFgDetail;
   };
 
-  const buildLevelPayload = (nextMode = mode) => ({
+  const buildLevelLookupPayload = (nextMode = mode) => ({
     mode: nextMode,
-    fgDetail: buildNextFgDetail(),
-    materialId: data.fgMaterialId,
-    bomId: data.fgBomId,
-    bomDesc: data.fgBomDesc,
-    levelBomId: data.levelBomId,
-    levelBomDesc: data.levelBomDesc,
-    levelMaterialId: data.materialId,
-    searchDesc: data.searchDesc,
-    fullDescEn: data.fullDescEn,
-    fullDescTh: data.fullDescTh,
-    uom: data.uom,
-    components: componentRows,
+    referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
+    levelMaterialId: data.materialId || '',
   });
 
   const goCreateComponent = () => {
+    if (levelKey === 'semiFgLv2') {
+      router.get(route('packmaterial.new'), {
+        ownerLevel: 'semiFgLv2',
+        backRoute: levelRoute || 'material-levels.semi-fg-lv2.new',
+        referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
+        fgMaterialId: data.fgMaterialId || data.referentMaterialId || '',
+        fgBomId: data.fgBomId,
+        levelMaterialId: data.materialId || '',
+        mode: 'create',
+        actionMode: 'create',
+      });
+      return;
+    }
+
     if (!createComponentRoute) {
       return;
     }
+
     const createPayload = {
       fgMaterialId: data.fgMaterialId,
       fgBomId: data.fgBomId,
       fgBomDesc: data.fgBomDesc,
-      fgDetail: buildNextFgDetail(),
-      components: componentRows,
       actionMode: 'create',
     };
+
+    Object.assign(createPayload, {
+      fgDetail: buildNextFgDetail(),
+      components: componentRows,
+    });
 
     if (!isCreateMode) {
       Object.assign(createPayload, {
@@ -217,6 +231,21 @@ export default function MaterialLevelForm({
   };
 
   const goComponentAction = (actionMode, item = {}) => {
+    if (levelKey === 'semiFgLv2') {
+      router.get(route('packmaterial.new'), {
+        ownerLevel: 'semiFgLv2',
+        backRoute: levelRoute || 'material-levels.semi-fg-lv2.new',
+        referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
+        fgMaterialId: data.fgMaterialId || data.referentMaterialId || '',
+        fgBomId: data.fgBomId,
+        levelMaterialId: data.materialId || '',
+        mode: 'view',
+        actionMode,
+        componentId: item.code || '',
+      });
+      return;
+    }
+
     if (!createComponentRoute) {
       return;
     }
@@ -252,12 +281,15 @@ export default function MaterialLevelForm({
 
   const goBack = () => {
     if (isEditMode && levelRoute) {
-      router.get(route(levelRoute), buildLevelPayload('view'));
+      router.get(route(levelRoute), buildLevelLookupPayload('view'));
       return;
     }
 
     if (backRoute === 'product.view') {
-      router.get(route(backRoute), data.materialId ? buildNextFgDetail() : (data.fgDetail || {}));
+      const backMaterialId = data.fgMaterialId || data.referentMaterialId || data.fgDetail?.materialId || data.materialId;
+      router.get(route(backRoute), {
+        materialId: backMaterialId,
+      });
       return;
     }
 
@@ -269,7 +301,7 @@ export default function MaterialLevelForm({
       return;
     }
 
-    router.get(route(levelRoute), buildLevelPayload('edit'));
+    router.get(route(levelRoute), buildLevelLookupPayload('edit'));
   };
 
   const backLabel = isEditMode
@@ -282,6 +314,7 @@ export default function MaterialLevelForm({
     <AuthenticatedLayout
       user={auth.user}
       header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">{headerTitle}</h2>}
+      pageIdentity={pageIdentity}
     >
       <Head title={headerTitle} />
 
@@ -362,22 +395,33 @@ export default function MaterialLevelForm({
                   )}
                   <InputError className="mt-2" message={errors.mattype} />
                 </div>
-                <div>
-                  <InputLabel htmlFor="subMattype" value="Sub Mattype" />
-                  <select
-                    id="subMattype"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${(isViewMode || !allowSubMattypeSelection) ? 'bg-gray-100' : ''}`}
-                    onChange={(e) => handleSubMattypeChange(e.target.value)}
-                    defaultValue={data.subMattype}
-                    disabled={isViewMode || !allowSubMattypeSelection || isGeneratingLevelData}
-                  >
-                    <option value="">---- Select Sub Mattype ----</option>
-                    {effectiveSubMattypeOptions?.map((o) => (
-                      <option key={`subMattype-code-${o.code}`} value={o.code}>{o.label}</option>
-                    ))}
-                  </select>
-                  <InputError className="mt-2" message={errors.subMattype} />
-                </div>
+                {!(hideSubMattypeOnView && isViewMode) && (
+                  <div>
+                    <InputLabel htmlFor="subMattype" value="Sub Mattype" />
+                    {isSubMattypeReadOnly ? (
+                      <TextInput
+                        id="subMattype"
+                        className="mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
+                        value={subMattypeDisplayValue}
+                        disabled
+                      />
+                    ) : (
+                      <select
+                        id="subMattype"
+                        className="mt-1 block w-full border-gray-300 rounded-md"
+                        onChange={(e) => handleSubMattypeChange(e.target.value)}
+                        defaultValue={data.subMattype}
+                        disabled={!allowSubMattypeSelection || isGeneratingLevelData}
+                      >
+                        <option value="">---- Select Sub Mattype ----</option>
+                        {effectiveSubMattypeOptions?.map((o) => (
+                          <option key={`subMattype-code-${o.code}`} value={o.code}>{o.label}</option>
+                        ))}
+                      </select>
+                    )}
+                    <InputError className="mt-2" message={errors.subMattype} />
+                  </div>
+                )}
               </div>
 
               {showLevelBomFields && (
@@ -481,7 +525,7 @@ export default function MaterialLevelForm({
                 </div>
               </div>
 
-              {(isViewMode || showComponentSectionWhenNotView) && (
+              {(isViewMode || (showComponentSectionWhenNotView && !isCreateMode)) && (
                 <fieldset className="border border-gray-300 rounded-md p-4">
                   <legend className="px-2 text-gray-600">{componentLegend || `${title} Components`}</legend>
                   {isViewMode && (

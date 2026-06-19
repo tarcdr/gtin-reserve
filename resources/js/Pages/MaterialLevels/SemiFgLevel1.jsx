@@ -1,12 +1,18 @@
 import MaterialLevelForm from '@/Components/MaterialLevelForm';
 
 export default function SemiFgLevel1(props) {
+  const pageId = props?.InputData?.mode === 'existing' ? '2SML1' : '1SML1';
+
   return (
     <MaterialLevelForm
       {...props}
       title="Semi FG Lv.1"
       levelKey="semiFgLv1"
       levelRoute="material-levels.semi-fg-lv1.new"
+      pageIdentity={{ pageId }}
+      showComponentSectionWhenNotView={false}
+      disableSubMattypeOnEdit={true}
+      allowSubMattypeSelection
       headerTitle={
         props?.InputData?.mode === 'view'
           ? 'SEMI FG LV.1 - Detail'

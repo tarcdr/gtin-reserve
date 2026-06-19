@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/packmaterial/product-categories', [PackMaterialController::class, 'productCategories'])->name('packmaterial.product-categories');
     Route::get('/packmaterial/generate-component-id', [PackMaterialController::class, 'generateComponentId'])->name('packmaterial.generate-component-id');
     Route::patch('/packmaterial/create', [PackMaterialController::class, 'create'])->name('packmaterial.create');
+    Route::patch('/packmaterial/update', [PackMaterialController::class, 'update'])->name('packmaterial.update');
 
     Route::get('/bom/create', [BomController::class, 'create'])->name('bom.create');
     Route::patch('/bom/create', [BomController::class, 'process'])->name('bom.create');

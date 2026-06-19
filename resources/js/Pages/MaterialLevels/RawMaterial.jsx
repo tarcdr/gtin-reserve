@@ -5,6 +5,9 @@ export default function RawMaterial(props) {
     <BomMaterialForm
       auth={props.auth}
       headerTitle="RAW MATERIAL - Create"
+      pageIdentity={{
+        pageId: 'RM',
+      }}
       InputData={props.InputData}
       mattypes={props.mattypes}
       subMattypes={props.subMattypes}

@@ -68,20 +68,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     router.get(route('packmaterial.new'), {
       ownerLevel: 'fg',
       backRoute: 'product.view',
-      backMaterialId: data.materialId,
-      fgDetail: buildFgDetailPayload(),
-      ownerDetail: {
-        id: data.materialId,
-        desc: data.searchDesc,
-        searchDesc: data.searchDesc,
-        fullDescEn: data.fullDescEn,
-        fullDescTh: data.fullDescTh,
-        uom: data.uom,
-      },
-      components: fgComponents,
-      bomId: data.bomId,
-      bomDesc: data.bomDesc,
-      subMattype: '',
+      referentMaterialId: data.materialId,
       actionMode: 'create',
     });
   };
@@ -90,83 +77,29 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     router.get(route('packmaterial.new'), {
       ownerLevel: 'fg',
       backRoute: 'product.view',
-      backMaterialId: data.materialId,
-      fgDetail: buildFgDetailPayload(),
-      ownerDetail: {
-        id: data.materialId,
-        desc: data.searchDesc,
-        searchDesc: data.searchDesc,
-        fullDescEn: data.fullDescEn,
-        fullDescTh: data.fullDescTh,
-        uom: data.uom,
-      },
-      components: fgComponents,
-      bomId: data.bomId,
-      bomDesc: data.bomDesc,
-      subMattype: data.subMattype || '',
+      referentMaterialId: data.materialId,
       actionMode,
-      componentId: item?.code || '',
-      searchDesc: item?.searchDesc || '',
-      fullDescEn: item?.fullDescEn || '',
-      fullDescTh: item?.fullDescTh || '',
-      uom: item?.uom || '',
-      productCat: item?.productCat || '',
-      productSubCat: item?.productSubCat || '',
+      ...(item?.code ? { componentId: item.code } : {}),
     });
   };
 
-  const buildFgDetailPayload = () => ({
-    brand: data.brand,
-    mattype: data.mattype,
-    subMattype: data.subMattype,
-    materialId: data.materialId,
-    fgStatus: data.fgStatus,
-    bomId: data.bomId,
-    bomDesc: data.bomDesc,
-    finishGoods: data.finishGoods,
-    fullDescEn: data.fullDescEn,
-    fullDescTh: data.fullDescTh,
-    searchDesc: data.searchDesc,
-    site: data.site,
-    uom: data.uom,
-    fgComponents: data.fgComponents,
-    semiFgLv2: data.semiFgLv2,
-    semiFgLv1: data.semiFgLv1,
-    businessSupply: data.businessSupply,
-  });
-
-  const materialLevelPayload = {
-    fgDetail: buildFgDetailPayload(),
-    materialId: data.materialId,
-    bomId: data.bomId,
-    bomDesc: data.bomDesc,
-    mattype: data.mattype,
-    subMattype: data.subMattype
-  };
-
   const goToSemiFgLv2 = (levelData = {}) => {
+    const mode = levelData.mode || (levelData.levelMaterialId ? 'view' : 'create');
     router.get(route('material-levels.semi-fg-lv2.new'), {
-      ...materialLevelPayload,
-      mode: levelData.mode || (levelData.levelMaterialId ? 'view' : 'create'),
-      ...levelData,
+      referentMaterialId: data.materialId,
+      mode,
+      ...(levelData.levelMaterialId ? { levelMaterialId: levelData.levelMaterialId } : {}),
     });
   };
 
   const goToSemiFgLv1 = (levelData = {}) => {
+    const mode = levelData.mode || (levelData.levelMaterialId ? 'view' : 'create');
     router.get(route('material-levels.semi-fg-lv1.new'), {
-      ...materialLevelPayload,
-      mode: levelData.mode || (levelData.levelMaterialId ? 'view' : 'create'),
-      ...levelData,
+      referentMaterialId: data.materialId,
+      mode,
+      ...(levelData.levelMaterialId ? { levelMaterialId: levelData.levelMaterialId } : {}),
     });
   };
-
-  // const goToBusinessSupply = (levelData = {}) => {
-  //   router.get(route('business-supply.new'), {
-  //     ...materialLevelPayload,
-  //     mode: levelData.mode || (levelData.levelMaterialId ? 'view' : 'create'),
-  //     ...levelData,
-  //   });
-  // };
 
   const submit = (e) => {
     e.preventDefault();
@@ -180,6 +113,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     router.get(route('product.edit'), {
       materialId: data.materialId,
     });
+  };
+
+  const goBackToSearch = () => {
+    router.get(route('product.search'));
   };
 
   const handleDelete = () => {
@@ -228,6 +165,9 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     <AuthenticatedLayout
       user={auth.user}
       header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">FG Material - Product Detail</h2>}
+      pageIdentity={{
+        pageId: '4E',
+      }}
     >
       <Head title="FG Material - Product Detail" />
 
@@ -498,17 +438,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                         <div className="space-y-3">
                           <div className="text-sm text-gray-600">Semi FG Level 2</div>
                           <div className="font-semibold">{semiFgLv2.id}</div>
-                          <div className="text-gray-500">{semiFgLv2.desc}</div>
                           <PrimaryButton
                             type="button"
                             onClick={() => goToSemiFgLv2({
                               mode: 'view',
                               levelMaterialId: semiFgLv2.id,
-                              searchDesc: semiFgLv2.searchDesc,
-                              fullDescEn: semiFgLv2.fullDescEn,
-                              fullDescTh: semiFgLv2.fullDescTh,
-                              uom: semiFgLv2.uom,
-                              components: semiFgLv2.components || [],
                             })}
                             disabled={!isDisabled}
                           >
@@ -528,17 +462,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                         <div className="space-y-3">
                           <div className="text-sm text-gray-600">Semi FG Level 1</div>
                           <div className="font-semibold">{semiFgLv1.id}</div>
-                          <div className="text-gray-500">{semiFgLv1.desc}</div>
                           <PrimaryButton
                             type="button"
                             onClick={() => goToSemiFgLv1({
                               mode: 'view',
                               levelMaterialId: semiFgLv1.id,
-                              searchDesc: semiFgLv1.searchDesc,
-                              fullDescEn: semiFgLv1.fullDescEn,
-                              fullDescTh: semiFgLv1.fullDescTh,
-                              uom: semiFgLv1.uom,
-                              components: semiFgLv1.components || [],
                             })}
                             disabled={!isDisabled}
                           >
@@ -586,7 +514,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                 </>
               )}
               <div className="flex items-center justify-center gap-4">
-                <SecondaryButton type="button" onClick={() => window.history.back()}>
+                <SecondaryButton type="button" onClick={goBackToSearch}>
                   Back
                 </SecondaryButton>
                 {isDisabled ? (

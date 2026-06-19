@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -67,7 +67,9 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
 
   const submit = (e) => {
     e.preventDefault();
-    patch(route('product.search.bom'));
+    router.get(route('product.view'), {
+      materialId: data.materialId,
+    });
   };
 
   useEffect(() => {
@@ -100,6 +102,7 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
     <AuthenticatedLayout
       user={auth.user}
       header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">FG Material - Product Search</h2>}
+      pageIdentity={{ pageId: '3E' }}
     >
       <Head title="FG Material - Product Search" />
 

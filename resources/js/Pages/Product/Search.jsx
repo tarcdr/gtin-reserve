@@ -58,6 +58,7 @@ export default function ProductSearch({ auth, InputData, brands = [], mattypes =
     subMattype: initialSubMattype,
     subMattypeOptions: initialOptions,
   });
+  const pageId = `${Math.min(Math.max(step, 1), 3)}E`;
 
   const goBack = () => {
     if (step >= 2) {
@@ -163,6 +164,7 @@ export default function ProductSearch({ auth, InputData, brands = [], mattypes =
     <AuthenticatedLayout
       user={auth.user}
       header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">FG Material - Search</h2>}
+      pageIdentity={{ pageId }}
     >
       <Head title="FG Material" />
 

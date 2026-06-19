@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 export default function BomMaterialForm({
   auth,
   headerTitle,
+  pageIdentity = null,
   InputData,
   mattypes = [],
   subMattypes = [],
@@ -25,7 +26,7 @@ export default function BomMaterialForm({
     actionMode: InputData?.actionMode || 'create',
     ownerLevel: InputData?.ownerLevel || 'fg',
     backRoute: InputData?.backRoute || 'product.view',
-    backMaterialId: InputData?.backMaterialId || InputData?.materialId || InputData?.fgMaterialId || '',
+    backMaterialId: InputData?.backMaterialId || InputData?.referentMaterialId || InputData?.materialId || InputData?.fgMaterialId || '',
     bomId: InputData?.bomId || '',
     bomDesc: InputData?.bomDesc || '',
     mattype: InputData?.mattype || '',
@@ -50,6 +51,9 @@ export default function BomMaterialForm({
     uom: InputData?.uom || ''
   });
   const isFgCreateMode = data.ownerLevel === 'fg' && data.actionMode === 'create';
+  const isEditMode = data.actionMode === 'edit';
+  const isSubMattypeLocked = isEditMode;
+  const isProductSubCatLocked = isEditMode;
 
   const submit = (e) => {
     e.preventDefault();
@@ -96,7 +100,7 @@ export default function BomMaterialForm({
           setData('productCat', nextProductCat);
         }
 
-        if (data.productSubCat) {
+        if (!isEditMode && data.productSubCat) {
           setData('productSubCat', '');
         }
       })
@@ -179,8 +183,16 @@ export default function BomMaterialForm({
   const backToSemiFgLv2 = () => {
     if (data.ownerLevel === 'fg') {
       router.get(route(data.backRoute || 'product.view'), {
-        ...data.fgDetail,
-        materialId: data.backMaterialId || data.fgDetail?.materialId || data.fgMaterialId || data.materialId,
+        materialId: data.backMaterialId || data.fgMaterialId || data.materialId || data.backMaterialId,
+      });
+      return;
+    }
+
+    if (data.ownerLevel === 'semiFgLv2') {
+      router.get(route(data.backRoute || 'material-levels.semi-fg-lv2.new'), {
+        referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
+        mode: 'view',
+        levelMaterialId: data.levelMaterialId || data.materialId || '',
       });
       return;
     }
@@ -207,13 +219,18 @@ export default function BomMaterialForm({
   };
 
   const deleteFromSemiFgLv2 = () => {
-    const filteredComponents = data.components.filter((item) => item.code !== data.componentId);
-
     if (data.ownerLevel === 'fg') {
       router.get(route(data.backRoute || 'product.view'), {
-        ...data.fgDetail,
-        materialId: data.backMaterialId || data.fgDetail?.materialId || data.fgMaterialId || data.materialId,
-        fgComponents: filteredComponents,
+        materialId: data.backMaterialId || data.fgMaterialId || data.materialId || data.backMaterialId,
+      });
+      return;
+    }
+
+    if (data.ownerLevel === 'semiFgLv2') {
+      router.get(route(data.backRoute || 'material-levels.semi-fg-lv2.new'), {
+        referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
+        mode: 'view',
+        levelMaterialId: data.levelMaterialId || data.materialId || '',
       });
       return;
     }
@@ -235,7 +252,7 @@ export default function BomMaterialForm({
       fullDescEn: data.ownerDetail?.fullDescEn,
       fullDescTh: data.ownerDetail?.fullDescTh,
       uom: data.ownerDetail?.uom,
-      components: filteredComponents,
+      components: data.components,
     });
   };
 
@@ -252,6 +269,7 @@ export default function BomMaterialForm({
     <AuthenticatedLayout
       user={auth.user}
       header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">{headerTitle}</h2>}
+      pageIdentity={pageIdentity}
     >
       <Head title={headerTitle} />
 
@@ -297,9 +315,10 @@ export default function BomMaterialForm({
                   <InputLabel htmlFor="subMattype" value="Sub Mattype" />
                   <select
                     id="subMattype"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isSubMattypeLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                     onChange={(e) => handleSubMattypeChange(e.target.value)}
                     value={data.subMattype}
+                    disabled={isSubMattypeLocked}
                   >
                     <option value="">---- Select Sub Mattype ----</option>
                     {subMattypes?.map((o) => (
@@ -327,10 +346,10 @@ export default function BomMaterialForm({
                   <InputLabel htmlFor="productSubCat" value="Product SUB Category" />
                   <select
                     id="productSubCat"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${!data.productCat ? 'bg-gray-100' : ''}`}
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${!data.productCat || isProductSubCatLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                     onChange={(e) => handleProductSubCategoryChange(e.target.value)}
                     value={data.productSubCat}
-                    disabled={!data.productCat}
+                    disabled={!data.productCat || isProductSubCatLocked}
                   >
                     <option value="">---- Select Product SUB Category ----</option>
                     {filteredProductSubCategories.map((option) => (

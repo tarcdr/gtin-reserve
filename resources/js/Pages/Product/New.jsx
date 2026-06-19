@@ -16,6 +16,7 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
   const [isGeneratingMaterialId, setIsGeneratingMaterialId] = useState(false);
   const [isGeneratingBomId, setIsGeneratingBomId] = useState(false);
   const [isBomIdReady, setIsBomIdReady] = useState(false);
+  const pageId = `${Math.min(Math.max(step, 1), 3)}N`;
   const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
     brand: '',
     mattype: '',
@@ -256,6 +257,7 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
     <AuthenticatedLayout
       user={auth.user}
       header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">FG Material - Create New Product</h2>}
+      pageIdentity={{ pageId }}
     >
       <Head title="FG Material - Create New Product" />
 

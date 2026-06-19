@@ -1,12 +1,16 @@
 import MaterialLevelForm from '@/Components/MaterialLevelForm';
 
 export default function SemiFgLevel2(props) {
+  const pageId = props?.InputData?.mode === 'create' ? '1SML2' : '2SML2';
+
   return (
     <MaterialLevelForm
       {...props}
       title="Semi FG Lv.2"
       levelKey="semiFgLv2"
       levelRoute="material-levels.semi-fg-lv2.new"
+      pageIdentity={{ pageId }}
+      disableSubMattypeOnEdit={true}
       fixedMattypeDisplayValue="2"
       subMattypeOptions={[
         { code: '0', label: '0' },
@@ -26,7 +30,6 @@ export default function SemiFgLevel2(props) {
       componentLegend="Semi FG Lv.2 Components"
       createComponentLabel="Create Component"
       showStorageTable={false}
-      showComponentSectionWhenNotView
       headerTitle={
         props?.InputData?.mode === 'view'
           ? 'SEMI FG LV.2 - Detail'
