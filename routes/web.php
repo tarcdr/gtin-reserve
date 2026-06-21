@@ -79,6 +79,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/rm/confirm', [RmController::class, 'update'])->name('rm.confirm');
     Route::delete('/rm/delete', [RmController::class, 'delete'])->name('rm.delete');
     Route::get('/rm/export', [RmController::class, 'export'])->name('rm.export');
+    Route::middleware('admin')->get('/rm/export-to-sap', [RmController::class, 'exportToSap'])->name('rm.export-sap');
 
     Route::get('/packmaterial/new', [PackMaterialController::class, 'new'])->name('packmaterial.new');
     Route::post('/packmaterial/new', [PackMaterialController::class, 'callNew'])->name('packmaterial.new');

@@ -22,6 +22,7 @@ use App\Models\SheetSalesData;
 use App\Models\SheetSuppPartNum;
 use App\Models\SheetUomChar;
 use App\Models\Labels;
+use App\Models\OracleTable;
 use SimpleXMLElement;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,10 @@ class RmController extends Controller
     private function fetchMasterOptions(string $table, string $chooseColumn, string $useColumn): array
     {
       try {
-        return DB::table($table)
+        $model = new OracleTable();
+        $model->setTable($table);
+
+        return $model->newQuery()
           ->select([
             DB::raw("{$chooseColumn} as option_label"),
             DB::raw("{$useColumn} as option_value"),
@@ -834,7 +838,7 @@ class RmController extends Controller
             ->with('success', 'Data deleted successfully.');
     }
 
-    public function export(Request $request)
+    private function buildExportResponse(Request $request)
     {
       $user_login = $request->user()->user_login;
       $tabs = ['AVAILABILITY', 'BOM_GENERAL', 'CUST_PART_NUM', 'FINANCIAL', 'GENERAL', 'GTINS', 'INPUT_PRODUCTS', 'LOGISTICS', 'PLANNING', 'QTY_CONVERS', 'SALES_DATA', 'SUPP_PART_NUM', 'UOM_CHAR'];
@@ -910,5 +914,15 @@ class RmController extends Controller
       file_put_contents($filePath, trim($output)); // trim เพื่อกัน whitespace หน้า xml
 
       return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    public function export(Request $request)
+    {
+      return $this->buildExportResponse($request);
+    }
+
+    public function exportToSap(Request $request)
+    {
+      return $this->buildExportResponse($request);
     }
 }

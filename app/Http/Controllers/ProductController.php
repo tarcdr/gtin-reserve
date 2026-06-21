@@ -17,6 +17,7 @@ use App\Models\FgMaterialDml;
 use App\Models\MasterMattypeFg;
 use App\Models\MasterUOM;
 use App\Models\MasterLogisitcSite;
+use App\Models\Proj12SemiFgLv2Id;
 use App\Services\MasterCatLookup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -246,8 +247,7 @@ class ProductController extends Controller
       return null;
     }
 
-    $row = DB::connection('oracle')
-      ->table('PROJ1_2_DML_SEMI_L2_ID')
+    $row = Proj12SemiFgLv2Id::query()
       ->selectRaw('
         TRIM(FG_BOM_ID) as fg_bom_id,
         TRIM(SEMI_FG_LV2_ID) as semi_fg_lv2_id,
@@ -396,8 +396,7 @@ class ProductController extends Controller
       return null;
     }
 
-    $materialRow = DB::connection('oracle')
-      ->table('PROJ1_2_DML_FG_MATTYPE_1')
+    $materialRow = FgMaterialDml::query()
       ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId])
       ->first();
 
@@ -408,8 +407,7 @@ class ProductController extends Controller
       return null;
     }
 
-    $bomRow = DB::connection('oracle')
-      ->table('PROJ1_2_DML_FG_BOM')
+    $bomRow = FgBomDml::query()
       ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId])
       ->first();
 
@@ -435,8 +433,7 @@ class ProductController extends Controller
   protected function assertFgMaterialSaved(string $materialId): array
   {
     $materialId = trim($materialId);
-    $rowCount = DB::connection('oracle')
-      ->table('PROJ1_2_DML_FG_MATTYPE_1')
+    $rowCount = FgMaterialDml::query()
       ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId])
       ->count();
 

@@ -1,6 +1,7 @@
 import BomMaterialForm from '@/Components/BomMaterialForm';
 
 export default function NewPackMaterial({ auth, InputData, mattypes = [], subMattypes = [], uoms = [], productCategories = [], productSubCategories = [] }) {
+  const ownerLevel = InputData?.ownerLevel || 'fg';
   const modePrefix = InputData?.actionMode === 'create' ? '1' : '2';
   const ownerSuffixMap = {
     fg: 'CFG',
@@ -8,7 +9,11 @@ export default function NewPackMaterial({ auth, InputData, mattypes = [], subMat
     semiFgLv2: 'SML2',
     businessSupply: 'BNS',
   };
-  const pageId = `${modePrefix}${ownerSuffixMap[InputData?.ownerLevel] || 'PM'}`;
+  const ownerSuffix = ownerSuffixMap[ownerLevel] || 'PM';
+  const pageId = ownerLevel && ownerLevel !== 'fg'
+    ? `${modePrefix}C${ownerSuffix}`
+    : `${modePrefix}${ownerSuffix}`;
+  const initialSubMattype = InputData?.subMattype || (ownerLevel === 'semiFgLv1' || ownerLevel === 'semiFgLv2' ? '0' : '');
   const submitRoute = InputData?.actionMode === 'edit' ? 'packmaterial.update' : 'packmaterial.create';
   const headerTitle = InputData?.actionMode === 'edit' ? 'PACK MATERIAL - Edit' : 'PACK MATERIAL - Create';
 
@@ -17,7 +22,7 @@ export default function NewPackMaterial({ auth, InputData, mattypes = [], subMat
       auth={auth}
       headerTitle={headerTitle}
       pageIdentity={{ pageId }}
-      InputData={InputData}
+      InputData={{ ...(InputData || {}), ownerLevel, subMattype: initialSubMattype }}
       mattypes={mattypes}
       subMattypes={subMattypes}
       uoms={uoms}

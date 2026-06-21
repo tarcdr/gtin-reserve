@@ -9,8 +9,13 @@ use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Brand;
+use App\Models\FgMaterialDml;
 use App\Models\MasterMattypePack;
 use App\Models\MasterUOM;
+use App\Models\Proj12CompSemiLv1V;
+use App\Models\Proj12CompSemiLv2V;
+use App\Models\Proj12DmlFgComp;
+use App\Models\Proj12DmlSemiL2CompM5;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -114,8 +119,7 @@ class PackMaterialController extends Controller
     }
 
     try {
-      $row = DB::connection('oracle')
-        ->table('PROJ1_2_DML_FG_MATTYPE_1')
+      $row = FgMaterialDml::query()
         ->selectRaw('TRIM(SITE) as site')
         ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId])
         ->first();
@@ -139,8 +143,7 @@ class PackMaterialController extends Controller
       return null;
     }
 
-    $materialRow = DB::connection('oracle')
-      ->table('PROJ1_2_DML_FG_MATTYPE_1')
+    $materialRow = FgMaterialDml::query()
       ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId])
       ->first();
 
@@ -289,6 +292,126 @@ class PackMaterialController extends Controller
     }
   }
 
+  protected function saveSemiFgLv2ComponentBom(array $data, ?string $userLogin = null, ?string $userRole = null): void
+  {
+    $userLogin = $userLogin ?: 'system';
+    $userRole = $userRole ?: 'GTIN';
+    $bomSemiLv2Id = trim((string) ($data['levelMaterialId'] ?? $data['materialId'] ?? $data['bomId'] ?? ''));
+    $mattype = trim((string) ($data['mattype'] ?? '2'));
+    $subMattype = trim((string) ($data['subMattype'] ?? '0'));
+    $productCat = trim((string) ($data['productCat'] ?? ''));
+    $productSubCat = trim((string) ($data['productSubCat'] ?? ''));
+    $site = trim((string) (
+      $data['site']
+      ?? data_get($data, 'fgDetail.semiFgLv2.site')
+      ?? data_get($data, 'ownerDetail.site')
+      ?? ''
+    ));
+    $componentId = trim((string) ($data['componentId'] ?? ''));
+    $searchDesc = trim((string) ($data['searchDesc'] ?? ''));
+    $fullDescEn = trim((string) ($data['fullDescEn'] ?? ''));
+    $fullDescTh = trim((string) ($data['fullDescTh'] ?? ''));
+    $uom = trim((string) ($data['uom'] ?? ''));
+
+    if ($bomSemiLv2Id === '' || $componentId === '') {
+      throw ValidationException::withMessages([
+        'componentId' => 'BOM ID or Component ID is missing.',
+      ]);
+    }
+
+    $pdo = DB::connection('oracle')->getPdo();
+    $error = null;
+    $stmt = $pdo->prepare('BEGIN proj1_2_save_comp_bom_semi_l2(:P_BOM_SEMI_LV2_ID, :P_MATTYPE, :P_SUBMATTYPE, :P_PRODUCT_CAT, :P_PROD_SUB_CAT, :P_SITE, :P_COMPONENT_ID, :P_SEARCH_DESC, :P_COMP_DESC_EN, :P_COMP_DESC_TH, :P_UOM, :P_USER_ROLE, :P_USER, :P_ERROR); END;');
+    $stmt->bindValue(':P_BOM_SEMI_LV2_ID', $bomSemiLv2Id, PDO::PARAM_STR);
+    $stmt->bindValue(':P_MATTYPE', $mattype, PDO::PARAM_STR);
+    $stmt->bindValue(':P_SUBMATTYPE', $subMattype, PDO::PARAM_STR);
+    $stmt->bindValue(':P_PRODUCT_CAT', $productCat, PDO::PARAM_STR);
+    $stmt->bindValue(':P_PROD_SUB_CAT', $productSubCat, PDO::PARAM_STR);
+    $stmt->bindValue(':P_SITE', $site, PDO::PARAM_STR);
+    $stmt->bindValue(':P_COMPONENT_ID', $componentId, PDO::PARAM_STR);
+    $stmt->bindValue(':P_SEARCH_DESC', $searchDesc, PDO::PARAM_STR);
+    $stmt->bindValue(':P_COMP_DESC_EN', $fullDescEn, PDO::PARAM_STR);
+    $stmt->bindValue(':P_COMP_DESC_TH', $fullDescTh, PDO::PARAM_STR);
+    $stmt->bindValue(':P_UOM', $uom, PDO::PARAM_STR);
+    $stmt->bindValue(':P_USER_ROLE', (string) $userRole, PDO::PARAM_STR);
+    $stmt->bindValue(':P_USER', (string) $userLogin, PDO::PARAM_STR);
+    $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
+    $stmt->execute();
+
+    $resolvedError = trim((string) $this->resolveProcedureErrorMessage($error));
+    if ($resolvedError !== '') {
+      Log::warning('packmaterial.save-semi-fg-lv2-component-bom.failed', [
+        'bomSemiLv2Id' => $bomSemiLv2Id,
+        'componentId' => $componentId,
+        'error' => $error,
+        'resolvedError' => $resolvedError,
+      ]);
+
+      throw ValidationException::withMessages([
+        'componentId' => $resolvedError,
+      ]);
+    }
+  }
+
+  protected function loadSemiFgLv2ComponentByBomAndComponentId(?string $levelMaterialId, ?string $componentId): ?array
+  {
+    $levelMaterialId = trim((string) $levelMaterialId);
+    $componentId = trim((string) $componentId);
+
+    if ($levelMaterialId === '' || $componentId === '') {
+      return null;
+    }
+
+    try {
+      $row = Proj12DmlSemiL2CompM5::query()
+        ->selectRaw('
+          TRIM(NO) as no,
+          TRIM(MATERIAL_ID_M5) as component_id,
+          TRIM(SEARCH_DESCRIPTION) as search_description,
+          TRIM(FULL_DESCRIPTION_EN) as full_description_en,
+          TRIM(FULL_DESCRIPTION_TH) as full_description_th,
+          TRIM(SEMI_FG_LV2_BOM_NO) as semi_fg_lv2_bom_no,
+          TRIM(SITE) as site,
+          TRIM(UOM) as uom,
+          TRIM(STATUS) as status,
+          TRIM(STATUS_ROW) as status_row
+        ')
+        ->whereRaw('TRIM(SEMI_FG_LV2_BOM_NO) = ?', [$levelMaterialId])
+        ->whereRaw('TRIM(MATERIAL_ID_M5) = ?', [$componentId])
+        ->first();
+
+      if (!$row) {
+        return null;
+      }
+
+      $record = $row instanceof \Illuminate\Database\Eloquent\Model
+        ? $row->getAttributes()
+        : (array) $row;
+
+      $source = array_change_key_case($record, CASE_LOWER);
+      $componentIdValue = trim((string) ($source['component_id'] ?? ''));
+
+      return [
+        'componentId' => $componentIdValue,
+        'productSubCat' => $componentIdValue !== '' ? substr($componentIdValue, 0, 4) : '',
+        'productCat' => $componentIdValue !== '' ? substr($componentIdValue, 0, 2) : '',
+        'searchDesc' => trim((string) ($source['search_description'] ?? '')),
+        'fullDescEn' => trim((string) ($source['full_description_en'] ?? '')),
+        'fullDescTh' => trim((string) ($source['full_description_th'] ?? '')),
+        'uom' => trim((string) ($source['uom'] ?? '')),
+        'status' => trim((string) ($source['status'] ?? $source['status_row'] ?? 'INS')),
+      ];
+    } catch (\Throwable $exception) {
+      Log::warning('packmaterial.semi-fg-lv2-component.lookup.failed', [
+        'levelMaterialId' => $levelMaterialId,
+        'componentId' => $componentId,
+        'error' => $exception->getMessage(),
+      ]);
+
+      return null;
+    }
+  }
+
   protected function loadFgComponentByMaterialAndComponentId(?string $materialId, ?string $componentId): ?array
   {
     $materialId = trim((string) $materialId);
@@ -305,8 +428,7 @@ class PackMaterialController extends Controller
       return null;
     }
 
-    $row = DB::connection('oracle')
-      ->table('proj1_2_dml_fg_comp')
+    $row = Proj12DmlFgComp::query()
       ->whereRaw('TRIM(BOM_FG_ID) = ?', [$bomId])
       ->whereRaw('TRIM(COMPONENT_ID) = ?', [$componentId])
       ->first();
@@ -433,6 +555,97 @@ class PackMaterialController extends Controller
       ->toArray();
   }
 
+  protected function packComponentProductCategories(string $viewName, string $mattype = '5', ?string $subMattype = null): array
+  {
+    $mattype = trim($mattype) !== '' ? trim($mattype) : '5';
+    $subMattype = trim((string) $subMattype) !== '' ? trim((string) $subMattype) : '0';
+
+    try {
+      $modelClass = $this->resolveComponentProductModel($viewName);
+
+      if ($modelClass === null) {
+        return [];
+      }
+
+      return $modelClass::query()
+        ->selectRaw('TRIM(code_product_cat) as code, TRIM(desc_prod_cat) as description')
+        ->whereRaw('TRIM(mattype) = ?', [$mattype])
+        ->whereRaw('TRIM(sub_mattype) = ?', [$subMattype])
+        ->whereRaw('TRIM(code_product_cat) IS NOT NULL')
+        ->groupByRaw('TRIM(code_product_cat), TRIM(desc_prod_cat)')
+        ->orderByRaw('TRIM(code_product_cat), TRIM(desc_prod_cat)')
+        ->get()
+        ->map(function ($row) {
+          return [
+            'code' => (string) $row->code,
+            'description' => (string) $row->description,
+          ];
+        })
+        ->values()
+        ->toArray();
+    } catch (\Throwable $exception) {
+      Log::warning('packmaterial.component-product-categories.failed', [
+        'viewName' => $viewName,
+        'error' => $exception->getMessage(),
+      ]);
+
+      return [];
+    }
+  }
+
+  protected function packComponentProductSubCategories(string $viewName, string $mattype = '5', ?string $subMattype = null, ?string $productCat = null): array
+  {
+    $mattype = trim($mattype) !== '' ? trim($mattype) : '5';
+    $subMattype = trim((string) $subMattype) !== '' ? trim((string) $subMattype) : '0';
+
+    try {
+      $modelClass = $this->resolveComponentProductModel($viewName);
+
+      if ($modelClass === null) {
+        return [];
+      }
+
+      $query = $modelClass::query()
+        ->selectRaw('TRIM(code_sub_cat) as code, TRIM(desc_prod_sub_cat) as description')
+        ->whereRaw('TRIM(mattype) = ?', [$mattype])
+        ->whereRaw('TRIM(sub_mattype) = ?', [$subMattype])
+        ->whereRaw('TRIM(code_sub_cat) IS NOT NULL')
+        ->groupByRaw('TRIM(code_sub_cat), TRIM(desc_prod_sub_cat)')
+        ->orderByRaw('TRIM(code_sub_cat), TRIM(desc_prod_sub_cat)');
+
+      if ($productCat !== null && $productCat !== '') {
+        $query->whereRaw('TRIM(code_product_cat) = ?', [(string) $productCat]);
+      }
+
+      return $query
+        ->get()
+        ->map(function ($row) {
+          return [
+            'code' => (string) $row->code,
+            'description' => (string) $row->description,
+          ];
+        })
+        ->values()
+        ->toArray();
+    } catch (\Throwable $exception) {
+      Log::warning('packmaterial.component-product-sub-categories.failed', [
+        'viewName' => $viewName,
+        'error' => $exception->getMessage(),
+      ]);
+
+      return [];
+    }
+  }
+
+  protected function resolveComponentProductModel(string $viewName): ?string
+  {
+    return match ($viewName) {
+      'PROJ1_2_COMP_SEMI_L1_V' => Proj12CompSemiLv1V::class,
+      'PROJ1_2_COMP_SEMI_L2_V' => Proj12CompSemiLv2V::class,
+      default => null,
+    };
+  }
+
   protected function redirectToOwner(Request $request, array $components): RedirectResponse
   {
     $ownerLevel = $request->get('ownerLevel', 'fg');
@@ -448,10 +661,18 @@ class PackMaterialController extends Controller
     if ($ownerLevel === 'semiFgLv1') {
       $fgDetail['semiFgLv1'] = array_merge($fgDetail['semiFgLv1'] ?? [], $ownerDetail, ['components' => $components]);
       $this->persistFgDraft($request, $fgDetail);
+      $referentMaterialId = trim((string) (
+        $request->get('referentMaterialId')
+        ?: $request->get('fgMaterialId')
+        ?: $request->get('materialId')
+        ?: $fgDetail['materialId']
+        ?: ''
+      ));
       return Redirect::route('material-levels.semi-fg-lv1.new', [
         'mode' => 'view',
         'fgDetail' => $fgDetail,
-        'materialId' => $fgDetail['materialId'] ?? null,
+        'referentMaterialId' => $referentMaterialId !== '' ? $referentMaterialId : null,
+        'materialId' => $referentMaterialId !== '' ? $referentMaterialId : ($fgDetail['materialId'] ?? null),
         'bomId' => $fgDetail['bomId'] ?? null,
         'bomDesc' => $fgDetail['bomDesc'] ?? null,
         'levelMaterialId' => $ownerDetail['id'] ?? null,
@@ -515,6 +736,13 @@ class PackMaterialController extends Controller
       $loadedComponent = $this->loadFgComponentByMaterialAndComponentId($referentMaterialId, $componentId);
     }
 
+    if ($ownerLevel === 'semiFgLv2' && $actionMode === 'edit' && $componentId !== '') {
+      $loadedComponent = $this->loadSemiFgLv2ComponentByBomAndComponentId(
+        $request->get('levelMaterialId') ?: $request->get('materialId'),
+        $componentId
+      );
+    }
+
     if (in_array($ownerLevel, ['fg', 'semiFgLv2'], true) && $actionMode === 'create' && $generatedBomId === '') {
       if ($ownerLevel === 'semiFgLv2') {
         $fgMaterialId = trim((string) ($request->fgMaterialId ?: $referentMaterialId));
@@ -546,18 +774,18 @@ class PackMaterialController extends Controller
           ]);
         }
       } else {
-      $site = trim((string) ($request->site ?: $this->resolveFgSiteByMaterialId($referentMaterialId)));
-      $generated = $this->generateFgBomId($referentMaterialId, $site);
+        $site = trim((string) ($request->site ?: $this->resolveFgSiteByMaterialId($referentMaterialId)));
+        $generated = $this->generateFgBomId($referentMaterialId, $site);
 
-      if ($generated['error'] !== '') {
-        Log::warning('packmaterial.generate-fg-bom-id.failed', [
-          'referentMaterialId' => $referentMaterialId,
-          'site' => $site,
-          'error' => $generated['error'],
-        ]);
-      }
+        if ($generated['error'] !== '') {
+          Log::warning('packmaterial.generate-fg-bom-id.failed', [
+            'referentMaterialId' => $referentMaterialId,
+            'site' => $site,
+            'error' => $generated['error'],
+          ]);
+        }
 
-      $generatedBomId = $generated['bomId'];
+        $generatedBomId = $generated['bomId'];
       }
     }
 
@@ -571,8 +799,12 @@ class PackMaterialController extends Controller
       'referentMaterialId' => $referentMaterialId,
       'materialId' => $referentMaterialId,
       'fgMaterialId' => $referentMaterialId,
-      'bomId'      => $loadedComponent['bomId'] ?? $generatedBomId,
-      'bomDesc'    => $loadedComponent['bomDesc'] ?? $request->bomDesc,
+      'bomId'      => $ownerLevel === 'semiFgLv2'
+        ? ($request->levelMaterialId ?: $request->get('materialId') ?: $generatedBomId)
+        : ($loadedComponent['bomId'] ?? $generatedBomId),
+      'bomDesc'    => $ownerLevel === 'semiFgLv2'
+        ? ($request->levelBomDesc ?: $request->bomDesc ?: '')
+        : ($loadedComponent['bomDesc'] ?? $request->bomDesc),
       'fgDetail'   => $request->get('fgDetail', []),
       'ownerDetail' => $request->get('ownerDetail', []),
       'components' => $request->get('components', []),
@@ -584,13 +816,17 @@ class PackMaterialController extends Controller
       'levelFullDescEn' => $request->levelFullDescEn,
       'levelFullDescTh' => $request->levelFullDescTh,
       'levelUom'   => $request->levelUom,
-      'productCat' => $loadedComponent['productCat'] ?? $request->productCat,
-      'productSubCat' => $loadedComponent['productSubCat'] ?? $request->productSubCat,
-      'componentId' => $loadedComponent['componentId'] ?? $componentId,
-      'searchDesc' => $loadedComponent['searchDesc'] ?? $request->searchDesc,
-      'fullDescEn' => $loadedComponent['fullDescEn'] ?? $request->fullDescEn,
-      'fullDescTh' => $loadedComponent['fullDescTh'] ?? $request->fullDescTh,
-      'uom'       => $loadedComponent['uom'] ?? $request->uom,
+      'site' => $request->site
+        ?: data_get($request->get('fgDetail', []), 'semiFgLv2.site')
+        ?: data_get($request->get('ownerDetail', []), 'site')
+        ?: '',
+      'productCat' => $request->productCat ?: ($loadedComponent['productCat'] ?? ''),
+      'productSubCat' => $request->productSubCat ?: ($loadedComponent['productSubCat'] ?? ''),
+      'componentId' => $request->componentId ?: ($loadedComponent['componentId'] ?? $componentId),
+      'searchDesc' => $request->searchDesc ?: ($loadedComponent['searchDesc'] ?? ''),
+      'fullDescEn' => $request->fullDescEn ?: ($loadedComponent['fullDescEn'] ?? ''),
+      'fullDescTh' => $request->fullDescTh ?: ($loadedComponent['fullDescTh'] ?? ''),
+      'uom'       => $request->uom ?: ($loadedComponent['uom'] ?? ''),
     ];
 
     $uoms = $this->uoms;
@@ -603,15 +839,34 @@ class PackMaterialController extends Controller
   {
     $validated = $request->validate([
       'subMattype' => ['nullable'],
+      'ownerLevel' => ['nullable', 'in:fg,semiFgLv1,semiFgLv2,businessSupply'],
+      'mattype' => ['nullable'],
     ]);
 
     $subMattype = $validated['subMattype'] ?? null;
+    $ownerLevel = $validated['ownerLevel'] ?? 'fg';
+    $mattype = trim((string) ($validated['mattype'] ?? '5'));
 
     if ($subMattype === null || $subMattype === '') {
       return response()->json([
         'subMattype' => '',
         'productCategories' => [],
         'productSubCategories' => [],
+      ]);
+    }
+
+    if (in_array($ownerLevel, ['semiFgLv1', 'semiFgLv2'], true)) {
+      $viewName = $ownerLevel === 'semiFgLv1'
+        ? 'PROJ1_2_COMP_SEMI_L1_V'
+        : 'PROJ1_2_COMP_SEMI_L2_V';
+      $productCategories = $this->packComponentProductCategories($viewName, $mattype, (string) $subMattype);
+      $productCat = $productCategories[0]['code'] ?? '';
+
+      return response()->json([
+        'subMattype' => (string) $subMattype,
+        'productCategories' => $productCategories,
+        'productSubCategories' => $this->packComponentProductSubCategories($viewName, $mattype, (string) $subMattype),
+        'productCat' => $productCat,
       ]);
     }
 
@@ -644,18 +899,38 @@ class PackMaterialController extends Controller
       $request->productSubCat ?: '00'
     );
 
-    if (in_array($request->get('ownerLevel', 'fg'), ['fg', 'semiFgLv2'], true)) {
-      $this->saveFgComponentBom(array_merge($request->all(), [
+    if ($request->get('ownerLevel', 'fg') === 'semiFgLv2') {
+      $components = $this->upsertComponent($request->get('components', []), [
+        'code' => $componentId,
+        'label' => $request->searchDesc ?: $request->fullDescEn ?: $componentId,
+        'status' => 'INS',
+        'searchDesc' => $request->searchDesc,
+        'fullDescEn' => $request->fullDescEn,
+        'fullDescTh' => $request->fullDescTh,
+        'uom' => $request->uom,
+        'productCat' => $request->productCat,
+        'productSubCat' => $request->productSubCat,
+      ]);
+
+      $this->saveSemiFgLv2ComponentBom(array_merge($request->all(), [
         'componentId' => $componentId,
       ]), $request->user()?->user_login, $request->user()?->role);
 
-      if ($request->get('ownerLevel', 'fg') === 'semiFgLv2') {
-        return Redirect::route($request->get('backRoute', 'material-levels.semi-fg-lv2.new'), [
-          'referentMaterialId' => $request->get('referentMaterialId') ?: $request->get('fgMaterialId') ?: $request->get('materialId'),
-          'mode' => 'view',
-          'levelMaterialId' => $request->get('levelMaterialId') ?: $request->get('materialId'),
-        ]);
-      }
+      return Redirect::route($request->get('backRoute', 'material-levels.semi-fg-lv2.new'), [
+        'referentMaterialId' => $request->get('referentMaterialId') ?: $request->get('fgMaterialId') ?: $request->get('materialId'),
+        'mode' => 'view',
+        'levelMaterialId' => $request->get('levelMaterialId') ?: $request->get('materialId'),
+        'fgMaterialId' => $request->get('fgMaterialId') ?: $request->get('referentMaterialId') ?: $request->get('materialId'),
+        'fgDetail' => $request->get('fgDetail', []),
+        'ownerDetail' => $request->get('ownerDetail', []),
+        'components' => $components,
+      ]);
+    }
+
+    if ($request->get('ownerLevel', 'fg') === 'fg') {
+      $this->saveFgComponentBom(array_merge($request->all(), [
+        'componentId' => $componentId,
+      ]), $request->user()?->user_login, $request->user()?->role);
 
       return Redirect::route($request->get('backRoute', 'product.view'), [
         'materialId' => $request->get('backMaterialId')
@@ -696,19 +971,28 @@ class PackMaterialController extends Controller
   {
     $validated = $request->validate([
       'productSubCat' => ['required'],
+      'ownerLevel' => ['nullable', 'in:fg,semiFgLv1,semiFgLv2,businessSupply'],
     ]);
 
+    $ownerLevel = $validated['ownerLevel'] ?? 'fg';
     $componentId = null;
     $error = null;
     $pdo = DB::getPdo();
-    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_COMP_BOMFG(:p_prd_sub_cat, :p_componenid, :p_error); END;');
-    $stmt->bindParam(':p_prd_sub_cat', $validated['productSubCat'], PDO::PARAM_STR);
+
+    if ($ownerLevel === 'semiFgLv2') {
+      $stmt = $pdo->prepare('BEGIN proj1_2_gen_comp_bom_semi_l2(:p_semi_l2_sub_cat, :p_componenid, :P_ERROR); END;');
+      $stmt->bindParam(':p_semi_l2_sub_cat', $validated['productSubCat'], PDO::PARAM_STR);
+    } else {
+      $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_COMP_BOMFG(:p_prd_sub_cat, :p_componenid, :p_error); END;');
+      $stmt->bindParam(':p_prd_sub_cat', $validated['productSubCat'], PDO::PARAM_STR);
+    }
+
     $stmt->bindParam(':p_componenid', $componentId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':p_error', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
     $stmt->execute();
 
     return response()->json([
-      'program' => 'PROJ1_2_GEN_COMP_BOMFG',
+      'program' => $ownerLevel === 'semiFgLv2' ? 'PROJ1_2_GEN_COMP_BOM_SEMI_L2' : 'PROJ1_2_GEN_COMP_BOMFG',
       'componentId' => $componentId,
       'error' => $this->resolveProcedureErrorMessage($error),
     ]);

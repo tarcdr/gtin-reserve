@@ -42,6 +42,7 @@ export default function BomMaterialForm({
     levelFullDescEn: InputData?.levelFullDescEn || '',
     levelFullDescTh: InputData?.levelFullDescTh || '',
     levelUom: InputData?.levelUom || '',
+    site: InputData?.site || InputData?.fgDetail?.semiFgLv2?.site || InputData?.ownerDetail?.site || '',
     productCat: InputData?.productCat || '',
     productSubCat: InputData?.productSubCat || '',
     componentId: InputData?.componentId || '',
@@ -51,6 +52,7 @@ export default function BomMaterialForm({
     uom: InputData?.uom || ''
   });
   const isFgCreateMode = data.ownerLevel === 'fg' && data.actionMode === 'create';
+  const isSemiFgLv2CreateMode = data.ownerLevel === 'semiFgLv2' && data.actionMode === 'create';
   const isEditMode = data.actionMode === 'edit';
   const isSubMattypeLocked = isEditMode;
   const isProductSubCatLocked = isEditMode;
@@ -82,7 +84,11 @@ export default function BomMaterialForm({
     }
 
     const controller = new AbortController();
-    fetch(route('packmaterial.product-categories', { subMattype: data.subMattype }), {
+    fetch(route('packmaterial.product-categories', {
+      subMattype: data.subMattype,
+      ownerLevel: data.ownerLevel,
+      mattype: data.mattype || '5',
+    }), {
       headers: {
         Accept: 'application/json',
       },
@@ -112,7 +118,7 @@ export default function BomMaterialForm({
   const handleProductSubCategoryChange = async (nextProductSubCat) => {
     setData('productSubCat', nextProductSubCat);
 
-    if (!isFgCreateMode) {
+    if (!isFgCreateMode && !isSemiFgLv2CreateMode) {
       return;
     }
 
@@ -128,6 +134,7 @@ export default function BomMaterialForm({
     try {
       const response = await fetch(route('packmaterial.generate-component-id', {
         productSubCat: nextProductSubCat,
+        ownerLevel: data.ownerLevel,
       }), {
         headers: {
           Accept: 'application/json',
@@ -193,6 +200,9 @@ export default function BomMaterialForm({
         referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
         mode: 'view',
         levelMaterialId: data.levelMaterialId || data.materialId || '',
+        fgDetail: data.fgDetail,
+        ownerDetail: data.ownerDetail,
+        components: data.components,
       });
       return;
     }
@@ -231,6 +241,9 @@ export default function BomMaterialForm({
         referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
         mode: 'view',
         levelMaterialId: data.levelMaterialId || data.materialId || '',
+        fgDetail: data.fgDetail,
+        ownerDetail: data.ownerDetail,
+        components: data.components,
       });
       return;
     }

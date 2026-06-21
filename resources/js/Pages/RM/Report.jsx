@@ -23,6 +23,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
 
   // ฟังก์ชัน toggle sidebar
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const isAdmin = auth?.user?.role === 'admin';
 
   const { data, setData, processing, errors, patch, delete: actionDelete } = useForm({});
 
@@ -441,7 +442,14 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
               {/* Content Area */}
               <div className="flex flex-col flex-grow w-full px-4 py-6 overflow-hidden">
                 {/* ปุ่ม Download */}
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-end gap-2 mb-4">
+                  <PrimaryButton
+                    onClick={() => window.open(route('rm.export-sap'))}
+                    disabled={!isAdmin}
+                    title={!isAdmin ? 'Admin only' : undefined}
+                  >
+                    Export to SAP
+                  </PrimaryButton>
                   <PrimaryButton onClick={() => window.open(route('rm.export'))}>Download</PrimaryButton>
                 </div>
 
@@ -562,7 +570,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                   onClick={scrollToBottom}
                   className="bg-gray-800 text-white px-4 py-2 rounded shadow-md hover:bg-gray-700 transition opacity-75"
                 >
-                  ⬇ Go to Bottom
+                  ▼ Go to Bottom
                 </button>
               </div>
             )}
@@ -574,7 +582,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                   onClick={scrollToTop}
                   className="bg-gray-800 text-white px-4 py-2 rounded shadow-md hover:bg-gray-700 transition opacity-75"
                 >
-                  ⬆ Back to Top
+                  ▲ Back to Top
                 </button>
               </div>
             )}

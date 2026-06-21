@@ -12,11 +12,6 @@ export default function SemiFgLevel2(props) {
       pageIdentity={{ pageId }}
       disableSubMattypeOnEdit={true}
       fixedMattypeDisplayValue="2"
-      subMattypeOptions={[
-        { code: '0', label: '0' },
-        { code: '1', label: '1' },
-        { code: '2', label: '2' },
-      ]}
       allowSubMattypeSelection
       enableSubMattypeGenerate
       generateRoute="material-levels.semi-fg-lv2.generate"

@@ -316,8 +316,7 @@ class BusinessSupplyController extends Controller
     $bomBsId = trim((string) $validated['bomBsId']);
 
     try {
-      $updated = DB::connection('oracle')
-        ->table('proj1_2_dml_fg_comp')
+      $updated = Proj12DmlFgComp::query()
         ->whereRaw('TRIM(BOM_FG_ID) = ?', [$bomBsId])
         ->update([
           'SEARCH_DESC' => $validated['searchDesc'],
