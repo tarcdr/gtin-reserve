@@ -85,20 +85,30 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
 
   const goToSemiFgLv2 = (levelData = {}) => {
     const mode = levelData.mode || (levelData.levelMaterialId ? 'view' : 'create');
-    router.get(route('material-levels.semi-fg-lv2.new'), {
-      referentMaterialId: data.materialId,
+    const payload = {
       mode,
       ...(levelData.levelMaterialId ? { levelMaterialId: levelData.levelMaterialId } : {}),
-    });
+    };
+
+    if (mode === 'create') {
+      payload.referentMaterialId = data.materialId;
+    }
+
+    router.get(route('material-levels.semi-fg-lv2.new'), payload);
   };
 
   const goToSemiFgLv1 = (levelData = {}) => {
     const mode = levelData.mode || (levelData.levelMaterialId ? 'view' : 'create');
-    router.get(route('material-levels.semi-fg-lv1.new'), {
-      referentMaterialId: data.materialId,
+    const payload = {
       mode,
       ...(levelData.levelMaterialId ? { levelMaterialId: levelData.levelMaterialId } : {}),
-    });
+    };
+
+    if (mode === 'create') {
+      payload.referentMaterialId = data.materialId;
+    }
+
+    router.get(route('material-levels.semi-fg-lv1.new'), payload);
   };
 
   const submit = (e) => {
@@ -115,8 +125,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     });
   };
 
-  const goBackToSearch = () => {
-    router.get(route('product.search'));
+  const goBackToFg = () => {
+    router.get(route('product.view'), {
+      materialId: data.materialId,
+    });
   };
 
   const handleDelete = () => {
@@ -483,39 +495,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                       )}
                     </div>
                   )}
-                  {/* <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
-                    {data.businessSupply ? (
-                      <div className="space-y-3">
-                        <div className="text-sm text-gray-600">Business Supply</div>
-                        <div className="font-semibold">{data.businessSupply.id}</div>
-                        <div className="text-gray-500">{data.businessSupply.desc}</div>
-                        <PrimaryButton
-                          type="button"
-                          onClick={() => goToBusinessSupply({
-                            mode: 'view',
-                            levelMaterialId: data.businessSupply.id,
-                            searchDesc: data.businessSupply.searchDesc,
-                            fullDescEn: data.businessSupply.fullDescEn,
-                            fullDescTh: data.businessSupply.fullDescTh,
-                            uom: data.businessSupply.uom,
-                            components: data.businessSupply.components || [],
-                          })}
-                          disabled={!isDisabled}
-                        >
-                          View Business Supply
-                        </PrimaryButton>
-                      </div>
-                    ) : (
-                      <SuccessButton type="button" onClick={() => goToBusinessSupply()} disabled={!isDisabled}>
-                        Create Business Supply
-                      </SuccessButton>
-                    )}
-                  </div> */}
                 </>
               )}
               <div className="flex items-center justify-center gap-4">
-                <SecondaryButton type="button" onClick={goBackToSearch}>
-                  Back
+                <SecondaryButton type="button" onClick={goBackToFg}>
+                  Back to FG
                 </SecondaryButton>
                 {isDisabled ? (
                   <>

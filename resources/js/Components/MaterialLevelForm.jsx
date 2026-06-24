@@ -41,7 +41,8 @@ export default function MaterialLevelForm({
   showStorageTable = true,
   showComponentSectionWhenNotView = false,
   hideSubMattypeOnView = false,
-  disableSubMattypeOnEdit = false
+  disableSubMattypeOnEdit = false,
+  semiFgLv2 = null
 }) {
   const [componentRows, setComponentRows] = useState(components);
   const [isGeneratingLevelData, setIsGeneratingLevelData] = useState(false);
@@ -69,6 +70,8 @@ export default function MaterialLevelForm({
     fullDescTh: InputData?.fullDescTh || '',
     uom: InputData?.uom || '',
     components: components,
+    fg_bom_id: semiFgLv2?.fg_bom_id || '',
+    semi_fg_lv2_id: semiFgLv2?.semi_fg_lv2_id || '',
   });
   const effectiveSubMattypeOptions = subMattypeOptions || subMattypes;
   const subMattypeDisplayValue = effectiveSubMattypeOptions?.find((item) => String(item.code) === String(data.subMattype))?.label || data.subMattype || '';
@@ -108,7 +111,7 @@ export default function MaterialLevelForm({
       });
 
       if (!response.ok) {
-        throw new Error('Unable to generate Semi FG Lv.2 data.');
+        throw new Error('Unable to generate Semi FG Lv data.');
       }
 
       const payload = await response.json();
@@ -121,7 +124,7 @@ export default function MaterialLevelForm({
     } catch (error) {
       setData('levelBomId', '');
       setData('materialId', '');
-      setError('subMattype', 'Unable to generate Semi FG Lv.2 data.');
+      setError('subMattype', 'Unable to generate Semi FG Lv data.');
     } finally {
       setIsGeneratingLevelData(false);
     }
@@ -170,36 +173,31 @@ export default function MaterialLevelForm({
 
   const buildLevelLookupPayload = (nextMode = mode) => ({
     mode: nextMode,
-    referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
-    fgMaterialId: data.fgMaterialId || data.referentMaterialId || '',
     levelMaterialId: data.materialId || '',
+  });
+
+  const buildSemiFgLv2ComponentPayload = (actionMode, item = {}) => ({
+    ownerLevel: 'semiFgLv2',
+    actionMode,
+    levelMaterialId: data.materialId || data.levelMaterialId || '',
+    ...(actionMode !== 'create' && item?.code ? { componentId: item.code } : {}),
+  });
+
+  const buildSemiFgLv1ComponentPayload = (actionMode, item = {}) => ({
+    ownerLevel: 'semiFgLv1',
+    actionMode,
+    levelMaterialId: data.materialId || data.levelMaterialId || '',
+    ...(actionMode !== 'create' && item?.code ? { componentId: item.code } : {}),
   });
 
   const goCreateComponent = () => {
     if (levelKey === 'semiFgLv2') {
-      router.get(route('packmaterial.new'), {
-        ownerLevel: 'semiFgLv2',
-        backRoute: levelRoute || 'material-levels.semi-fg-lv2.new',
-        referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
-        fgMaterialId: data.fgMaterialId || data.referentMaterialId || '',
-        levelMaterialId: data.materialId || data.levelMaterialId || '',
-        levelBomId: data.levelBomId || '',
-        levelBomDesc: data.levelBomDesc || '',
-        fgDetail: buildNextFgDetail(),
-        ownerDetail: {
-          bomId: data.levelBomId,
-          bomDesc: data.levelBomDesc,
-          id: data.materialId,
-          desc: data.searchDesc,
-          searchDesc: data.searchDesc,
-          fullDescEn: data.fullDescEn,
-          fullDescTh: data.fullDescTh,
-          uom: data.uom,
-        },
-        components: componentRows,
-        actionMode: 'create',
-        mode: 'view',
-      });
+      router.get(route('packmaterial.new'), buildSemiFgLv2ComponentPayload('create'));
+      return;
+    }
+
+    if (levelKey === 'semiFgLv1') {
+      router.get(route('packmaterial.new'), buildSemiFgLv1ComponentPayload('create'));
       return;
     }
 
@@ -246,36 +244,12 @@ export default function MaterialLevelForm({
 
   const goComponentAction = (actionMode, item = {}) => {
     if (levelKey === 'semiFgLv2') {
-      router.get(route('packmaterial.new'), {
-        ownerLevel: 'semiFgLv2',
-        backRoute: levelRoute || 'material-levels.semi-fg-lv2.new',
-        referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
-        fgMaterialId: data.fgMaterialId || data.referentMaterialId || '',
-        levelMaterialId: data.materialId || data.levelMaterialId || '',
-        levelBomId: data.levelBomId || '',
-        levelBomDesc: data.levelBomDesc || '',
-        fgDetail: buildNextFgDetail(),
-        ownerDetail: {
-          bomId: data.levelBomId,
-          bomDesc: data.levelBomDesc,
-          id: data.materialId,
-          desc: data.searchDesc,
-          searchDesc: data.searchDesc,
-          fullDescEn: data.fullDescEn,
-          fullDescTh: data.fullDescTh,
-          uom: data.uom,
-        },
-        components: componentRows,
-        actionMode,
-        componentId: item.code || '',
-        searchDesc: item.searchDesc || item.label || '',
-        fullDescEn: item.fullDescEn || item.label || '',
-        fullDescTh: item.fullDescTh || item.label || '',
-        uom: item.uom || '',
-        productCat: item.productCat || data.productCat || (item.code ? item.code.slice(0, 2) : ''),
-        productSubCat: item.productSubCat || data.productSubCat || (item.code ? item.code.slice(0, 4) : ''),
-        mode: 'view',
-      });
+      router.get(route('packmaterial.new'), buildSemiFgLv2ComponentPayload(actionMode, item));
+      return;
+    }
+
+    if (levelKey === 'semiFgLv1') {
+      router.get(route('packmaterial.new'), buildSemiFgLv1ComponentPayload(actionMode, item));
       return;
     }
 

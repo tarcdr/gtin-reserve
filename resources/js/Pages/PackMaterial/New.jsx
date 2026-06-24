@@ -15,7 +15,11 @@ export default function NewPackMaterial({ auth, InputData, mattypes = [], subMat
     : `${modePrefix}${ownerSuffix}`;
   const initialSubMattype = InputData?.subMattype || (ownerLevel === 'semiFgLv1' || ownerLevel === 'semiFgLv2' ? '0' : '');
   const submitRoute = InputData?.actionMode === 'edit' ? 'packmaterial.update' : 'packmaterial.create';
-  const headerTitle = InputData?.actionMode === 'edit' ? 'PACK MATERIAL - Edit' : 'PACK MATERIAL - Create';
+  let headerLabel = 'PACK';
+  if (ownerLevel === 'semiFgLv1') {
+    headerLabel = 'RAW';
+  }
+  const headerTitle = InputData?.actionMode === 'edit' ? `${headerLabel} MATERIAL - Edit` : `${headerLabel} MATERIAL - Create`;
 
   return (
     <BomMaterialForm

@@ -6,6 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import { useEffect, useState } from 'react';
+import DangerButton from './DangerButton';
 
 export default function BomMaterialForm({
   auth,
@@ -22,10 +23,16 @@ export default function BomMaterialForm({
   const [isGeneratingComponentId, setIsGeneratingComponentId] = useState(false);
   const [productCategoryOptions, setProductCategoryOptions] = useState([]);
   const [productSubCategoryOptions, setProductSubCategoryOptions] = useState([]);
+  const ownerLevel = InputData?.ownerLevel || 'fg';
+  const defaultBackRoute = ownerLevel === 'semiFgLv2'
+    ? 'material-levels.semi-fg-lv2.new'
+    : ownerLevel === 'semiFgLv1'
+      ? 'material-levels.semi-fg-lv1.new'
+    : 'product.view';
   const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
     actionMode: InputData?.actionMode || 'create',
-    ownerLevel: InputData?.ownerLevel || 'fg',
-    backRoute: InputData?.backRoute || 'product.view',
+    ownerLevel,
+    backRoute: InputData?.backRoute || defaultBackRoute,
     backMaterialId: InputData?.backMaterialId || InputData?.referentMaterialId || InputData?.materialId || InputData?.fgMaterialId || '',
     bomId: InputData?.bomId || '',
     bomDesc: InputData?.bomDesc || '',
@@ -52,8 +59,9 @@ export default function BomMaterialForm({
     uom: InputData?.uom || ''
   });
   const isFgCreateMode = data.ownerLevel === 'fg' && data.actionMode === 'create';
-  const isSemiFgLv2CreateMode = data.ownerLevel === 'semiFgLv2' && data.actionMode === 'create';
+  const isSemiFgCreateMode = ['semiFgLv1', 'semiFgLv2'].includes(data.ownerLevel) && data.actionMode === 'create';
   const isEditMode = data.actionMode === 'edit';
+  const isDeleteMode = data.actionMode === 'delete';
   const isSubMattypeLocked = isEditMode;
   const isProductSubCatLocked = isEditMode;
 
@@ -118,7 +126,7 @@ export default function BomMaterialForm({
   const handleProductSubCategoryChange = async (nextProductSubCat) => {
     setData('productSubCat', nextProductSubCat);
 
-    if (!isFgCreateMode && !isSemiFgLv2CreateMode) {
+    if (!isFgCreateMode && !isSemiFgCreateMode) {
       return;
     }
 
@@ -197,12 +205,16 @@ export default function BomMaterialForm({
 
     if (data.ownerLevel === 'semiFgLv2') {
       router.get(route(data.backRoute || 'material-levels.semi-fg-lv2.new'), {
-        referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
         mode: 'view',
         levelMaterialId: data.levelMaterialId || data.materialId || '',
-        fgDetail: data.fgDetail,
-        ownerDetail: data.ownerDetail,
-        components: data.components,
+      });
+      return;
+    }
+
+    if (data.ownerLevel === 'semiFgLv1') {
+      router.get(route(data.backRoute || 'material-levels.semi-fg-lv1.new'), {
+        mode: 'view',
+        levelMaterialId: data.levelMaterialId || data.materialId || '',
       });
       return;
     }
@@ -238,12 +250,16 @@ export default function BomMaterialForm({
 
     if (data.ownerLevel === 'semiFgLv2') {
       router.get(route(data.backRoute || 'material-levels.semi-fg-lv2.new'), {
-        referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
         mode: 'view',
         levelMaterialId: data.levelMaterialId || data.materialId || '',
-        fgDetail: data.fgDetail,
-        ownerDetail: data.ownerDetail,
-        components: data.components,
+      });
+      return;
+    }
+
+    if (data.ownerLevel === 'semiFgLv1') {
+      router.get(route(data.backRoute || 'material-levels.semi-fg-lv1.new'), {
+        mode: 'view',
+        levelMaterialId: data.levelMaterialId || data.materialId || '',
       });
       return;
     }
@@ -328,10 +344,10 @@ export default function BomMaterialForm({
                   <InputLabel htmlFor="subMattype" value="Sub Mattype" />
                   <select
                     id="subMattype"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${isSubMattypeLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isSubMattypeLocked ? 'bg-gray-100 text-gray-500' : ''}`}
                     onChange={(e) => handleSubMattypeChange(e.target.value)}
                     value={data.subMattype}
-                    disabled={isSubMattypeLocked}
+                    disabled={isSubMattypeLocked || isDeleteMode}
                   >
                     <option value="">---- Select Sub Mattype ----</option>
                     {subMattypes?.map((o) => (
@@ -359,10 +375,10 @@ export default function BomMaterialForm({
                   <InputLabel htmlFor="productSubCat" value="Product SUB Category" />
                   <select
                     id="productSubCat"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${!data.productCat || isProductSubCatLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${!data.productCat || isProductSubCatLocked ? 'bg-gray-100 text-gray-500' : ''}`}
                     onChange={(e) => handleProductSubCategoryChange(e.target.value)}
                     value={data.productSubCat}
-                    disabled={!data.productCat || isProductSubCatLocked}
+                    disabled={!data.productCat || isProductSubCatLocked || isDeleteMode}
                   >
                     <option value="">---- Select Product SUB Category ----</option>
                     {filteredProductSubCategories.map((option) => (
@@ -397,10 +413,11 @@ export default function BomMaterialForm({
 
                   <TextInput
                     id="searchDesc"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full ${isDeleteMode ? 'bg-gray-100 text-gray-500' : ''}`}
                     value={data.searchDesc}
                     maxLength="40"
                     onChange={(e) => setData('searchDesc', e.target.value)}
+                    disabled={isDeleteMode}
                   />
 
                   <InputError className="mt-2" message={errors.searchDesc} />
@@ -412,10 +429,11 @@ export default function BomMaterialForm({
 
                   <TextInput
                     id="fullDescEn"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full ${isDeleteMode ? 'bg-gray-100 text-gray-500' : ''}`}
                     value={data.fullDescEn}
                     maxLength="40"
                     onChange={(e) => setData('fullDescEn', e.target.value)}
+                    disabled={isDeleteMode}
                   />
 
                   <InputError className="mt-2" message={errors.fullDescEn} />
@@ -425,10 +443,11 @@ export default function BomMaterialForm({
 
                   <TextInput
                     id="fullDescTh"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full ${isDeleteMode ? 'bg-gray-100 text-gray-500' : ''}`}
                     value={data.fullDescTh}
                     maxLength="40"
                     onChange={(e) => setData('fullDescTh', e.target.value)}
+                    disabled={isDeleteMode}
                   />
 
                   <InputError className="mt-2" message={errors.fullDescTh} />
@@ -440,9 +459,10 @@ export default function BomMaterialForm({
                   <InputLabel htmlFor="uom" value="UOM" />
                   <select
                     id="uom"
-                    className="mt-1 block w-full border-gray-300 rounded-md"
+                    className={`mt-1 block w-full ${isDeleteMode ? 'bg-gray-100 text-gray-500' : ''}`}
                     onChange={(e) => setData('uom', e.target.value)}
                     defaultValue={data.uom}
+                    disabled={isDeleteMode}
                   >
                     <option value="">---- Select UOM ----</option>
                     {uoms?.map((o) => {
@@ -464,10 +484,10 @@ export default function BomMaterialForm({
                 {data.actionMode !== 'delete' && (
                   <PrimaryButton disabled={processing || isGeneratingComponentId}>{primaryActionLabel}</PrimaryButton>
                 )}
-                {data.actionMode !== 'create' && (
-                  <SecondaryButton type="button" onClick={deleteFromSemiFgLv2}>
+                {data.actionMode === 'delete' && (
+                  <DangerButton type="button" onClick={deleteFromSemiFgLv2}>
                     Delete
-                  </SecondaryButton>
+                  </DangerButton>
                 )}
               </div>
             </form>

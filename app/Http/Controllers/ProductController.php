@@ -17,6 +17,7 @@ use App\Models\FgMaterialDml;
 use App\Models\MasterMattypeFg;
 use App\Models\MasterUOM;
 use App\Models\MasterLogisitcSite;
+use App\Models\Proj12SemiFgLv1Id;
 use App\Models\Proj12SemiFgLv2Id;
 use App\Services\MasterCatLookup;
 use Illuminate\Http\JsonResponse;
@@ -239,6 +240,61 @@ class ProductController extends Controller
     ];
   }
 
+  protected function loadSemiFgLv1ByFgBomId(?string $fgBomId): ?array
+  {
+    $fgBomId = trim((string) $fgBomId);
+
+    if ($fgBomId === '') {
+      return null;
+    }
+
+    $row = Proj12SemiFgLv1Id::query()
+      ->selectRaw('
+        TRIM(FG_BOM_ID) as fg_bom_id,
+        TRIM(SEMI_FG_LV1_ID) as semi_fg_lv1_id,
+        TRIM(DESC_SEMI_FG_LV1_ID) as desc_semi_fg_lv1_id,
+        TRIM(FULL_DESC_SEMI_FG_LV1_EN) as full_desc_semi_fg_lv1_en,
+        TRIM(FULL_DESC_SEMI_FG_LV1_TH) as full_desc_semi_fg_lv1_th,
+        TRIM(MATTYPE_SEMI_FG_L1ID) as mattype_semi_fg_l1id,
+        TRIM(SUB_MATTYPE_SEMI_FG_L1ID) as sub_mattype_semi_fg_l1id,
+        TRIM(UOM_SEMI_FG_L1ID) as uom_semi_fg_l1id,
+        TRIM(MATERIAL_ID_FG_1) as material_id_fg_1,
+        TRIM(SITE) as site,
+        TRIM(STATUS_ROW) as status_row
+      ')
+      ->whereRaw('TRIM(FG_BOM_ID) = ?', [$fgBomId])
+      ->first();
+
+    if (!$row) {
+      Log::debug('product.load-semi-fg-lv1.not-found', [
+        'fgBomId' => $fgBomId,
+      ]);
+      return null;
+    }
+
+    $semiFgLv1 = [
+      'id' => trim((string) ($row->semi_fg_lv1_id ?? '')),
+      'desc' => trim((string) ($row->desc_semi_fg_lv1_id ?? '')),
+      'searchDesc' => trim((string) ($row->desc_semi_fg_lv1_id ?? '')),
+      'fullDescEn' => trim((string) ($row->full_desc_semi_fg_lv1_en ?? '')),
+      'fullDescTh' => trim((string) ($row->full_desc_semi_fg_lv1_th ?? '')),
+      'uom' => trim((string) ($row->uom_semi_fg_l1id ?? '')),
+      'mattype' => trim((string) ($row->mattype_semi_fg_l1id ?? '')),
+      'subMattype' => trim((string) ($row->sub_mattype_semi_fg_l1id ?? '')),
+      'materialIdFg1' => trim((string) ($row->material_id_fg_1 ?? '')),
+      'site' => trim((string) ($row->site ?? '')),
+      'components' => [],
+      'statusRow' => trim((string) ($row->status_row ?? '')),
+    ];
+
+    Log::debug('product.load-semi-fg-lv1.found', [
+      'fgBomId' => $fgBomId,
+      'semiFgLv1' => $semiFgLv1,
+    ]);
+
+    return $semiFgLv1;
+  }
+
   protected function loadSemiFgLv2ByFgBomId(?string $fgBomId): ?array
   {
     $fgBomId = trim((string) $fgBomId);
@@ -292,31 +348,6 @@ class ProductController extends Controller
     ]);
 
     return $semiFgLv2;
-  }
-
-  protected function loadSemiFgLv1DraftByFgMaterialId(?string $fgMaterialId): ?array
-  {
-    $fgMaterialId = trim((string) $fgMaterialId);
-
-    if ($fgMaterialId === '') {
-      return null;
-    }
-
-    $draft = session()->get("product_drafts.{$fgMaterialId}.semiFgLv1");
-
-    if (!is_array($draft)) {
-      return null;
-    }
-
-    return [
-      'id' => trim((string) ($draft['id'] ?? '')),
-      'desc' => trim((string) ($draft['desc'] ?? '')),
-      'searchDesc' => trim((string) ($draft['searchDesc'] ?? $draft['desc'] ?? '')),
-      'fullDescEn' => trim((string) ($draft['fullDescEn'] ?? '')),
-      'fullDescTh' => trim((string) ($draft['fullDescTh'] ?? '')),
-      'uom' => trim((string) ($draft['uom'] ?? '')),
-      'components' => is_array($draft['components'] ?? null) ? $draft['components'] : [],
-    ];
   }
 
   protected function loadFgComponentsByMaterialId(?string $materialId, ?string $bomId = null): array
@@ -417,7 +448,7 @@ class ProductController extends Controller
       $inputData['bomId'] ?? null
     );
     $inputData['semiFgLv2'] = $this->loadSemiFgLv2ByFgBomId($inputData['bomId'] ?? null);
-    $inputData['semiFgLv1'] = $this->loadSemiFgLv1DraftByFgMaterialId($inputData['materialId'] ?? null);
+    $inputData['semiFgLv1'] = $this->loadSemiFgLv1ByFgBomId($inputData['bomId'] ?? null);
 
     Log::debug('product.load-fg-material-input.found', [
       'materialId' => $materialId,

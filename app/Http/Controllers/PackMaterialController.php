@@ -16,6 +16,8 @@ use App\Models\Proj12CompSemiLv1V;
 use App\Models\Proj12CompSemiLv2V;
 use App\Models\Proj12DmlFgComp;
 use App\Models\Proj12DmlSemiL2CompM5;
+use App\Models\Proj12MasterBomSemiLv1V;
+use App\Models\Proj12SemiFgLv2Id;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -171,6 +173,25 @@ class PackMaterialController extends Controller
       'materialId' => $materialId,
       'bomId' => $pick($materialSource, ['fg_bom_id', 'bom_fg_id', 'bom_id']),
       'bomDesc' => $pick($materialSource, ['desc_fg_bom_id', 'bom_fg_desc', 'desc_bom_id']),
+    ];
+  }
+
+  protected function resolveFgBomByMaterialId(?string $materialId): array
+  {
+    $materialId = trim((string) $materialId);
+
+    if ($materialId === '') {
+      return [
+        'fgBomId' => '',
+        'fgBomDesc' => '',
+      ];
+    }
+
+    $materialInput = $this->loadFgMaterialInputByMaterialId($materialId);
+
+    return [
+      'fgBomId' => trim((string) ($materialInput['bomId'] ?? '')),
+      'fgBomDesc' => trim((string) ($materialInput['bomDesc'] ?? '')),
     ];
   }
 
@@ -410,6 +431,196 @@ class PackMaterialController extends Controller
 
       return null;
     }
+  }
+
+  protected function loadSemiFgLv1ComponentByBomAndComponentId(?string $levelMaterialId, ?string $componentId): ?array
+  {
+    $levelMaterialId = trim((string) $levelMaterialId);
+    $componentId = trim((string) $componentId);
+
+    if ($levelMaterialId === '' || $componentId === '') {
+      return null;
+    }
+
+    try {
+      $sampleRow = Proj12CompSemiLv1V::query()->selectRaw('*')->first();
+      if (!$sampleRow) {
+        return null;
+      }
+
+      $availableColumns = array_change_key_case((array) ($sampleRow instanceof \Illuminate\Database\Eloquent\Model ? $sampleRow->getAttributes() : $sampleRow), CASE_UPPER);
+      $candidateColumns = [
+        ['bom' => 'SEMI_FG_LV1_BOM_NO', 'component' => 'MATERIAL_ID_M5'],
+        ['bom' => 'SEMI_FG_L1_BOM_NO', 'component' => 'MATERIAL_ID_M5'],
+        ['bom' => 'BOM_SEMI_L1_NO', 'component' => 'MATERIAL_ID_M5'],
+        ['bom' => 'BOM_NO', 'component' => 'MATERIAL_ID_M5'],
+        ['bom' => 'SEMI_FG_LV1_BOM_NO', 'component' => 'COMPONENT_ID'],
+      ];
+
+      foreach ($candidateColumns as $candidate) {
+        if (!array_key_exists($candidate['bom'], $availableColumns) || !array_key_exists($candidate['component'], $availableColumns)) {
+          continue;
+        }
+
+        $row = Proj12CompSemiLv1V::query()
+          ->selectRaw('*')
+          ->whereRaw("TRIM({$candidate['bom']}) = ?", [$levelMaterialId])
+          ->whereRaw("TRIM({$candidate['component']}) = ?", [$componentId])
+          ->first();
+
+        if (!$row) {
+          continue;
+        }
+
+        $source = array_change_key_case(($row instanceof \Illuminate\Database\Eloquent\Model ? $row->getAttributes() : (array) $row), CASE_LOWER);
+        $pick = function (array $source, array $keys, string $default = ''): string {
+          foreach ($keys as $key) {
+            if (array_key_exists($key, $source) && trim((string) $source[$key]) !== '') {
+              return trim((string) $source[$key]);
+            }
+          }
+
+          return $default;
+        };
+
+        $componentIdValue = $pick($source, ['component_id', 'material_id_m5', 'comp_id'], $componentId);
+
+        return [
+          'componentId' => $componentIdValue,
+          'productSubCat' => $componentIdValue !== '' ? substr($componentIdValue, 0, 4) : '',
+          'productCat' => $componentIdValue !== '' ? substr($componentIdValue, 0, 2) : '',
+          'searchDesc' => $pick($source, ['search_description', 'search_desc', 'description']),
+          'fullDescEn' => $pick($source, ['full_description_en', 'comp_desc_en', 'description_en']),
+          'fullDescTh' => $pick($source, ['full_description_th', 'comp_desc_th', 'description_th']),
+          'uom' => $pick($source, ['uom', 'uom_code', 'code_uom']),
+          'status' => $pick($source, ['status', 'status_row', 'row_status'], 'INS'),
+        ];
+      }
+    } catch (\Throwable $exception) {
+      Log::warning('packmaterial.semi-fg-lv1-component.lookup.failed', [
+        'levelMaterialId' => $levelMaterialId,
+        'componentId' => $componentId,
+        'error' => $exception->getMessage(),
+      ]);
+    }
+
+    return null;
+  }
+
+  protected function loadSemiFgLv2ByMaterialId(?string $levelMaterialId): ?array
+  {
+    $levelMaterialId = trim((string) $levelMaterialId);
+
+    if ($levelMaterialId === '') {
+      return null;
+    }
+
+    $row = Proj12SemiFgLv2Id::query()
+      ->selectRaw('
+        TRIM(FG_BOM_ID) as fg_bom_id,
+        TRIM(SEMI_FG_LV2_ID) as semi_fg_lv2_id,
+        TRIM(DESC_SEMI_FG_LV2_ID) as desc_semi_fg_lv2_id,
+        TRIM(FULL_DESC_SEMI_FG_LV2_EN) as full_desc_semi_fg_lv2_en,
+        TRIM(FULL_DESC_SEMI_FG_LV2_TH) as full_desc_semi_fg_lv2_th,
+        TRIM(MATTYPE_SEMI_FG_L2ID) as mattype_semi_fg_l2id,
+        TRIM(SUB_MATTYPE_SEMI_FG_L2ID) as sub_mattype_semi_fg_l2id,
+        TRIM(UOM_SEMI_FG_L2ID) as uom_semi_fg_l2id,
+        TRIM(MATERIAL_ID_FG_1) as material_id_fg_1,
+        TRIM(SITE) as site,
+        TRIM(STATUS_ROW) as status_row
+      ')
+      ->whereRaw('TRIM(SEMI_FG_LV2_ID) = ?', [$levelMaterialId])
+      ->first();
+
+    if (!$row) {
+      return null;
+    }
+
+    return [
+      'fgBomId' => trim((string) ($row->fg_bom_id ?? '')),
+      'bomId' => '',
+      'bomDesc' => '',
+      'id' => trim((string) ($row->semi_fg_lv2_id ?? '')),
+      'desc' => trim((string) ($row->desc_semi_fg_lv2_id ?? '')),
+      'searchDesc' => trim((string) ($row->desc_semi_fg_lv2_id ?? '')),
+      'fullDescEn' => trim((string) ($row->full_desc_semi_fg_lv2_en ?? '')),
+      'fullDescTh' => trim((string) ($row->full_desc_semi_fg_lv2_th ?? '')),
+      'uom' => trim((string) ($row->uom_semi_fg_l2id ?? '')),
+      'mattype' => trim((string) ($row->mattype_semi_fg_l2id ?? '')),
+      'subMattype' => trim((string) ($row->sub_mattype_semi_fg_l2id ?? '')),
+      'materialIdFg1' => trim((string) ($row->material_id_fg_1 ?? '')),
+      'fgMaterialId' => trim((string) ($row->material_id_fg_1 ?? '')),
+      'site' => trim((string) ($row->site ?? '')),
+      'components' => [],
+      'statusRow' => trim((string) ($row->status_row ?? '')),
+    ];
+  }
+
+  protected function loadSemiFgLv1ByMaterialId(?string $levelMaterialId): ?array
+  {
+    $levelMaterialId = trim((string) $levelMaterialId);
+
+    if ($levelMaterialId === '') {
+      return null;
+    }
+
+    $sampleRow = Proj12MasterBomSemiLv1V::query()->selectRaw('*')->first();
+    if (!$sampleRow) {
+      return null;
+    }
+
+    $availableColumns = array_change_key_case((array) ($sampleRow instanceof \Illuminate\Database\Eloquent\Model ? $sampleRow->getAttributes() : $sampleRow), CASE_UPPER);
+    $candidateColumns = [
+      ['id' => 'SEMI_FG_LV1_ID', 'desc' => 'DESC_SEMI_FG_LV1_ID', 'full_en' => 'FULL_DESC_SEMI_FG_LV1_EN', 'full_th' => 'FULL_DESC_SEMI_FG_LV1_TH', 'uom' => 'UOM_SEMI_FG_L1ID', 'fg_bom_id' => 'FG_BOM_ID', 'fg_material_id' => 'MATERIAL_ID_FG_1', 'site' => 'SITE', 'status_row' => 'STATUS_ROW'],
+      ['id' => 'SEMI_FG_L1_ID', 'desc' => 'DESC_SEMI_FG_L1_ID', 'full_en' => 'FULL_DESC_SEMI_FG_L1_EN', 'full_th' => 'FULL_DESC_SEMI_FG_L1_TH', 'uom' => 'UOM_SEMI_FG_L1ID', 'fg_bom_id' => 'FG_BOM_ID', 'fg_material_id' => 'MATERIAL_ID_FG_1', 'site' => 'SITE', 'status_row' => 'STATUS_ROW'],
+      ['id' => 'SEMI_FG_L1ID', 'desc' => 'DESC_SEMI_FG_L1ID', 'full_en' => 'FULL_DESC_SEMI_FG_L1_EN', 'full_th' => 'FULL_DESC_SEMI_FG_L1_TH', 'uom' => 'UOM_SEMI_FG_L1ID', 'fg_bom_id' => 'FG_BOM_ID', 'fg_material_id' => 'MATERIAL_ID_FG_1', 'site' => 'SITE', 'status_row' => 'STATUS_ROW'],
+    ];
+
+    foreach ($candidateColumns as $candidate) {
+      if (!array_key_exists($candidate['id'], $availableColumns)) {
+        continue;
+      }
+
+      $row = Proj12MasterBomSemiLv1V::query()
+        ->selectRaw('*')
+        ->whereRaw("TRIM({$candidate['id']}) = ?", [$levelMaterialId])
+        ->first();
+
+      if (!$row) {
+        continue;
+      }
+
+      $source = array_change_key_case(($row instanceof \Illuminate\Database\Eloquent\Model ? $row->getAttributes() : (array) $row), CASE_LOWER);
+      $pick = function (array $source, array $keys, string $default = ''): string {
+        foreach ($keys as $key) {
+          if (array_key_exists($key, $source) && trim((string) $source[$key]) !== '') {
+            return trim((string) $source[$key]);
+          }
+        }
+        return $default;
+      };
+
+      return [
+        'fgBomId' => $pick($source, [$candidate['fg_bom_id']]),
+        'bomId' => '',
+        'bomDesc' => '',
+        'id' => $pick($source, [$candidate['id']], $levelMaterialId),
+        'desc' => $pick($source, [$candidate['desc']]),
+        'searchDesc' => $pick($source, [$candidate['desc']]),
+        'fullDescEn' => $pick($source, [$candidate['full_en']]),
+        'fullDescTh' => $pick($source, [$candidate['full_th']]),
+        'uom' => $pick($source, [$candidate['uom']]),
+        'mattype' => '1',
+        'subMattype' => '1',
+        'materialIdFg1' => $pick($source, [$candidate['fg_material_id']]),
+        'fgMaterialId' => $pick($source, [$candidate['fg_material_id']]),
+        'site' => $pick($source, [$candidate['site']]),
+        'components' => [],
+        'statusRow' => $pick($source, [$candidate['status_row']]),
+      ];
+    }
+
+    return null;
   }
 
   protected function loadFgComponentByMaterialAndComponentId(?string $materialId, ?string $componentId): ?array
@@ -661,26 +872,9 @@ class PackMaterialController extends Controller
     if ($ownerLevel === 'semiFgLv1') {
       $fgDetail['semiFgLv1'] = array_merge($fgDetail['semiFgLv1'] ?? [], $ownerDetail, ['components' => $components]);
       $this->persistFgDraft($request, $fgDetail);
-      $referentMaterialId = trim((string) (
-        $request->get('referentMaterialId')
-        ?: $request->get('fgMaterialId')
-        ?: $request->get('materialId')
-        ?: $fgDetail['materialId']
-        ?: ''
-      ));
       return Redirect::route('material-levels.semi-fg-lv1.new', [
         'mode' => 'view',
-        'fgDetail' => $fgDetail,
-        'referentMaterialId' => $referentMaterialId !== '' ? $referentMaterialId : null,
-        'materialId' => $referentMaterialId !== '' ? $referentMaterialId : ($fgDetail['materialId'] ?? null),
-        'bomId' => $fgDetail['bomId'] ?? null,
-        'bomDesc' => $fgDetail['bomDesc'] ?? null,
         'levelMaterialId' => $ownerDetail['id'] ?? null,
-        'searchDesc' => $ownerDetail['searchDesc'] ?? null,
-        'fullDescEn' => $ownerDetail['fullDescEn'] ?? null,
-        'fullDescTh' => $ownerDetail['fullDescTh'] ?? null,
-        'uom' => $ownerDetail['uom'] ?? null,
-        'components' => $components,
       ]);
     }
 
@@ -708,16 +902,7 @@ class PackMaterialController extends Controller
     $this->persistFgDraft($request, $fgDetail);
     return Redirect::route('material-levels.semi-fg-lv2.new', [
       'mode' => 'view',
-      'fgDetail' => $fgDetail,
-      'materialId' => $fgDetail['materialId'] ?? null,
-      'bomId' => $fgDetail['bomId'] ?? null,
-      'bomDesc' => $fgDetail['bomDesc'] ?? null,
       'levelMaterialId' => $ownerDetail['id'] ?? null,
-      'searchDesc' => $ownerDetail['searchDesc'] ?? null,
-      'fullDescEn' => $ownerDetail['fullDescEn'] ?? null,
-      'fullDescTh' => $ownerDetail['fullDescTh'] ?? null,
-      'uom' => $ownerDetail['uom'] ?? null,
-      'components' => $components,
     ]);
   }
 
@@ -731,22 +916,110 @@ class PackMaterialController extends Controller
     $generatedBomId = trim((string) $request->bomId);
     $componentId = trim((string) $request->componentId);
     $loadedComponent = null;
+    $resolvedSemiFgLv1 = null;
+    $resolvedSemiFgLv2 = null;
+    $resolvedSemiFgLv1MaterialId = '';
+    $resolvedSemiFgLv1FgBomId = '';
+    $resolvedSemiFgLv1FgBomDesc = '';
+    $resolvedSemiFgLv2MaterialId = '';
+    $resolvedSemiFgLv2FgBomId = '';
+    $resolvedSemiFgLv2FgBomDesc = '';
+
+    if ($ownerLevel === 'semiFgLv1') {
+      $resolvedSemiFgLv1MaterialId = trim((string) ($request->levelMaterialId ?: $request->materialId ?: $request->fgMaterialId ?: ''));
+      $resolvedSemiFgLv1 = $this->loadSemiFgLv1ByMaterialId($resolvedSemiFgLv1MaterialId);
+
+      if (is_array($resolvedSemiFgLv1)) {
+        $resolvedFgMaterialId = trim((string) (
+          $request->fgMaterialId
+          ?: $request->referentMaterialId
+          ?: $resolvedSemiFgLv1['fgMaterialId']
+          ?: ''
+        ));
+
+        if ($resolvedFgMaterialId !== '') {
+          $resolvedFgBom = $this->resolveFgBomByMaterialId($resolvedFgMaterialId);
+          $resolvedSemiFgLv1FgBomId = trim((string) ($request->fgBomId ?: $request->bomId ?: $resolvedSemiFgLv1['fgBomId'] ?: ($resolvedFgBom['fgBomId'] ?? '')));
+          $resolvedSemiFgLv1FgBomDesc = trim((string) ($request->fgBomDesc ?: ($resolvedFgBom['fgBomDesc'] ?? '')));
+          $request = $request->merge([
+            'fgMaterialId' => $resolvedFgMaterialId,
+            'referentMaterialId' => $resolvedFgMaterialId,
+            'fgBomId' => $resolvedSemiFgLv1FgBomId,
+            'fgBomDesc' => $resolvedSemiFgLv1FgBomDesc,
+          ]);
+        }
+
+        if (($resolvedSemiFgLv1['site'] ?? '') !== '') {
+          $request = $request->merge([
+            'site' => $request->site ?: $resolvedSemiFgLv1['site'],
+          ]);
+        }
+
+        if (($resolvedSemiFgLv1['id'] ?? '') !== '') {
+          $request = $request->merge([
+            'levelMaterialId' => $resolvedSemiFgLv1['id'],
+          ]);
+        }
+      }
+    }
+
+    if ($ownerLevel === 'semiFgLv2') {
+      $resolvedSemiFgLv2MaterialId = trim((string) ($request->levelMaterialId ?: $request->materialId ?: $request->fgMaterialId ?: ''));
+      $resolvedSemiFgLv2 = $this->loadSemiFgLv2ByMaterialId($resolvedSemiFgLv2MaterialId);
+      if (is_array($resolvedSemiFgLv2)) {
+        $resolvedFgMaterialId = trim((string) (
+          $request->fgMaterialId
+          ?: $request->referentMaterialId
+          ?: $resolvedSemiFgLv2['fgMaterialId']
+          ?: $resolvedSemiFgLv2['materialIdFg1']
+          ?: ''
+        ));
+        if ($resolvedFgMaterialId !== '') {
+          $resolvedFgBom = $this->resolveFgBomByMaterialId($resolvedFgMaterialId);
+          $resolvedSemiFgLv2FgBomId = trim((string) ($request->fgBomId ?: $request->bomId ?: $resolvedSemiFgLv2['fgBomId'] ?: ($resolvedFgBom['fgBomId'] ?? '')));
+          $resolvedSemiFgLv2FgBomDesc = trim((string) ($request->fgBomDesc ?: ($resolvedFgBom['fgBomDesc'] ?? '')));
+          $request = $request->merge([
+            'fgMaterialId' => $resolvedFgMaterialId,
+            'referentMaterialId' => $resolvedFgMaterialId,
+            'fgBomId' => $resolvedSemiFgLv2FgBomId,
+            'fgBomDesc' => $resolvedSemiFgLv2FgBomDesc,
+          ]);
+        }
+        if (($resolvedSemiFgLv2['site'] ?? '') !== '') {
+          $request = $request->merge([
+            'site' => $request->site ?: $resolvedSemiFgLv2['site'],
+          ]);
+        }
+        if ($resolvedSemiFgLv2['id'] ?? false) {
+          $request = $request->merge([
+            'levelMaterialId' => $resolvedSemiFgLv2['id'],
+          ]);
+        }
+      }
+    }
 
     if ($ownerLevel === 'fg' && in_array($actionMode, ['edit', 'delete'], true) && $referentMaterialId !== '' && $componentId !== '') {
       $loadedComponent = $this->loadFgComponentByMaterialAndComponentId($referentMaterialId, $componentId);
     }
 
-    if ($ownerLevel === 'semiFgLv2' && $actionMode === 'edit' && $componentId !== '') {
+    if ($ownerLevel === 'semiFgLv2' && in_array($actionMode, ['edit', 'delete'], true) && $componentId !== '') {
       $loadedComponent = $this->loadSemiFgLv2ComponentByBomAndComponentId(
         $request->get('levelMaterialId') ?: $request->get('materialId'),
         $componentId
       );
     }
 
-    if (in_array($ownerLevel, ['fg', 'semiFgLv2'], true) && $actionMode === 'create' && $generatedBomId === '') {
+    if ($ownerLevel === 'semiFgLv1' && in_array($actionMode, ['edit', 'delete'], true) && $componentId !== '') {
+      $loadedComponent = $this->loadSemiFgLv1ComponentByBomAndComponentId(
+        $request->get('levelMaterialId') ?: $request->get('materialId'),
+        $componentId
+      );
+    }
+
+    if (in_array($ownerLevel, ['fg', 'semiFgLv1', 'semiFgLv2'], true) && $actionMode === 'create' && $generatedBomId === '') {
       if ($ownerLevel === 'semiFgLv2') {
         $fgMaterialId = trim((string) ($request->fgMaterialId ?: $referentMaterialId));
-        $fgBomId = trim((string) ($request->fgBomId ?: $request->bomId));
+        $fgBomId = trim((string) ($request->fgBomId ?: $request->bomId ?: $resolvedSemiFgLv2FgBomId));
         if ($fgBomId === '' && $fgMaterialId !== '') {
           $fgInput = $this->loadFgMaterialInputByMaterialId($fgMaterialId);
           $fgBomId = trim((string) ($fgInput['bomId'] ?? ''));
@@ -761,6 +1034,35 @@ class PackMaterialController extends Controller
 
         if ($generated['error'] !== '') {
           Log::warning('packmaterial.generate-semi-fg-lv2-bom-id.failed', [
+            'fgMaterialId' => $fgMaterialId,
+            'fgBomId' => $fgBomId,
+            'error' => $generated['error'],
+          ]);
+        }
+
+        $generatedBomId = $generated['bomId'];
+        if ($generated['levelMaterialId'] !== '') {
+          $request = $request->merge([
+            'levelMaterialId' => $generated['levelMaterialId'],
+          ]);
+        }
+      } elseif ($ownerLevel === 'semiFgLv1') {
+        $fgMaterialId = trim((string) ($request->fgMaterialId ?: $referentMaterialId));
+        $fgBomId = trim((string) ($request->fgBomId ?: $request->bomId ?: $resolvedSemiFgLv1FgBomId));
+        if ($fgBomId === '' && $fgMaterialId !== '') {
+          $fgInput = $this->loadFgMaterialInputByMaterialId($fgMaterialId);
+          $fgBomId = trim((string) ($fgInput['bomId'] ?? ''));
+        }
+
+        $generated = $this->generateSemiFgLv2BomId(
+          $fgMaterialId,
+          $fgBomId,
+          $request->mattype ?: '1',
+          $request->subMattype ?: '0'
+        );
+
+        if ($generated['error'] !== '') {
+          Log::warning('packmaterial.generate-semi-fg-lv1-bom-id.failed', [
             'fgMaterialId' => $fgMaterialId,
             'fgBomId' => $fgBomId,
             'error' => $generated['error'],
@@ -789,44 +1091,84 @@ class PackMaterialController extends Controller
       }
     }
 
+    $resolvedBackRoute = $ownerLevel === 'semiFgLv2'
+      ? ($request->backRoute ?: 'material-levels.semi-fg-lv2.new')
+      : ($ownerLevel === 'semiFgLv1'
+        ? ($request->backRoute ?: 'material-levels.semi-fg-lv1.new')
+        : ($request->backRoute ?: 'product.view'));
+    $resolvedFgMaterialId = $ownerLevel === 'semiFgLv2'
+      ? ($request->fgMaterialId ?: $request->referentMaterialId ?: $request->materialId ?: '')
+      : ($ownerLevel === 'semiFgLv1'
+        ? ($request->fgMaterialId ?: $request->referentMaterialId ?: $request->materialId ?: '')
+        : $referentMaterialId);
+    $resolvedReferentMaterialId = $ownerLevel === 'semiFgLv2'
+      ? ($request->referentMaterialId ?: $request->fgMaterialId ?: $request->materialId ?: '')
+      : ($ownerLevel === 'semiFgLv1'
+        ? ($request->referentMaterialId ?: $request->fgMaterialId ?: $request->materialId ?: '')
+        : $referentMaterialId);
+    $resolvedLevelMaterialId = $ownerLevel === 'semiFgLv2'
+      ? ($request->materialId ?: $request->levelMaterialId ?: '')
+      : ($ownerLevel === 'semiFgLv1'
+        ? ($request->materialId ?: $request->levelMaterialId ?: '')
+        : $referentMaterialId);
+    $resolvedBOMId = $ownerLevel === 'semiFgLv2'
+      ? ($request->levelMaterialId ?: $request->get('materialId') ?: $generatedBomId)
+      : ($ownerLevel === 'semiFgLv1'
+        ? ($request->levelMaterialId ?: $request->get('materialId') ?: $generatedBomId)
+        : ($loadedComponent['bomId'] ?? $generatedBomId));
+    $resolvedBomDesc = $ownerLevel === 'semiFgLv2'
+      ? ($request->levelBomDesc ?: $request->bomDesc ?: $resolvedSemiFgLv2FgBomDesc ?: '')
+      : ($ownerLevel === 'semiFgLv1'
+        ? ($request->levelBomDesc ?: $request->bomDesc ?: $resolvedSemiFgLv1FgBomDesc ?: '')
+        : ($loadedComponent['bomDesc'] ?? $request->bomDesc));
+    $resolvedFgBomId = $ownerLevel === 'semiFgLv2'
+      ? ($request->fgBomId ?: $resolvedSemiFgLv2FgBomId)
+      : ($ownerLevel === 'semiFgLv1'
+        ? ($request->fgBomId ?: $resolvedSemiFgLv1FgBomId)
+        : $request->fgBomId);
+    $resolvedFgBomDesc = $ownerLevel === 'semiFgLv2'
+      ? ($request->fgBomDesc ?: $resolvedSemiFgLv2FgBomDesc)
+      : ($ownerLevel === 'semiFgLv1'
+        ? ($request->fgBomDesc ?: $resolvedSemiFgLv1FgBomDesc)
+        : $request->fgBomDesc);
+    $resolvedSite = $request->site
+      ?: data_get($request->get('fgDetail', []), 'semiFgLv2.site')
+      ?: data_get($request->get('ownerDetail', []), 'site')
+      ?: ($resolvedSemiFgLv2['site'] ?? '')
+      ?: ($resolvedSemiFgLv1['site'] ?? '')
+      ?: '';
+
     $InputData = [
-      "mattype"    => "5",
-      "subMattype" => $loadedComponent['subMattype'] ?? ($request->subMattype ?? ''),
+      'mattype' => '5',
+      'subMattype' => $loadedComponent['subMattype'] ?? ($request->subMattype ?? ''),
       'actionMode' => $actionMode,
       'ownerLevel' => $ownerLevel,
-      'backRoute' => $request->backRoute ?: 'product.view',
+      'backRoute' => $resolvedBackRoute,
       'backMaterialId' => $request->backMaterialId ?: $request->referentMaterialId ?: $request->materialId ?: $request->fgMaterialId,
-      'referentMaterialId' => $referentMaterialId,
-      'materialId' => $referentMaterialId,
-      'fgMaterialId' => $referentMaterialId,
-      'bomId'      => $ownerLevel === 'semiFgLv2'
-        ? ($request->levelMaterialId ?: $request->get('materialId') ?: $generatedBomId)
-        : ($loadedComponent['bomId'] ?? $generatedBomId),
-      'bomDesc'    => $ownerLevel === 'semiFgLv2'
-        ? ($request->levelBomDesc ?: $request->bomDesc ?: '')
-        : ($loadedComponent['bomDesc'] ?? $request->bomDesc),
-      'fgDetail'   => $request->get('fgDetail', []),
+      'referentMaterialId' => $resolvedReferentMaterialId,
+      'materialId' => $resolvedLevelMaterialId,
+      'fgMaterialId' => $resolvedFgMaterialId,
+      'bomId' => $resolvedBOMId,
+      'bomDesc' => $resolvedBomDesc,
+      'fgDetail' => $request->get('fgDetail', []),
       'ownerDetail' => $request->get('ownerDetail', []),
       'components' => $request->get('components', []),
-      'fgMaterialId' => $request->fgMaterialId ?: $referentMaterialId,
-      'fgBomId'    => $request->fgBomId,
-      'fgBomDesc'  => $request->fgBomDesc,
+      'fgMaterialId' => $resolvedFgMaterialId,
+      'fgBomId' => $resolvedFgBomId,
+      'fgBomDesc' => $resolvedFgBomDesc,
       'levelMaterialId' => $request->levelMaterialId ?: $request->get('materialId'),
       'levelSearchDesc' => $request->levelSearchDesc,
       'levelFullDescEn' => $request->levelFullDescEn,
       'levelFullDescTh' => $request->levelFullDescTh,
-      'levelUom'   => $request->levelUom,
-      'site' => $request->site
-        ?: data_get($request->get('fgDetail', []), 'semiFgLv2.site')
-        ?: data_get($request->get('ownerDetail', []), 'site')
-        ?: '',
+      'levelUom' => $request->levelUom,
+      'site' => $resolvedSite,
       'productCat' => $request->productCat ?: ($loadedComponent['productCat'] ?? ''),
       'productSubCat' => $request->productSubCat ?: ($loadedComponent['productSubCat'] ?? ''),
       'componentId' => $request->componentId ?: ($loadedComponent['componentId'] ?? $componentId),
       'searchDesc' => $request->searchDesc ?: ($loadedComponent['searchDesc'] ?? ''),
       'fullDescEn' => $request->fullDescEn ?: ($loadedComponent['fullDescEn'] ?? ''),
       'fullDescTh' => $request->fullDescTh ?: ($loadedComponent['fullDescTh'] ?? ''),
-      'uom'       => $request->uom ?: ($loadedComponent['uom'] ?? ''),
+      'uom' => $request->uom ?: ($loadedComponent['uom'] ?? ''),
     ];
 
     $uoms = $this->uoms;
@@ -916,11 +1258,49 @@ class PackMaterialController extends Controller
         'componentId' => $componentId,
       ]), $request->user()?->user_login, $request->user()?->role);
 
-      return Redirect::route($request->get('backRoute', 'material-levels.semi-fg-lv2.new'), [
-        'referentMaterialId' => $request->get('referentMaterialId') ?: $request->get('fgMaterialId') ?: $request->get('materialId'),
+      $backRoute = $request->get('backRoute', 'material-levels.semi-fg-lv2.new');
+
+      if ($backRoute === 'material-levels.semi-fg-lv2.new') {
+        return Redirect::route($backRoute, [
+          'mode' => 'view',
+          'levelMaterialId' => $request->get('levelMaterialId') ?: $request->get('materialId'),
+        ]);
+      }
+
+      return Redirect::route($backRoute, [
         'mode' => 'view',
         'levelMaterialId' => $request->get('levelMaterialId') ?: $request->get('materialId'),
-        'fgMaterialId' => $request->get('fgMaterialId') ?: $request->get('referentMaterialId') ?: $request->get('materialId'),
+        'fgDetail' => $request->get('fgDetail', []),
+        'ownerDetail' => $request->get('ownerDetail', []),
+        'components' => $components,
+      ]);
+    }
+
+    if ($request->get('ownerLevel', 'fg') === 'semiFgLv1') {
+      $components = $this->upsertComponent($request->get('components', []), [
+        'code' => $componentId,
+        'label' => $request->searchDesc ?: $request->fullDescEn ?: $componentId,
+        'status' => 'INS',
+        'searchDesc' => $request->searchDesc,
+        'fullDescEn' => $request->fullDescEn,
+        'fullDescTh' => $request->fullDescTh,
+        'uom' => $request->uom,
+        'productCat' => $request->productCat,
+        'productSubCat' => $request->productSubCat,
+      ]);
+
+      $backRoute = $request->get('backRoute', 'material-levels.semi-fg-lv1.new');
+
+      if ($backRoute === 'material-levels.semi-fg-lv1.new') {
+        return Redirect::route($backRoute, [
+          'mode' => 'view',
+          'levelMaterialId' => $request->get('levelMaterialId') ?: $request->get('materialId'),
+        ]);
+      }
+
+      return Redirect::route($backRoute, [
+        'mode' => 'view',
+        'levelMaterialId' => $request->get('levelMaterialId') ?: $request->get('materialId'),
         'fgDetail' => $request->get('fgDetail', []),
         'ownerDetail' => $request->get('ownerDetail', []),
         'components' => $components,

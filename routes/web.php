@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/material-levels/semi-fg-lv1', [MaterialLevelController::class, 'semiFgLevel1'])->name('material-levels.semi-fg-lv1.new');
     Route::patch('/material-levels/semi-fg-lv1', [MaterialLevelController::class, 'saveSemiFgLevel1'])->name('material-levels.semi-fg-lv1.save');
     Route::get('/material-levels/semi-fg-lv1/create-component', [MaterialLevelController::class, 'createComponentSemiFgLevel1'])->name('material-levels.semi-fg-lv1.create-component');
+    Route::get('/material-levels/semi-fg-lv1/generate', [MaterialLevelController::class, 'generateSemiFgLevel1'])->name('material-levels.semi-fg-lv1.generate');
 
     Route::get('/business-supply/new', [BusinessSupplyController::class, 'new'])->name('business-supply.new');
     Route::get('/business-supply/existing', [BusinessSupplyController::class, 'existing'])->name('business-supply.existing');
