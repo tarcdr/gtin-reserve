@@ -12,7 +12,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
     const roleLabel = user?.role ? user.role.toUpperCase() : 'USER';
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100 text-green-900 font-extrabold">
             <nav className="bg-white border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
@@ -24,7 +24,11 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                             </div>
 
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
-                                <NavLink href={route('dashboard')} active={route().current('dashboard')}>
+                                <NavLink
+                                    href={route('dashboard')}
+                                    active={route().current('dashboard')}
+                                    className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md px-2"
+                                >
                                     Dashboard
                                 </NavLink>
 
@@ -35,7 +39,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                                 <span className="rounded-md">
                                                     <button
                                                         type="button"
-                                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
+                                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-extrabold rounded-md text-gray-500 bg-white hover:bg-green-50 hover:text-green-800 focus:outline-none transition ease-in-out duration-150 text-green-900 font-extrabold"
                                                     >
                                                         Product(FG)-Report
 
@@ -59,7 +63,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                                 {/* <Dropdown.Link href={route('material.request')}>
                                                     Material Request
                                                 </Dropdown.Link> */}
-                                                <Dropdown.Link href={route('material.report')}>
+                                                <Dropdown.Link href={route('material.report')} className="text-green-900 font-extrabold hover:bg-green-50">
                                                     Material Confirm/Report
                                                 </Dropdown.Link>
                                             </Dropdown.Content>
@@ -73,7 +77,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                                 <span className="rounded-md">
                                                     <button
                                                         type="button"
-                                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
+                                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-extrabold rounded-md text-gray-500 bg-white hover:bg-green-50 hover:text-green-800 focus:outline-none transition ease-in-out duration-150 text-green-900 font-extrabold"
                                                     >
                                                         Business Supply
 
@@ -94,10 +98,10 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                             </Dropdown.Trigger>
 
                                             <Dropdown.Content>
-                                                <Dropdown.Link href={route('business-supply.new')}>
+                                                <Dropdown.Link href={route('business-supply.new')} className="text-green-900 font-extrabold hover:bg-green-50">
                                                     NEW BUSINESS SUPPLY
                                                 </Dropdown.Link>
-                                                <Dropdown.Link href={route('business-supply.existing')}>
+                                                <Dropdown.Link href={route('business-supply.existing')} className="text-green-900 font-extrabold hover:bg-green-50">
                                                     EXISTING BUSINESS SUPPLY
                                                 </Dropdown.Link>
                                             </Dropdown.Content>
@@ -111,7 +115,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                                 <span className="rounded-md">
                                                     <button
                                                         type="button"
-                                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
+                                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-extrabold rounded-md text-gray-500 bg-white hover:bg-green-50 hover:text-green-800 focus:outline-none transition ease-in-out duration-150 text-green-900 font-extrabold"
                                                     >
                                                         GTIN
 
@@ -132,21 +136,29 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                             </Dropdown.Trigger>
 
                                             <Dropdown.Content>
-                                                <Dropdown.Link href={route('request')}>
+                                                <Dropdown.Link href={route('request')} className="text-green-900 font-extrabold hover:bg-green-50">
                                                     Request
                                                 </Dropdown.Link>
-                                                <Dropdown.Link href={route('report')}>
+                                                <Dropdown.Link href={route('report')} className="text-green-900 font-extrabold hover:bg-green-50">
                                                     Confirm/Report
                                                 </Dropdown.Link>
                                             </Dropdown.Content>
                                         </Dropdown>
                                     </div>
                                 </div>
-                                <NavLink href={route('rm.report')} active={route().current('rm.report')}>
+                                <NavLink
+                                    href={route('rm.report')}
+                                    active={route().current('rm.report')}
+                                    className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md px-2"
+                                >
                                     Export-to-SAP
                                 </NavLink>
                                 {isAdmin && (
-                                    <NavLink href={route('admin.users.index')} active={route().current('admin.users.index')}>
+                                    <NavLink
+                                        href={route('admin.users.index')}
+                                        active={route().current('admin.users.index')}
+                                        className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md px-2"
+                                    >
                                         Account Management
                                     </NavLink>
                                 )}
@@ -160,7 +172,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                         <span className="inline-flex rounded-md">
                                             <button
                                                 type="button"
-                                                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
+                                                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-extrabold rounded-md text-gray-500 bg-white hover:bg-green-50 hover:text-green-800 focus:outline-none transition ease-in-out duration-150 text-green-900 font-extrabold"
                                             >
                                                 {`${user?.employee_name || '-'} (${roleLabel})`}
 
@@ -181,8 +193,10 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                     </Dropdown.Trigger>
 
                                     <Dropdown.Content>
-                                        <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
-                                        <Dropdown.Link href={route('logout')} method="post" as="button">
+                                        <Dropdown.Link href={route('profile.edit')} className="text-green-900 font-extrabold hover:bg-green-50">
+                                            Profile
+                                        </Dropdown.Link>
+                                        <Dropdown.Link href={route('logout')} method="post" as="button" className="text-green-900 font-extrabold hover:bg-green-50">
                                             Log Out
                                         </Dropdown.Link>
                                     </Dropdown.Content>
@@ -193,7 +207,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                         <div className="-mr-2 flex items-center sm:hidden">
                             <button
                                 onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
-                                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out"
+                                className="inline-flex items-center justify-center p-2 rounded-md text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:outline-none focus:bg-green-50 focus:text-green-800 transition duration-150 ease-in-out"
                             >
                                 <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                     <path
@@ -218,29 +232,57 @@ export default function Authenticated({ user, header, pageIdentity = null, child
 
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden'}>
                     <div className="pt-2 pb-3 space-y-1">
-                        <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
+                        <ResponsiveNavLink
+                            href={route('dashboard')}
+                            active={route().current('dashboard')}
+                            className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
+                        >
                             Dashboard
                         </ResponsiveNavLink>
                         {/* <ResponsiveNavLink href={route('material.request')} active={route().current('material.request')}>
                             Material/Request
                         </ResponsiveNavLink> */}
-                        <ResponsiveNavLink href={route('material.report')} active={route().current('material.report')}>
+                        <ResponsiveNavLink
+                            href={route('material.report')}
+                            active={route().current('material.report')}
+                            className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
+                        >
                             Material_Confirm/Report
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('request')} active={route().current('request')}>
+                        <ResponsiveNavLink
+                            href={route('request')}
+                            active={route().current('request')}
+                            className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
+                        >
                             GTIN/Request
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('business-supply.new')} active={route().current('business-supply.new')}>
+                        <ResponsiveNavLink
+                            href={route('business-supply.new')}
+                            active={route().current('business-supply.new')}
+                            className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
+                        >
                             NEW BUSINESS SUPPLY
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('business-supply.existing')} active={route().current('business-supply.existing')}>
+                        <ResponsiveNavLink
+                            href={route('business-supply.existing')}
+                            active={route().current('business-supply.existing')}
+                            className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
+                        >
                             EXISTING BUSINESS SUPPLY
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('report')} active={route().current('report')}>
+                        <ResponsiveNavLink
+                            href={route('report')}
+                            active={route().current('report')}
+                            className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
+                        >
                             GTIN_Confirm/Report
                         </ResponsiveNavLink>
                         {isAdmin && (
-                            <ResponsiveNavLink href={route('admin.users.index')} active={route().current('admin.users.index')}>
+                            <ResponsiveNavLink
+                                href={route('admin.users.index')}
+                                active={route().current('admin.users.index')}
+                                className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
+                            >
                                 Account Management
                             </ResponsiveNavLink>
                         )}
@@ -248,12 +290,22 @@ export default function Authenticated({ user, header, pageIdentity = null, child
 
                     <div className="pt-4 pb-1 border-t border-gray-200">
                         <div className="px-4">
-                            <div className="font-medium text-base text-gray-800">{`${user?.employee_name || '-'} (${roleLabel})`}</div>
+                            <div className="text-base text-green-900 font-extrabold">{`${user?.employee_name || '-'} (${roleLabel})`}</div>
                         </div>
 
                         <div className="mt-3 space-y-1">
-                            <ResponsiveNavLink href={route('profile.edit')}>Profile</ResponsiveNavLink>
-                            <ResponsiveNavLink method="post" href={route('logout')} as="button">
+                            <ResponsiveNavLink
+                                href={route('profile.edit')}
+                                className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
+                            >
+                                Profile
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink
+                                method="post"
+                                href={route('logout')}
+                                as="button"
+                                className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
+                            >
                                 Log Out
                             </ResponsiveNavLink>
                         </div>
