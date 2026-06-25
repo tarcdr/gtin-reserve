@@ -13,11 +13,8 @@ export default function BomMaterialForm({
   headerTitle,
   pageIdentity = null,
   InputData,
-  mattypes = [],
   subMattypes = [],
   uoms = [],
-  productCategories = [],
-  productSubCategories = [],
   submitRoute
 }) {
   const [isGeneratingComponentId, setIsGeneratingComponentId] = useState(false);
@@ -325,18 +322,12 @@ export default function BomMaterialForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <InputLabel htmlFor="mattype" value="Mattype" />
-                  <select
+                  <TextInput
                     id="mattype"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${data?.mattype !== '' ? 'bg-gray-100' : ''}`}
-                    onChange={(e) => setData('mattype', e.target.value)}
-                    defaultValue={data.mattype}
-                    disabled={data?.mattype !== ''}
-                  >
-                    <option value="">---- Select Mattype ----</option>
-                    {mattypes?.map((o) => (
-                      <option key={`mattype-code-${o.code}`} value={o.code}>{o.label}</option>
-                    ))}
-                  </select>
+                    className={`mt-1 block w-full bg-gray-100 ${!data.subMattype ? 'opacity-60' : ''}`}
+                    disabled
+                    value={data.mattype}
+                  />
 
                   <InputError className="mt-2" message={errors.mattype} />
                 </div>
@@ -349,7 +340,6 @@ export default function BomMaterialForm({
                     value={data.subMattype}
                     disabled={isSubMattypeLocked || isDeleteMode}
                   >
-                    <option value="">---- Select Sub Mattype ----</option>
                     {subMattypes?.map((o) => (
                       <option key={`subMattype-code-${o.code}`} value={o.code}>{getOptionLabel(o)}</option>
                     ))}

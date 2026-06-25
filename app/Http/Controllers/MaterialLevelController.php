@@ -18,6 +18,7 @@ use App\Models\Proj12MasterBomSemiLv1V;
 use App\Models\Proj12MasterBomSemiLv2V;
 use App\Models\Proj12DmlSemiL1CompM4;
 use App\Models\Proj12DmlSemiL2CompM5;
+use App\Models\Proj12SemiFgLv1Bom;
 use App\Models\Proj12SemiFgLv2Bom;
 use App\Models\Proj12SemiFgLv1Id;
 use App\Models\Proj12SemiFgLv2Id;

@@ -175,38 +175,6 @@ class ProductController extends Controller
       ->all();
   }
 
-  protected function draftKey(?string $materialId, ?string $bomId = null): ?string
-  {
-    $key = $materialId ?: $bomId;
-
-    return $key ? "product_drafts.{$key}" : null;
-  }
-
-  protected function mergeWithDraft(Request $request, array $inputData): array
-  {
-    $draftKey = $this->draftKey(
-      $request->get('materialId') ?: ($inputData['materialId'] ?? null),
-      $request->get('bomId') ?: ($inputData['bomId'] ?? null),
-    );
-
-    if (!$draftKey) {
-      return $inputData;
-    }
-
-    $draft = $request->session()->get($draftKey, []);
-
-    return array_replace($draft, array_filter($inputData, fn($value) => $value !== null));
-  }
-
-  protected function persistDraft(Request $request, array $inputData): void
-  {
-    $draftKey = $this->draftKey($inputData['materialId'] ?? null, $inputData['bomId'] ?? null);
-
-    if ($draftKey) {
-      $request->session()->put($draftKey, $inputData);
-    }
-  }
-
   protected function fgMaterialToInputData(object|array $row, ?object $bomRow = null): array
   {
     $materialSource = $row instanceof \Illuminate\Database\Eloquent\Model
@@ -556,13 +524,10 @@ class ProductController extends Controller
       return;
     }
 
-    FgBomDml::query()
-      ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId])
-      ->delete();
-
-    FgMaterialDml::query()
-      ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId])
-      ->delete();
+    $pdo = DB::connection('oracle')->getPdo();
+    $stmt = $pdo->prepare('BEGIN proj1_2_delete_fg(:p_mat_id); END;');
+    $stmt->bindValue(':p_mat_id', $materialId, PDO::PARAM_STR);
+    $stmt->execute();
   }
 
   protected function buildProductInput(Request $request): array
@@ -642,7 +607,6 @@ class ProductController extends Controller
       return $this->redirectToExistingSearch($request, "Material ID {$requestedMaterialId} not found.");
     }
 
-    $InputData = $InputData ?? $this->mergeWithDraft($request, $this->buildProductInput($request));
     Log::debug('product.view', [
       'requestMaterialId' => $request->get('materialId'),
       'resolvedInputData' => $InputData,
@@ -660,7 +624,6 @@ class ProductController extends Controller
     ]);
     $this->callSaveMatIdProcedure($InputData, $request->user()?->user_login, $request->user()?->role);
     $savedInputData = $this->assertFgMaterialSaved((string) ($InputData['materialId'] ?? ''));
-    $this->persistDraft($request, $InputData);
     Log::debug('product.create.redirect', [
       'materialId' => $InputData['materialId'] ?? null,
     ]);
@@ -673,9 +636,13 @@ class ProductController extends Controller
   {
     $brands = $this->brands;
     $mattypes = $this->fgMattypes();
+    $mattype = trim((string) $request->get('mattype', ''));
+    if ($mattype === '' && count($mattypes) > 0) {
+      $mattype = $mattypes[0]['code'] ?? '';
+    }
     $InputData = [
       'brand' => $request->brand,
-      'mattype' => $request->mattype,
+      'mattype' => $mattype,
       'subMattype' => $request->subMattype,
       'subMattypeOptions' => $this->normalizeSubMattypeOptions($request->get('subMattypeOptions', [])),
       'startStep' => $request->get('startStep'),
@@ -805,7 +772,6 @@ class ProductController extends Controller
       return $this->redirectToExistingSearch($request, "Material ID {$requestedMaterialId} not found.");
     }
 
-    $InputData = $InputData ?? $this->mergeWithDraft($request, $this->buildProductInput($request));
     $isDisabled = false;
     $isEditMode = true;
     return Inertia::render('Product/Detail', compact('InputData', 'brands', 'mattypes', 'sites', 'masterUom', 'finishGoods', 'isDisabled', 'isEditMode'));
@@ -912,7 +878,6 @@ class ProductController extends Controller
     ]);
     $this->callSaveMatIdProcedure($InputData, $request->user()?->user_login, $request->user()?->role);
     $savedInputData = $this->assertFgMaterialSaved((string) ($InputData['materialId'] ?? ''));
-    $this->persistDraft($request, $InputData);
     Log::debug('product.update.redirect', [
       'materialId' => $savedInputData['materialId'] ?? ($InputData['materialId'] ?? null),
     ]);
@@ -924,10 +889,6 @@ class ProductController extends Controller
   public function delete(Request $request): RedirectResponse
   {
     $this->deleteFgMaterial((string) $request->get('materialId'));
-    $draftKey = $this->draftKey($request->get('materialId'), $request->get('bomId'));
-    if ($draftKey) {
-      $request->session()->forget($draftKey);
-    }
 
     return Redirect::route('product.search');
   }
