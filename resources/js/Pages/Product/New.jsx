@@ -7,6 +7,7 @@ import { useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
+import { getAxiosErrorMessage, getFirstErrorMessage, getResponseErrorMessage } from '@/Utils/apiError';
 
 export default function ProductNew({ auth, brands = [], mattypes = [], sites = [], masterUom = [] }) {
   const [showSite, setShowSite] = useState(false);
@@ -97,11 +98,11 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
       });
 
       if (!response.ok) {
-        throw new Error('Unable to generate BOM ID.');
+        throw new Error(await getResponseErrorMessage(response, 'Unable to generate BOM ID.'));
       }
 
       const payload = await response.json();
-      const payloadError = (payload?.error || '').trim();
+      const payloadError = getFirstErrorMessage(payload, '');
       if (payloadError) {
         throw new Error(payloadError);
       }
@@ -116,7 +117,7 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
       setIsBomIdReady(true);
       clearErrors('site', 'bomId', 'bomDesc');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to generate BOM ID.';
+      const message = getAxiosErrorMessage(error, 'Unable to generate BOM ID.');
       setData('bomId', '');
       setIsBomIdReady(false);
       if (message === 'ERR-005') {
@@ -193,11 +194,11 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
         });
 
         if (!response.ok) {
-          throw new Error('Unable to generate Suggest Material ID.');
+          throw new Error(await getResponseErrorMessage(response, 'Unable to generate Suggest Material ID.'));
         }
 
         const payload = await response.json();
-        const payloadError = (payload?.error || '').trim();
+        const payloadError = getFirstErrorMessage(payload, '');
         if (payloadError) {
           throw new Error(payloadError);
         }
@@ -213,7 +214,7 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
         setIsBomIdReady(false);
         setStep(3);
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unable to generate Suggest Material ID.';
+        const message = getAxiosErrorMessage(error, 'Unable to generate Suggest Material ID.');
         setData('materialId', '');
         setData('bomId', '');
         setData('bomDesc', '');

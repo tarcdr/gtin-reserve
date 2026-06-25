@@ -7,6 +7,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import { useEffect, useState } from 'react';
 import DangerButton from './DangerButton';
+import { getAxiosErrorMessage, getFirstErrorMessage, getResponseErrorMessage } from '@/Utils/apiError';
 
 export default function BomMaterialForm({
   auth,
@@ -147,11 +148,11 @@ export default function BomMaterialForm({
       });
 
       if (!response.ok) {
-        throw new Error('Unable to generate Component ID.');
+        throw new Error(await getResponseErrorMessage(response, 'Unable to generate Component ID.'));
       }
 
       const payload = await response.json();
-      const payloadError = (payload?.error || '').trim();
+      const payloadError = getFirstErrorMessage(payload, '');
       if (payloadError) {
         throw new Error(payloadError);
       }
@@ -165,7 +166,7 @@ export default function BomMaterialForm({
       clearErrors('componentId');
     } catch (error) {
       setData('componentId', '');
-      setError('componentId', 'Unable to generate Component ID.');
+      setError('componentId', getAxiosErrorMessage(error, 'Unable to generate Component ID.'));
     } finally {
       setIsGeneratingComponentId(false);
     }
@@ -192,7 +193,7 @@ export default function BomMaterialForm({
     }
   }, [data.subMattype, data.productCat, data.productSubCat]);
 
-  const backToSemiFgLv2 = () => {
+  const backToSemiFgLv = () => {
     if (data.ownerLevel === 'fg') {
       router.get(route(data.backRoute || 'product.view'), {
         materialId: data.backMaterialId || data.fgMaterialId || data.materialId || data.backMaterialId,
@@ -203,7 +204,7 @@ export default function BomMaterialForm({
     if (data.ownerLevel === 'semiFgLv2') {
       router.get(route(data.backRoute || 'material-levels.semi-fg-lv2.new'), {
         mode: 'view',
-        levelMaterialId: data.levelMaterialId || data.materialId || '',
+        levelMaterialId: data.backMaterialId || data.levelMaterialId || data.materialId || '',
       });
       return;
     }
@@ -211,7 +212,7 @@ export default function BomMaterialForm({
     if (data.ownerLevel === 'semiFgLv1') {
       router.get(route(data.backRoute || 'material-levels.semi-fg-lv1.new'), {
         mode: 'view',
-        levelMaterialId: data.levelMaterialId || data.materialId || '',
+        levelMaterialId: data.backMaterialId || data.levelMaterialId || data.materialId || '',
       });
       return;
     }
@@ -248,7 +249,7 @@ export default function BomMaterialForm({
     if (data.ownerLevel === 'semiFgLv2') {
       router.get(route(data.backRoute || 'material-levels.semi-fg-lv2.new'), {
         mode: 'view',
-        levelMaterialId: data.levelMaterialId || data.materialId || '',
+        levelMaterialId: data.backMaterialId || data.levelMaterialId || data.materialId || '',
       });
       return;
     }
@@ -256,7 +257,7 @@ export default function BomMaterialForm({
     if (data.ownerLevel === 'semiFgLv1') {
       router.get(route(data.backRoute || 'material-levels.semi-fg-lv1.new'), {
         mode: 'view',
-        levelMaterialId: data.levelMaterialId || data.materialId || '',
+        levelMaterialId: data.backMaterialId || data.levelMaterialId || data.materialId || '',
       });
       return;
     }
@@ -468,7 +469,7 @@ export default function BomMaterialForm({
                 </div>
               </div>
               <div className="flex items-center justify-center gap-4">
-                <SecondaryButton type="button" onClick={backToSemiFgLv2}>
+                <SecondaryButton type="button" onClick={backToSemiFgLv}>
                   {backLabel}
                 </SecondaryButton>
                 {data.actionMode !== 'delete' && (

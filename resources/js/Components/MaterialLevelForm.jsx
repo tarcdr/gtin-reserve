@@ -7,6 +7,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import SuccessButton from '@/Components/SuccessButton';
 import TextInput from '@/Components/TextInput';
 import DangerButton from '@/Components/DangerButton';
+import { getAxiosErrorMessage, getResponseErrorMessage } from '@/Utils/apiError';
 import { useEffect, useState } from 'react';
 
 export default function MaterialLevelForm({
@@ -111,7 +112,7 @@ export default function MaterialLevelForm({
       });
 
       if (!response.ok) {
-        throw new Error('Unable to generate Semi FG Lv data.');
+        throw new Error(await getResponseErrorMessage(response, 'Unable to generate Semi FG Lv data.'));
       }
 
       const payload = await response.json();
@@ -124,7 +125,7 @@ export default function MaterialLevelForm({
     } catch (error) {
       setData('levelBomId', '');
       setData('materialId', '');
-      setError('subMattype', 'Unable to generate Semi FG Lv data.');
+      setError('subMattype', getAxiosErrorMessage(error, 'Unable to generate Semi FG Lv data.'));
     } finally {
       setIsGeneratingLevelData(false);
     }
@@ -179,14 +180,20 @@ export default function MaterialLevelForm({
   const buildSemiFgLv2ComponentPayload = (actionMode, item = {}) => ({
     ownerLevel: 'semiFgLv2',
     actionMode,
+    backRoute: levelRoute,
     levelMaterialId: data.materialId || data.levelMaterialId || '',
+    backMaterialId: data.levelMaterialId || data.materialId || '',
+    referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
     ...(actionMode !== 'create' && item?.code ? { componentId: item.code } : {}),
   });
 
   const buildSemiFgLv1ComponentPayload = (actionMode, item = {}) => ({
     ownerLevel: 'semiFgLv1',
     actionMode,
+    backRoute: levelRoute,
     levelMaterialId: data.materialId || data.levelMaterialId || '',
+    backMaterialId: data.levelMaterialId || data.materialId || '',
+    referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
     ...(actionMode !== 'create' && item?.code ? { componentId: item.code } : {}),
   });
 

@@ -5,6 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import BusinessSupplyDetail from '@/Components/BusinessSupply/BusinessSupplyDetail';
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { getAxiosErrorMessage } from '@/Utils/apiError';
 
 export default function BusinessSupplyEdit({
   auth,
@@ -83,17 +84,7 @@ export default function BusinessSupplyEdit({
         bizsupId: selectedBizsupId,
       }));
     } catch (error) {
-      const responseErrors = error?.response?.data?.errors || {};
-      if (error?.response?.status === 422 && Object.keys(responseErrors).length > 0) {
-        Object.entries(responseErrors).forEach(([field, messages]) => {
-          if (Array.isArray(messages) && messages[0]) {
-            setError(field, messages[0]);
-          }
-        });
-        return;
-      }
-
-      setError('save', error?.response?.data?.error || error?.message || 'Unable to update Business Supply.');
+      setError('save', getAxiosErrorMessage(error, 'Unable to update Business Supply.'));
     } finally {
       setIsSaving(false);
     }

@@ -6,9 +6,8 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import { useForm } from '@inertiajs/react';
 import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
-import { usePage } from '@inertiajs/react';
 import ReactSelect from 'react-select';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const FLOW_KEY = 'product.search.flow';
 
@@ -33,8 +32,6 @@ const writeFlowState = (state) => {
 };
 
 export default function ProductSearchBom({ auth, InputData, isDisabled = true, brands = [], mattypes = [], materials = [] }) {
-  const { flash } = usePage().props;
-  const alertedMessageRef = useRef('');
   const storedFlow = readFlowState();
   const initialOptions = storedFlow.subMattypeOptions ?? InputData?.subMattypeOptions ?? [];
   const [subMattypeOptions, setSubMattypeOptions] = useState(initialOptions);
@@ -46,24 +43,6 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
   });
 
   const selectedMaterial = materials.find(item => item.code === data.materialId) || null;
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const fallbackMessage = params.get('flashError') || '';
-    const message = flash?.error || fallbackMessage;
-
-    if (message && alertedMessageRef.current !== message) {
-      alertedMessageRef.current = message;
-      alert(message);
-
-      if (params.has('flashError')) {
-        params.delete('flashError');
-        const nextQuery = params.toString();
-        const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
-        window.history.replaceState({}, '', nextUrl);
-      }
-    }
-  }, [flash?.error]);
 
   const submit = (e) => {
     e.preventDefault();

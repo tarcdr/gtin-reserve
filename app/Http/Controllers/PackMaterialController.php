@@ -469,7 +469,7 @@ class PackMaterialController extends Controller
         'error' => $exception->getMessage(),
       ]);
 
-      return null;
+      throw $exception;
     }
   }
 
@@ -527,7 +527,7 @@ class PackMaterialController extends Controller
         'error' => $exception->getMessage(),
       ]);
 
-      return null;
+      throw $exception;
     }
   }
 
@@ -806,7 +806,7 @@ class PackMaterialController extends Controller
         'error' => $exception->getMessage(),
       ]);
 
-      return [];
+      throw $exception;
     }
   }
 
@@ -850,7 +850,7 @@ class PackMaterialController extends Controller
         'error' => $exception->getMessage(),
       ]);
 
-      return [];
+      throw $exception;
     }
   }
 
@@ -1262,17 +1262,18 @@ class PackMaterialController extends Controller
       ]), $request->user()?->user_login, $request->user()?->role);
 
       $backRoute = $request->get('backRoute', 'material-levels.semi-fg-lv2.new');
+      $backMaterialId = $request->get('backMaterialId') ?: $request->get('levelMaterialId') ?: $request->get('materialId');
 
       if ($backRoute === 'material-levels.semi-fg-lv2.new') {
         return Redirect::route($backRoute, [
           'mode' => 'view',
-          'levelMaterialId' => $request->get('levelMaterialId') ?: $request->get('materialId'),
+          'levelMaterialId' => $backMaterialId,
         ]);
       }
 
       return Redirect::route($backRoute, [
         'mode' => 'view',
-        'levelMaterialId' => $request->get('levelMaterialId') ?: $request->get('materialId'),
+        'levelMaterialId' => $backMaterialId,
         'fgDetail' => $request->get('fgDetail', []),
         'ownerDetail' => $request->get('ownerDetail', []),
         'components' => $components,
@@ -1297,17 +1298,18 @@ class PackMaterialController extends Controller
       ]), $request->user()?->user_login, $request->user()?->role);
 
       $backRoute = $request->get('backRoute', 'material-levels.semi-fg-lv1.new');
+      $backMaterialId = $request->get('backMaterialId') ?: $request->get('levelMaterialId') ?: $request->get('materialId');
 
       if ($backRoute === 'material-levels.semi-fg-lv1.new') {
         return Redirect::route($backRoute, [
           'mode' => 'view',
-          'levelMaterialId' => $request->get('levelMaterialId') ?: $request->get('materialId'),
+          'levelMaterialId' => $backMaterialId,
         ]);
       }
 
       return Redirect::route($backRoute, [
         'mode' => 'view',
-        'levelMaterialId' => $request->get('levelMaterialId') ?: $request->get('materialId'),
+        'levelMaterialId' => $backMaterialId,
         'fgDetail' => $request->get('fgDetail', []),
         'ownerDetail' => $request->get('ownerDetail', []),
         'components' => $components,

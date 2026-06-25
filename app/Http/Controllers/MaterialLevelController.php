@@ -208,6 +208,8 @@ class MaterialLevelController extends Controller
         'viewName' => $viewName,
         'error' => $exception->getMessage(),
       ]);
+
+      throw $exception;
     }
 
     return $fallback;
@@ -284,7 +286,7 @@ class MaterialLevelController extends Controller
         'error' => $exception->getMessage(),
       ]);
 
-      return [];
+      throw $exception;
     }
   }
 
@@ -351,7 +353,7 @@ class MaterialLevelController extends Controller
         'error' => $exception->getMessage(),
       ]);
 
-      return [];
+      throw $exception;
     }
   }
 
@@ -942,6 +944,16 @@ class MaterialLevelController extends Controller
         'levelMaterialId' => $levelMaterialId,
         'error' => $e->getMessage(),
       ]);
+    }
+
+    if ($semiFgLv2) {
+      $semiFgLv2 = [
+        'fg_bom_id' => trim((string) ($semiFgLv2->fg_bom_id ?? '')),
+        'semi_fg_lv2_id' => trim((string) ($semiFgLv2->semi_fg_lv2_id ?? '')),
+      ];
+      $InputData['fg_bom_id'] = $semiFgLv2['fg_bom_id'];
+      $InputData['semi_fg_lv2_id'] = $semiFgLv2['semi_fg_lv2_id'];
+      $InputData['semiFgLv2'] = $semiFgLv2;
     }
 
     if ($semiFgLv1) {

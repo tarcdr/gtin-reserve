@@ -1,15 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
+import Modal from '@/Components/Modal';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import PageIdentity from '@/Components/PageIdentity';
-import { Link } from '@inertiajs/react';
+import SecondaryButton from '@/Components/SecondaryButton';
+import { Link, usePage } from '@inertiajs/react';
 
 export default function Authenticated({ user, header, pageIdentity = null, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
+    const [databaseError, setDatabaseError] = useState('');
+    const { flash } = usePage().props;
     const isAdmin = user?.role === 'admin';
     const roleLabel = user?.role ? user.role.toUpperCase() : 'USER';
+
+    useEffect(() => {
+        const nextError = flash?.error || '';
+        if (nextError) {
+            setDatabaseError(nextError);
+        }
+    }, [flash?.error]);
 
     return (
         <div className="min-h-screen bg-gray-100 text-green-900 font-extrabold">
@@ -327,6 +338,25 @@ export default function Authenticated({ user, header, pageIdentity = null, child
             )}
 
             <main>{children}</main>
+
+            <Modal
+                show={Boolean(databaseError)}
+                onClose={() => setDatabaseError('')}
+                maxWidth="lg"
+            >
+                <div className="p-6">
+                    <h3 className="text-lg font-bold text-red-700">Database Error</h3>
+                    <p className="mt-3 text-sm font-medium text-gray-700 whitespace-pre-wrap">
+                        {databaseError}
+                    </p>
+
+                    <div className="mt-6 flex justify-end">
+                        <SecondaryButton type="button" onClick={() => setDatabaseError('')}>
+                            Close
+                        </SecondaryButton>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

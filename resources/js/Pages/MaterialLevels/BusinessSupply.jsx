@@ -9,6 +9,7 @@ import { router, useForm } from '@inertiajs/react';
 import axios from 'axios';
 import ReactSelect from 'react-select';
 import { useMemo, useState } from 'react';
+import { getAxiosErrorMessage, getFirstErrorMessage } from '@/Utils/apiError';
 
 const DEFAULT_MATTYPE = '6';
 const DEFAULT_SUB_MATTYPE = '0';
@@ -138,8 +139,9 @@ export default function BusinessSupply({
         },
       });
 
-      if (payload?.error) {
-        throw new Error(payload.error);
+      const payloadError = getFirstErrorMessage(payload, '');
+      if (payloadError) {
+        throw new Error(payloadError);
       }
 
       setBsId(payload?.bsId || '');
@@ -150,17 +152,7 @@ export default function BusinessSupply({
         setGenerationError('Procedure returned empty Business Supply IDs.');
       }
     } catch (error) {
-      const responseErrors = error?.response?.data?.errors || {};
-      if (error?.response?.status === 422 && Object.keys(responseErrors).length > 0) {
-        Object.entries(responseErrors).forEach(([field, messages]) => {
-          if (Array.isArray(messages) && messages[0]) {
-            setError(field, messages[0]);
-          }
-        });
-        return;
-      }
-
-      setGenerationError(error?.response?.data?.error || error?.message || 'Unable to generate Business Supply ID.');
+      setGenerationError(getAxiosErrorMessage(error, 'Unable to generate Business Supply ID.'));
     } finally {
       setIsGenerating(false);
     }
@@ -250,17 +242,7 @@ export default function BusinessSupply({
         componentId: bsId,
       }));
     } catch (error) {
-      const responseErrors = error?.response?.data?.errors || {};
-      if (error?.response?.status === 422 && Object.keys(responseErrors).length > 0) {
-        Object.entries(responseErrors).forEach(([field, messages]) => {
-          if (Array.isArray(messages) && messages[0]) {
-            setError(field, messages[0]);
-          }
-        });
-        return;
-      }
-
-      setSaveError(error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Unable to save Business Supply.');
+      setSaveError(getAxiosErrorMessage(error, 'Unable to save Business Supply.'));
     } finally {
       setIsSaving(false);
     }
