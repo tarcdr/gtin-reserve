@@ -434,8 +434,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                                   {item.label}
                                 </th>
                                 <td className="px-6 py-4 flex gap-2">
+                                  <PrimaryButton type="button" onClick={() => goToPackMaterialAction('edit', item)}>VIEW</PrimaryButton>
                                   <DangerButton type="button" onClick={() => goToPackMaterialAction('delete', item)}>DELETE</DangerButton>
-                                  <PrimaryButton type="button" onClick={() => goToPackMaterialAction('edit', item)}>Edit</PrimaryButton>
                                 </td>
                               </tr>
                             ))
@@ -508,7 +508,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                     <SuccessButton type="button" onClick={handleComplete} disabled={data.fgStatus === 'COM'}>Complete</SuccessButton>
                   </>
                 ) : (
-                  <PrimaryButton disabled={processing}>Save FG</PrimaryButton>
+                  <SuccessButton disabled={processing}>Save FG</SuccessButton>
                 )}
               </div>
             </form>

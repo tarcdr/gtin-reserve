@@ -568,8 +568,8 @@ export default function MaterialLevelForm({
                               <td className="px-6 py-4">
                                 {isViewMode ? (
                                   <div className="flex items-center gap-2">
-                                    <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>Edit</PrimaryButton>
-                                    <DangerButton type="button" onClick={() => goComponentAction('delete', item)}>Delete</DangerButton>
+                                    <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>VIEW</PrimaryButton>
+                                    <DangerButton type="button" onClick={() => goComponentAction('delete', item)}>DELETE</DangerButton>
                                   </div>
                                 ) : (
                                   <span className="text-gray-400">View Only</span>
@@ -591,7 +591,7 @@ export default function MaterialLevelForm({
                 {isViewMode ? (
                   <PrimaryButton type="button" onClick={goToEdit}>Edit</PrimaryButton>
                 ) : (
-                  <PrimaryButton disabled={processing || isGeneratingLevelData}>Save</PrimaryButton>
+                  <SuccessButton disabled={processing || isGeneratingLevelData}>Save</SuccessButton>
                 )}
               </div>
             </form>

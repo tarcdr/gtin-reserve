@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
+import SuccessButton from '@/Components/SuccessButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import { useEffect, useState } from 'react';
@@ -472,7 +472,7 @@ export default function BomMaterialForm({
                   {backLabel}
                 </SecondaryButton>
                 {data.actionMode !== 'delete' && (
-                  <PrimaryButton disabled={processing || isGeneratingComponentId}>{primaryActionLabel}</PrimaryButton>
+                  <SuccessButton disabled={processing || isGeneratingComponentId}>{primaryActionLabel}</SuccessButton>
                 )}
                 {data.actionMode === 'delete' && (
                   <DangerButton type="button" onClick={deleteFromSemiFgLv2}>
