@@ -11,7 +11,7 @@ import DangerButton from '@/Components/DangerButton';
 import { useState } from 'react';
 import { useEffect } from 'react';
 
-export default function ProductDetail({ auth, InputData, isDisabled = true, isEditMode = false, brands = [], mattypes = [], sites = [], masterUom = [], finishGoods = [] }) {
+export default function ProductDetail({ auth, InputData, isDisabled = true, isEditMode = false, brands = [], mattypes = [], sites = [], masterUom = [] }) {
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
   const subMattypeOptions = ['0', '1', '2', '3'];
@@ -126,6 +126,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   };
 
   const goBackToFg = () => {
+    if (!isEditMode) {
+      router.get(route('dashboard'));
+      return;
+    }
+
     router.get(route('product.view'), {
       materialId: data.materialId,
     });
@@ -499,7 +504,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
               )}
               <div className="flex items-center justify-center gap-4">
                 <SecondaryButton type="button" onClick={goBackToFg}>
-                  Back to FG
+                  {isEditMode ? 'BACK TO FG' : 'BACK'}
                 </SecondaryButton>
                 {isDisabled ? (
                   <>
