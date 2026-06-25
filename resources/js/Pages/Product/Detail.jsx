@@ -439,7 +439,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                                   {item.label}
                                 </th>
                                 <td className="px-6 py-4 flex gap-2">
-                                  <PrimaryButton type="button" onClick={() => goToPackMaterialAction('edit', item)}>VIEW</PrimaryButton>
+                                  <PrimaryButton type="button" onClick={() => goToPackMaterialAction('edit', item)}>EDIT</PrimaryButton>
                                   <DangerButton type="button" onClick={() => goToPackMaterialAction('delete', item)}>DELETE</DangerButton>
                                 </td>
                               </tr>

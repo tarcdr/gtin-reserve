@@ -575,7 +575,7 @@ export default function MaterialLevelForm({
                               <td className="px-6 py-4">
                                 {isViewMode ? (
                                   <div className="flex items-center gap-2">
-                                    <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>VIEW</PrimaryButton>
+                                    <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>EDIT</PrimaryButton>
                                     <DangerButton type="button" onClick={() => goComponentAction('delete', item)}>DELETE</DangerButton>
                                   </div>
                                 ) : (
