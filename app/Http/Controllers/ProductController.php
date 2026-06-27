@@ -29,11 +29,9 @@ use PDO;
 class ProductController extends Controller
 {
   protected $brands;
-  protected $materials;
   protected $masterUom;
   protected $masterSite;
   protected MasterCatLookup $mk;
-  protected $mockMaterialStatus;
 
   public function __construct(MasterCatLookup $mk)
   {
@@ -44,51 +42,6 @@ class ProductController extends Controller
         "code" => $b->brand,
       ];
     })->toArray();
-    $this->materials = [
-      [
-        "code"   => "10000001",
-        "label"  => "10000001 - Shampoo Fresh 250ml",
-        "status" => "ACTIVE"
-      ],
-      [
-        "code"   => "10000002",
-        "label"  => "10000002 - Shampoo Fresh 500ml",
-        "status" => "ACTIVE"
-      ],
-      [
-        "code"   => "10000003",
-        "label"  => "10000003 - Conditioner Smooth 250ml",
-        "status" => "HOLD"
-      ],
-      [
-        "code"   => "10000004",
-        "label"  => "10000004 - Body Wash Citrus 500ml",
-        "status" => "INS"
-      ],
-      [
-        "code"   => "10000005",
-        "label"  => "10000005 - Hand Soap Aloe 300ml",
-        "status" => "DRAFT"
-      ],
-      [
-        "code"   => "10000006",
-        "label"  => "10000006 - Toothpaste Mint 150g",
-        "status" => "ACTIVE"
-      ],
-      [
-        "code"   => "10000007",
-        "label"  => "10000007 - Laundry Detergent 1L",
-        "status" => "BLOCKED"
-      ],
-      [
-        "code"   => "10000008",
-        "label"  => "10000008 - Fabric Softener 900ml",
-        "status" => "ACTIVE"
-      ]
-    ];
-    $this->mockMaterialStatus = collect($this->materials)
-      ->mapWithKeys(fn($item) => [$item['code'] => $item['status']])
-      ->toArray();
     $this->masterUom = MasterUOM::all()->map(function ($b) {
       return [
         "value" => $b->code_uom,
@@ -580,10 +533,19 @@ class ProductController extends Controller
   {
     $brands = $this->brands;
     $mattypes = $this->fgMattypes();
+    $mattype = '';
+    if (count($mattypes) === 1) {
+      $mattype = trim((string) ($mattypes[0]['code'] ?? ''));
+    }
+
     $masterUom = $this->masterUom;
     $sites = $this->masterSite;
     $finishGoods = $this->mk->subcategoriesOf('10');
-    return Inertia::render('Product/New', compact('brands', 'mattypes', 'sites', 'masterUom', 'finishGoods'));
+    $InputData = [
+      'mattype' => $mattype,
+    ];
+
+    return Inertia::render('Product/New', compact('brands', 'mattypes', 'sites', 'masterUom', 'finishGoods', 'InputData'));
   }
 
   public function view(Request $request): Response|RedirectResponse
@@ -795,27 +757,6 @@ class ProductController extends Controller
       'materialId' => $request->materialId,
     ];
     return Redirect::route('product.view', $InputData);
-  }
-
-  public function materialStatus(Request $request): JsonResponse
-  {
-    $materialId = $request->get('materialId');
-
-    if (!$materialId) {
-      return response()->json([
-        'materialId' => null,
-        'status' => null,
-        'mock' => true,
-      ]);
-    }
-
-    $status = $this->mockMaterialStatus[$materialId] ?? 'UNKNOWN';
-
-    return response()->json([
-      'materialId' => $materialId,
-      'status' => $status,
-      'mock' => true,
-    ]);
   }
 
   public function generateMaterialId(Request $request): JsonResponse

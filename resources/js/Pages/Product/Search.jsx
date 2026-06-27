@@ -7,48 +7,12 @@ import { useForm } from '@inertiajs/react';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { useState } from 'react';
 
-const FLOW_KEY = 'product.search.flow';
-
-const readFlowState = () => {
-  if (typeof window === 'undefined') {
-    return {};
-  }
-
-  try {
-    return JSON.parse(window.sessionStorage.getItem(FLOW_KEY) || '{}') || {};
-  } catch {
-    return {};
-  }
-};
-
-const writeFlowState = (state) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.sessionStorage.setItem(FLOW_KEY, JSON.stringify(state));
-};
-
-const clearFlowState = () => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.sessionStorage.removeItem(FLOW_KEY);
-};
-
 export default function ProductSearch({ auth, InputData, brands = [], mattypes = [] }) {
-  const shouldResetFlow = !InputData?.brand && !InputData?.mattype && !InputData?.subMattype && !InputData?.startStep;
-  if (shouldResetFlow) {
-    clearFlowState();
-  }
-
-  const storedFlow = shouldResetFlow ? {} : readFlowState();
-  const initialBrand = storedFlow.brand ?? InputData?.brand ?? '';
-  const initialMattype = storedFlow.mattype ?? InputData?.mattype ?? '';
-  const initialSubMattype = storedFlow.subMattype ?? InputData?.subMattype ?? '';
-  const initialOptions = storedFlow.subMattypeOptions ?? InputData?.subMattypeOptions ?? [];
-  const initialStep = storedFlow.step ? Number(storedFlow.step) : (InputData?.startStep ? Number(InputData.startStep) : (initialBrand && initialMattype ? 2 : 1));
+  const initialBrand = InputData?.brand ?? '';
+  const initialMattype = InputData?.mattype ?? '';
+  const initialSubMattype = InputData?.subMattype ?? '';
+  const initialOptions = InputData?.subMattypeOptions ?? [];
+  const initialStep = InputData?.startStep ? Number(InputData.startStep) : (initialBrand && initialMattype ? 2 : 1);
   const [step, setStep] = useState(initialStep);
   const [subMattypeOptions, setSubMattypeOptions] = useState(initialOptions);
   const [subMattypeLoadError, setSubMattypeLoadError] = useState('');
@@ -65,13 +29,6 @@ export default function ProductSearch({ auth, InputData, brands = [], mattypes =
       setSubMattypeLoadError('');
       clearErrors('subMattype');
       setStep(1);
-      writeFlowState({
-        brand: data.brand,
-        mattype: data.mattype,
-        subMattype: data.subMattype,
-        subMattypeOptions,
-        step: 1,
-      });
       return;
     }
 
@@ -119,13 +76,6 @@ export default function ProductSearch({ auth, InputData, brands = [], mattypes =
       clearErrors('brand', 'mattype', 'subMattype');
       if (subMattypeOptions.length > 0) {
         setData('subMattypeOptions', subMattypeOptions);
-        writeFlowState({
-          brand: data.brand,
-          mattype: data.mattype,
-          subMattype: data.subMattype,
-          subMattypeOptions,
-          step: 2,
-        });
         setStep(2);
         return;
       }
@@ -134,13 +84,6 @@ export default function ProductSearch({ auth, InputData, brands = [], mattypes =
       try {
         const options = await loadSubMattypeOptions(data.mattype);
         setData('subMattypeOptions', options);
-        writeFlowState({
-          brand: data.brand,
-          mattype: data.mattype,
-          subMattype: data.subMattype,
-          subMattypeOptions: options,
-          step: 2,
-        });
         setStep(2);
       } catch (error) {
         setSubMattypeLoadError('Unable to load Sub Mattype options.');
@@ -150,13 +93,6 @@ export default function ProductSearch({ auth, InputData, brands = [], mattypes =
       return;
     }
 
-    writeFlowState({
-      brand: data.brand,
-      mattype: data.mattype,
-      subMattype: data.subMattype,
-      subMattypeOptions,
-      step: 2,
-    });
     patch(route('product.search'));
   };
 
@@ -203,13 +139,6 @@ export default function ProductSearch({ auth, InputData, brands = [], mattypes =
                       setSubMattypeOptions([]);
                       setSubMattypeLoadError('');
                       clearErrors('subMattype');
-                      writeFlowState({
-                        brand: data.brand,
-                        mattype: nextMattype,
-                        subMattype: '',
-                        subMattypeOptions: [],
-                        step,
-                      });
                     }}
                     value={data.mattype}
                     disabled={step >= 2}
@@ -238,13 +167,6 @@ export default function ProductSearch({ auth, InputData, brands = [], mattypes =
                       onChange={(e) => {
                         const nextSubMattype = e.target.value;
                         setData('subMattype', nextSubMattype);
-                        writeFlowState({
-                          brand: data.brand,
-                          mattype: data.mattype,
-                          subMattype: nextSubMattype,
-                          subMattypeOptions,
-                          step,
-                        });
                       }}
                       value={data.subMattype}
                     >

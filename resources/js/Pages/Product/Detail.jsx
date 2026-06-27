@@ -388,9 +388,13 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                     disabled={isDisabled}
                   >
                     <option value="">---- Select UOM ----</option>
-                    {masterUom?.map(o => (
-                      <option key={`uom-code-${o.value}`} value={o.value}>{o.label}</option>
-                    ))}
+                    {masterUom?.map((o) => {
+                      const value = o.value ?? o.code;
+                      const label = o.label ?? o.description_uom ?? value;
+                      return (
+                        <option key={`uom-code-${value}`} value={value}>{`${value} - ${label}`}</option>
+                      );
+                    })}
                   </select>
 
                   <InputError className="mt-2" message={errors.uom} />

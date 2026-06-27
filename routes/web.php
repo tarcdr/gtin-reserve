@@ -49,7 +49,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/product/sub-mattypes', [ProductController::class, 'subMattypes'])->name('product.sub-mattypes');
     Route::get('/product/generate-material-id', [ProductController::class, 'generateMaterialId'])->name('product.generate-material-id');
     Route::get('/product/generate-bom-id', [ProductController::class, 'generateBomId'])->name('product.generate-bom-id');
-    Route::get('/product/material-status', [ProductController::class, 'materialStatus'])->name('product.material-status');
     Route::patch('/product/update', [ProductController::class, 'update'])->name('product.update');
     Route::delete('/product/delete', [ProductController::class, 'delete'])->name('product.delete');
 

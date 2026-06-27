@@ -779,27 +779,6 @@ class MaterialLevelController extends Controller
     }
   }
 
-  protected function mockComponents(string $level): array
-  {
-    $map = [
-      'raw' => [
-        ['code' => 'RM0001', 'label' => 'Raw Material A', 'status' => 'ACTIVE'],
-        ['code' => 'RM0002', 'label' => 'Raw Material B', 'status' => 'HOLD'],
-      ],
-      'lv2' => [
-        ['code' => 'S2-0001', 'label' => 'Semi FG Lv2 A', 'status' => 'INS'],
-      ],
-      'lv1' => [
-        ['code' => 'S1-0001', 'label' => 'Semi FG Lv1 A', 'status' => 'DRAFT'],
-      ],
-      'bns' => [
-        ['code' => 'BS-0001', 'label' => 'Business Supply A', 'status' => 'ACTIVE'],
-      ],
-    ];
-
-    return $map[$level] ?? [];
-  }
-
   public function rawMaterial(Request $request): Response
   {
     $InputData = [
@@ -809,13 +788,12 @@ class MaterialLevelController extends Controller
       'subMattype' => '',
       'storageTable' => 'proj1_raw_material',
     ];
-    $components = $this->mockComponents('raw');
     return Inertia::render('MaterialLevels/RawMaterial', [
       'InputData' => $InputData,
       'mattypes' => $this->mattypes,
       'subMattypes' => $this->subMattypes,
       'uoms' => $this->uoms,
-      'components' => $components,
+      'components' => [],
     ]);
   }
 

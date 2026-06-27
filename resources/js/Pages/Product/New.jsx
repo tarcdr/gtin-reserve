@@ -9,7 +9,7 @@ import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { getAxiosErrorMessage, getFirstErrorMessage, getResponseErrorMessage } from '@/Utils/apiError';
 
-export default function ProductNew({ auth, brands = [], mattypes = [], sites = [], masterUom = [] }) {
+export default function ProductNew({ auth, InputData, brands = [], mattypes = [], sites = [], masterUom = [] }) {
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
   const [subMattypeOptions, setSubMattypeOptions] = useState([]);
@@ -20,7 +20,7 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
   const pageId = `${Math.min(Math.max(step, 1), 3)}N`;
   const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
     brand: '',
-    mattype: '',
+    mattype: InputData?.mattype ?? '',
     subMattype: '',
     finishGoods: '',
     site: '',
@@ -70,6 +70,13 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
     resetGeneratedFields();
     clearErrors();
     setStep(2);
+  };
+
+  const handleMattypeChange = (nextMattype) => {
+    setData('mattype', nextMattype);
+    setData('subMattype', '');
+    setSubMattypeOptions([]);
+    clearErrors('mattype', 'subMattype');
   };
 
   const requiresSiteSubmit = data.mattype === '1';
@@ -289,7 +296,7 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
                   <select
                     id="mattype"
                     className={`mt-1 block w-full border-gray-300 rounded-md ${step >= 2 ? 'bg-gray-100' : ''}`}
-                    onChange={(e) => setData('mattype', e.target.value)}
+                    onChange={(e) => handleMattypeChange(e.target.value)}
                     value={data.mattype}
                     disabled={step >= 2}
                   >
@@ -463,11 +470,15 @@ export default function ProductNew({ auth, brands = [], mattypes = [], sites = [
                         className="mt-1 block w-full border-gray-300 rounded-md"
                         onChange={(e) => setData('uom', e.target.value)}
                         value={data.uom}
-                      >
-                        <option value="">---- Select UOM ----</option>
-                        {masterUom?.map(o => (
-                          <option key={`uom-code-${o.value}`} value={o.value}>{o.label}</option>
-                        ))}
+                        >
+                          <option value="">---- Select UOM ----</option>
+                        {masterUom?.map((o) => {
+                          const value = o.value ?? o.code;
+                          const label = o.label ?? o.description_uom ?? value;
+                          return (
+                            <option key={`uom-code-${value}`} value={value}>{`${value} - ${label}`}</option>
+                          );
+                        })}
                       </select>
 
                       <InputError className="mt-2" message={errors.uom} />
