@@ -167,13 +167,12 @@ class PackMaterialController extends Controller
     ];
   }
 
-  protected function generateSemiFgLv1BomId(?string $fgMaterialId, ?string $fgBomId, ?string $mattype, ?string $subMattype, ?string $userLogin = null): array
+  protected function generateSemiFgLv1BomId(?string $fgMaterialId, ?string $fgBomId, ?string $mattype, ?string $subMattype): array
   {
     $fgMaterialId = trim((string) $fgMaterialId);
     $fgBomId = trim((string) $fgBomId);
     $mattype = trim((string) ($mattype ?: '1'));
     $subMattype = trim((string) ($subMattype ?: '1'));
-    $userLogin = trim((string) ($userLogin ?: 'system'));
 
     if ($fgMaterialId === '' || $fgBomId === '') {
       return [
@@ -187,12 +186,11 @@ class PackMaterialController extends Controller
     $semiFgLv1BomId = null;
     $semiFgLv1Id = null;
     $error = null;
-    $stmt = $pdo->prepare('BEGIN proj1_2_gen_semifg_lv1(:p_fg_matid, :p_fg_bomid, :p_mattype, :p_sub_mattype, :p_user_login, :p_semifg_lv1_bomid, :p_semifg_lv1_id, :P_ERROR); END;');
+    $stmt = $pdo->prepare('BEGIN proj1_2_gen_semifg_lv1(:p_fg_matid, :p_fg_bomid, :p_mattype, :p_sub_mattype, :p_semifg_lv1_bomid, :p_semifg_lv1_id, :P_ERROR); END;');
     $stmt->bindValue(':p_fg_matid', $fgMaterialId, PDO::PARAM_STR);
     $stmt->bindValue(':p_fg_bomid', $fgBomId, PDO::PARAM_STR);
     $stmt->bindValue(':p_mattype', $mattype, PDO::PARAM_STR);
     $stmt->bindValue(':p_sub_mattype', $subMattype, PDO::PARAM_STR);
-    $stmt->bindValue(':p_user_login', $userLogin, PDO::PARAM_STR);
     $stmt->bindParam(':p_semifg_lv1_bomid', $semiFgLv1BomId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':p_semifg_lv1_id', $semiFgLv1Id, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
@@ -205,13 +203,12 @@ class PackMaterialController extends Controller
     ];
   }
 
-  protected function generateSemiFgLv2BomId(?string $fgMaterialId, ?string $fgBomId, ?string $mattype, ?string $subMattype, ?string $userLogin = null): array
+  protected function generateSemiFgLv2BomId(?string $fgMaterialId, ?string $fgBomId, ?string $mattype, ?string $subMattype): array
   {
     $fgMaterialId = trim((string) $fgMaterialId);
     $fgBomId = trim((string) $fgBomId);
     $mattype = trim((string) ($mattype ?: '2'));
     $subMattype = trim((string) ($subMattype ?: '0'));
-    $userLogin = trim((string) ($userLogin ?: 'system'));
 
     if ($fgMaterialId === '' || $fgBomId === '') {
       return [
@@ -225,12 +222,11 @@ class PackMaterialController extends Controller
     $semiFgLv2BomId = null;
     $semiFgLv2Id = null;
     $error = null;
-    $stmt = $pdo->prepare('BEGIN proj1_2_gen_semifg_lv2(:p_fg_matid, :p_fg_bomid, :p_mattype, :p_sub_mattype, :p_user_login, :p_semifg_lv2_bomid, :p_semifg_lv2_id, :P_ERROR); END;');
+    $stmt = $pdo->prepare('BEGIN proj1_2_gen_semifg_lv2(:p_fg_matid, :p_fg_bomid, :p_mattype, :p_sub_mattype, :p_semifg_lv2_bomid, :p_semifg_lv2_id, :P_ERROR); END;');
     $stmt->bindValue(':p_fg_matid', $fgMaterialId, PDO::PARAM_STR);
     $stmt->bindValue(':p_fg_bomid', $fgBomId, PDO::PARAM_STR);
     $stmt->bindValue(':p_mattype', $mattype, PDO::PARAM_STR);
     $stmt->bindValue(':p_sub_mattype', $subMattype, PDO::PARAM_STR);
-    $stmt->bindValue(':p_user_login', $userLogin, PDO::PARAM_STR);
     $stmt->bindParam(':p_semifg_lv2_bomid', $semiFgLv2BomId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':p_semifg_lv2_id', $semiFgLv2Id, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
@@ -1038,8 +1034,7 @@ class PackMaterialController extends Controller
           $fgMaterialId,
           $fgBomId,
           $request->mattype ?: '2',
-          $request->subMattype ?: '0',
-          $request->user()?->user_login
+          $request->subMattype ?: '0'
         );
 
         if ($generated['error'] !== '') {
@@ -1068,8 +1063,7 @@ class PackMaterialController extends Controller
           $fgMaterialId,
           $fgBomId,
           $request->mattype ?: '1',
-          $request->subMattype ?: '0',
-          $request->user()?->user_login
+          $request->subMattype ?: '0'
         );
 
         if ($generated['error'] !== '') {
