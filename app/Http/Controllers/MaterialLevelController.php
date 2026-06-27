@@ -231,28 +231,47 @@ class MaterialLevelController extends Controller
     $levelBomId = trim((string) $levelBomId);
 
     try {
-      $rows = Proj12DmlSemiL2CompM5::query()
-        ->selectRaw('
-          TRIM(NO) as no,
-          TRIM(MATERIAL_ID_M5) as code,
-          TRIM(SEARCH_DESCRIPTION) as label,
-          TRIM(FULL_DESCRIPTION_EN) as full_desc_en,
-          TRIM(FULL_DESCRIPTION_TH) as full_desc_th,
-          TRIM(SEMI_FG_LV2_BOM_NO) as semi_fg_lv2_bom_no,
-          TRIM(SITE) as site,
-          TRIM(UOM) as uom,
-          TRIM(STATUS_ROW) as status_row,
-          TRIM(USER_ROLE) as user_role,
-          TRIM(USER_CREATE) as user_create,
-          TRIM(CREATE_DATE) as create_date,
-          TRIM(USER_UPDATE) as user_update,
-          TRIM(UPDATE_DATE) as update_date
-        ')
-        ->when($levelMaterialId !== '', fn ($query) => $query->whereRaw('TRIM(SEMI_FG_LV2_BOM_NO) = ?', [$levelMaterialId]))
-        ->when($levelMaterialId === '' && $fgBomId !== '', fn ($query) => $query->whereRaw('TRIM(SEMI_FG_LV2_BOM_NO) = ?', [$fgBomId]))
-        ->when($levelMaterialId === '' && $fgBomId === '' && $levelBomId !== '', fn ($query) => $query->whereRaw('TRIM(SEMI_FG_LV2_BOM_NO) = ?', [$levelBomId]))
-        ->orderByRaw('TRIM(MATERIAL_ID_M5)')
-        ->get();
+      $candidates = array_values(array_unique(array_filter([
+        $levelBomId,
+        $fgBomId,
+        $levelMaterialId,
+      ], fn ($value) => trim((string) $value) !== '')));
+
+      $rows = collect();
+      $matchedBy = '';
+
+      foreach ($candidates as $candidate) {
+        $queryRows = Proj12DmlSemiL2CompM5::query()
+          ->selectRaw('
+            TRIM(NO) as no,
+            TRIM(MATERIAL_ID_M5) as code,
+            TRIM(SEARCH_DESCRIPTION) as label,
+            TRIM(FULL_DESCRIPTION_EN) as full_desc_en,
+            TRIM(FULL_DESCRIPTION_TH) as full_desc_th,
+            TRIM(SEMI_FG_LV2_BOM_NO) as semi_fg_lv2_bom_no,
+            TRIM(SITE) as site,
+            TRIM(UOM) as uom,
+            TRIM(STATUS_ROW) as status_row,
+            TRIM(USER_ROLE) as user_role,
+            TRIM(USER_CREATE) as user_create,
+            TRIM(CREATE_DATE) as create_date,
+            TRIM(USER_UPDATE) as user_update,
+            TRIM(UPDATE_DATE) as update_date
+          ')
+          ->whereRaw('TRIM(SEMI_FG_LV2_BOM_NO) = ?', [$candidate])
+          ->orderByRaw('TRIM(MATERIAL_ID_M5)')
+          ->get();
+
+        if ($queryRows->isNotEmpty()) {
+          $rows = $queryRows;
+          $matchedBy = $candidate;
+          break;
+        }
+      }
+
+      if ($rows->isEmpty()) {
+        return [];
+      }
 
       return $rows
         ->map(function ($row) {
@@ -283,6 +302,7 @@ class MaterialLevelController extends Controller
       Log::warning('material-levels.semi-fg-lv2.components.lookup.failed', [
         'levelMaterialId' => $levelMaterialId,
         'fgBomId' => $fgBomId,
+        'levelBomId' => $levelBomId,
         'error' => $exception->getMessage(),
       ]);
 
@@ -297,28 +317,45 @@ class MaterialLevelController extends Controller
     $levelBomId = trim((string) $levelBomId);
 
     try {
-      $rows = Proj12DmlSemiL1CompM4::query()
-        ->selectRaw('
-          TRIM(NO) as no,
-          TRIM(MATERIAL_ID_M4) as code,
-          TRIM(SEARCH_DESCRIPTION) as label,
-          TRIM(FULL_DESCRIPTION_EN) as full_desc_en,
-          TRIM(FULL_DESCRIPTION_TH) as full_desc_th,
-          TRIM(SEMI_FG_LV1_BOM_NO) as semi_fg_lv1_bom_no,
-          TRIM(SITE) as site,
-          TRIM(UOM) as uom,
-          TRIM(STATUS_ROW) as status_row,
-          TRIM(USER_ROLE) as user_role,
-          TRIM(USER_CREATE) as user_create,
-          TRIM(CREATE_DATE) as create_date,
-          TRIM(USER_UPDATE) as user_update,
-          TRIM(UPDATE_DATE) as update_date
-        ')
-        ->when($levelMaterialId !== '', fn ($query) => $query->whereRaw('TRIM(SEMI_FG_LV1_BOM_NO) = ?', [$levelMaterialId]))
-        ->when($levelMaterialId === '' && $fgBomId !== '', fn ($query) => $query->whereRaw('TRIM(SEMI_FG_LV1_BOM_NO) = ?', [$fgBomId]))
-        ->when($levelMaterialId === '' && $fgBomId === '' && $levelBomId !== '', fn ($query) => $query->whereRaw('TRIM(SEMI_FG_LV1_BOM_NO) = ?', [$levelBomId]))
-        ->orderByRaw('TRIM(MATERIAL_ID_M4)')
-        ->get();
+      $candidates = array_values(array_unique(array_filter([
+        $levelBomId,
+        $fgBomId,
+        $levelMaterialId,
+      ], fn ($value) => trim((string) $value) !== '')));
+
+      $rows = collect();
+
+      foreach ($candidates as $candidate) {
+        $queryRows = Proj12DmlSemiL1CompM4::query()
+          ->selectRaw('
+            TRIM(NO) as no,
+            TRIM(MATERIAL_ID_M4) as code,
+            TRIM(SEARCH_DESCRIPTION) as label,
+            TRIM(FULL_DESCRIPTION_EN) as full_desc_en,
+            TRIM(FULL_DESCRIPTION_TH) as full_desc_th,
+            TRIM(SEMI_FG_LV1_BOM_NO) as semi_fg_lv1_bom_no,
+            TRIM(SITE) as site,
+            TRIM(UOM) as uom,
+            TRIM(STATUS_ROW) as status_row,
+            TRIM(USER_ROLE) as user_role,
+            TRIM(USER_CREATE) as user_create,
+            TRIM(CREATE_DATE) as create_date,
+            TRIM(USER_UPDATE) as user_update,
+            TRIM(UPDATE_DATE) as update_date
+          ')
+          ->whereRaw('TRIM(SEMI_FG_LV1_BOM_NO) = ?', [$candidate])
+          ->orderByRaw('TRIM(MATERIAL_ID_M4)')
+          ->get();
+
+        if ($queryRows->isNotEmpty()) {
+          $rows = $queryRows;
+          break;
+        }
+      }
+
+      if ($rows->isEmpty()) {
+        return [];
+      }
 
       return $rows
         ->map(function ($row) {

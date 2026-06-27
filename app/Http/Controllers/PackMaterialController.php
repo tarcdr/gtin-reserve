@@ -297,7 +297,9 @@ class PackMaterialController extends Controller
   {
     $userLogin = $userLogin ?: 'system';
     $userRole = $userRole ?: 'GTIN';
-    $bomSemiLv1Id = trim((string) ($data['levelMaterialId'] ?? $data['materialId'] ?? $data['bomId'] ?? ''));
+    // The parent BOM lives in backMaterialId when creating/editing a component.
+    // levelMaterialId may be overwritten with the generated child component id.
+    $bomSemiLv1Id = trim((string) ($data['backMaterialId'] ?? $data['levelMaterialId'] ?? $data['materialId'] ?? $data['bomId'] ?? ''));
     $mattype = trim((string) ($data['mattype'] ?? '2'));
     $subMattype = trim((string) ($data['subMattype'] ?? '0'));
     $productCat = trim((string) ($data['productCat'] ?? ''));
@@ -358,7 +360,9 @@ class PackMaterialController extends Controller
   {
     $userLogin = $userLogin ?: 'system';
     $userRole = $userRole ?: 'GTIN';
-    $bomSemiLv2Id = trim((string) ($data['levelMaterialId'] ?? $data['materialId'] ?? $data['bomId'] ?? ''));
+    // The parent BOM lives in backMaterialId when creating/editing a component.
+    // levelMaterialId may be overwritten with the generated child component id.
+    $bomSemiLv2Id = trim((string) ($data['backMaterialId'] ?? $data['levelMaterialId'] ?? $data['materialId'] ?? $data['bomId'] ?? ''));
     $mattype = trim((string) ($data['mattype'] ?? '2'));
     $subMattype = trim((string) ($data['subMattype'] ?? '0'));
     $productCat = trim((string) ($data['productCat'] ?? ''));
