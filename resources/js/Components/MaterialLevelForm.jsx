@@ -43,7 +43,8 @@ export default function MaterialLevelForm({
   showComponentSectionWhenNotView = false,
   hideSubMattypeOnView = false,
   disableSubMattypeOnEdit = false,
-  semiFgLv2 = null
+  semiFgLv2 = null,
+  fgDetail = null,
 }) {
   const [componentRows, setComponentRows] = useState(components);
   const [isGeneratingLevelData, setIsGeneratingLevelData] = useState(false);
@@ -73,6 +74,7 @@ export default function MaterialLevelForm({
     components: components,
     fg_bom_id: semiFgLv2?.fg_bom_id || '',
     semi_fg_lv2_id: semiFgLv2?.semi_fg_lv2_id || '',
+    fgMaterialDesc: fgDetail?.search_description || '',
   });
   const effectiveSubMattypeOptions = subMattypeOptions || subMattypes;
   const subMattypeDisplayValue = effectiveSubMattypeOptions?.find((item) => String(item.code) === String(data.subMattype))?.label || data.subMattype || '';
@@ -347,6 +349,17 @@ export default function MaterialLevelForm({
                   />
                 </div>
                 <div>
+                  <InputLabel htmlFor="fgBomId" value="FG Search Description" />
+                  <TextInput
+                    id="fgBomId"
+                    className="mt-1 block w-full bg-gray-100"
+                    value={data.fgMaterialDesc}
+                    disabled
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
                   <InputLabel htmlFor="fgBomId" value="FG BOM ID" />
                   <TextInput
                     id="fgBomId"
@@ -355,8 +368,6 @@ export default function MaterialLevelForm({
                     disabled
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <InputLabel htmlFor="fgBomDesc" value="FG BOM Description" />
                   <TextInput
@@ -366,6 +377,8 @@ export default function MaterialLevelForm({
                     disabled
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {showStorageTable && (
                   <div>
                     <InputLabel htmlFor="storageTable" value="Storage Table" />
