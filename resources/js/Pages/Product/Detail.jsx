@@ -457,8 +457,28 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                     <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
                       {hasSemiFgLv2 ? (
                         <div className="space-y-3">
-                          <div className="text-sm text-gray-600">Semi FG Level 2</div>
-                          <div className="font-semibold">{semiFgLv2.id}</div>
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                              <div>
+                                <InputLabel htmlFor="fgMaterialId" value="Semi FG Level 2" />
+                                <TextInput
+                                  id="fgMaterialId"
+                                  className="mt-1 block w-full bg-gray-100"
+                                  value={semiFgLv2.id}
+                                  disabled
+                                />
+                              </div>
+                              <div>
+                                <InputLabel htmlFor="fgBomId" value="Semi FG Level 2 Description" />
+                                <TextInput
+                                  id="fgBomId"
+                                  className="mt-1 block w-full bg-gray-100"
+                                  value={semiFgLv2.desc}
+                                  disabled
+                                />
+                              </div>
+                            </div>
+                          </div>
                           <PrimaryButton
                             type="button"
                             onClick={() => goToSemiFgLv2({
@@ -481,8 +501,28 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                     <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
                       {hasSemiFgLv1 ? (
                         <div className="space-y-3">
-                          <div className="text-sm text-gray-600">Semi FG Level 1</div>
-                          <div className="font-semibold">{semiFgLv1.id}</div>
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                              <div>
+                                <InputLabel htmlFor="fgMaterialId" value="Semi FG Level 1" />
+                                <TextInput
+                                  id="fgMaterialId"
+                                  className="mt-1 block w-full bg-gray-100"
+                                  value={semiFgLv1.id}
+                                  disabled
+                                />
+                              </div>
+                              <div>
+                                <InputLabel htmlFor="fgBomId" value="Semi FG Level 1 Description" />
+                                <TextInput
+                                  id="fgBomId"
+                                  className="mt-1 block w-full bg-gray-100"
+                                  value={semiFgLv1.desc}
+                                  disabled
+                                />
+                              </div>
+                            </div>
+                          </div>
                           <PrimaryButton
                             type="button"
                             onClick={() => goToSemiFgLv1({

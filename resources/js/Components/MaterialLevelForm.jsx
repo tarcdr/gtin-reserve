@@ -186,6 +186,10 @@ export default function MaterialLevelForm({
     levelMaterialId: data.materialId || data.levelMaterialId || '',
     backMaterialId: data.levelMaterialId || data.materialId || '',
     referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
+    semiFgLvBomId: data.levelBomId || '',
+    semiFgLvBomDesc: data.levelBomDesc || '',
+    bomId: data.levelBomId || '',
+    bomDesc: data.levelBomDesc || '',
     ...(actionMode !== 'create' && item?.code ? { componentId: item.code } : {}),
   });
 
@@ -196,6 +200,10 @@ export default function MaterialLevelForm({
     levelMaterialId: data.materialId || data.levelMaterialId || '',
     backMaterialId: data.levelMaterialId || data.materialId || '',
     referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
+    semiFgLvBomId: data.levelBomId || '',
+    semiFgLvBomDesc: data.levelBomDesc || '',
+    bomId: data.levelBomId || '',
+    bomDesc: data.levelBomDesc || '',
     ...(actionMode !== 'create' && item?.code ? { componentId: item.code } : {}),
   });
 
@@ -218,6 +226,8 @@ export default function MaterialLevelForm({
       fgMaterialId: data.fgMaterialId,
       fgBomId: data.fgBomId,
       fgBomDesc: data.fgBomDesc,
+      semiFgLvBomId: data.levelBomId || '',
+      semiFgLvBomDesc: data.levelBomDesc || '',
       actionMode: 'create',
     };
 
@@ -269,6 +279,8 @@ export default function MaterialLevelForm({
       fgMaterialId: data.fgMaterialId,
       fgBomId: data.fgBomId,
       fgBomDesc: data.fgBomDesc,
+      semiFgLvBomId: data.levelBomId || '',
+      semiFgLvBomDesc: data.levelBomDesc || '',
       levelBomId: data.levelBomId,
       levelBomDesc: data.levelBomDesc,
       materialId: data.materialId,

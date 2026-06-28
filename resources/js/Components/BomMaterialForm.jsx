@@ -16,12 +16,15 @@ export default function BomMaterialForm({
   InputData,
   subMattypes = [],
   uoms = [],
-  submitRoute
+  submitRoute,
+  levelBomIdLabel = 'New BOM ID',
+  levelBomDescLabel = 'New BOM Description',
 }) {
   const [isGeneratingComponentId, setIsGeneratingComponentId] = useState(false);
   const [productCategoryOptions, setProductCategoryOptions] = useState([]);
   const [productSubCategoryOptions, setProductSubCategoryOptions] = useState([]);
   const ownerLevel = InputData?.ownerLevel || 'fg';
+  const isSemiFgOwner = ['semiFgLv1', 'semiFgLv2'].includes(ownerLevel);
   const defaultBackRoute = ownerLevel === 'semiFgLv2'
     ? 'material-levels.semi-fg-lv2.new'
     : ownerLevel === 'semiFgLv1'
@@ -34,6 +37,8 @@ export default function BomMaterialForm({
     backMaterialId: InputData?.backMaterialId || InputData?.referentMaterialId || InputData?.materialId || InputData?.fgMaterialId || '',
     bomId: InputData?.bomId || '',
     bomDesc: InputData?.bomDesc || '',
+    semiFgLvBomId: InputData?.semiFgLvBomId || InputData?.bomId || '',
+    semiFgLvBomDesc: InputData?.semiFgLvBomDesc || InputData?.bomDesc || '',
     mattype: InputData?.mattype || '',
     subMattype: InputData?.subMattype || '',
     fgDetail: InputData?.fgDetail || {},
@@ -205,6 +210,10 @@ export default function BomMaterialForm({
       router.get(route(data.backRoute || 'material-levels.semi-fg-lv2.new'), {
         mode: 'view',
         levelMaterialId: data.backMaterialId || data.levelMaterialId || data.materialId || '',
+        semiFgLvBomId: data.semiFgLvBomId || data.bomId || '',
+        semiFgLvBomDesc: data.semiFgLvBomDesc || data.bomDesc || '',
+        bomId: data.semiFgLvBomId || data.bomId || '',
+        bomDesc: data.semiFgLvBomDesc || data.bomDesc || '',
       });
       return;
     }
@@ -213,6 +222,10 @@ export default function BomMaterialForm({
       router.get(route(data.backRoute || 'material-levels.semi-fg-lv1.new'), {
         mode: 'view',
         levelMaterialId: data.backMaterialId || data.levelMaterialId || data.materialId || '',
+        semiFgLvBomId: data.semiFgLvBomId || data.bomId || '',
+        semiFgLvBomDesc: data.semiFgLvBomDesc || data.bomDesc || '',
+        bomId: data.semiFgLvBomId || data.bomId || '',
+        bomDesc: data.semiFgLvBomDesc || data.bomDesc || '',
       });
       return;
     }
@@ -223,12 +236,17 @@ export default function BomMaterialForm({
         ? 'business-supply.new'
         : 'material-levels.semi-fg-lv2.new';
 
+    const semiFgLvBomId = data.semiFgLvBomId || data.bomId || '';
+    const semiFgLvBomDesc = data.semiFgLvBomDesc || data.bomDesc || '';
+
     router.get(route(levelRoute), {
       mode: 'view',
       fgDetail: data.fgDetail,
       materialId: data.fgDetail?.materialId,
-      bomId: data.fgDetail?.bomId,
-      bomDesc: data.fgDetail?.bomDesc,
+      semiFgLvBomId,
+      semiFgLvBomDesc,
+      bomId: semiFgLvBomId,
+      bomDesc: semiFgLvBomDesc,
       levelMaterialId: data.ownerDetail?.id,
       searchDesc: data.ownerDetail?.searchDesc,
       fullDescEn: data.ownerDetail?.fullDescEn,
@@ -268,12 +286,17 @@ export default function BomMaterialForm({
         ? 'business-supply.new'
         : 'material-levels.semi-fg-lv2.new';
 
+    const semiFgLvBomId = data.semiFgLvBomId || data.bomId || '';
+    const semiFgLvBomDesc = data.semiFgLvBomDesc || data.bomDesc || '';
+
     router.get(route(levelRoute), {
       mode: 'view',
       fgDetail: data.fgDetail,
       materialId: data.fgDetail?.materialId,
-      bomId: data.fgDetail?.bomId,
-      bomDesc: data.fgDetail?.bomDesc,
+      semiFgLvBomId,
+      semiFgLvBomDesc,
+      bomId: semiFgLvBomId,
+      bomDesc: semiFgLvBomDesc,
       levelMaterialId: data.ownerDetail?.id,
       searchDesc: data.ownerDetail?.searchDesc,
       fullDescEn: data.ownerDetail?.fullDescEn,
@@ -306,12 +329,21 @@ export default function BomMaterialForm({
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <InputLabel htmlFor="bomId" value="New BOM ID" />
+                  <InputLabel htmlFor={isSemiFgOwner ? 'semiFgLvBomId' : 'bomId'} value={levelBomIdLabel} />
                   <TextInput
-                    id="bomId"
+                    id={isSemiFgOwner ? 'semiFgLvBomId' : 'bomId'}
                     className="mt-1 block w-full bg-gray-100"
                     disabled
-                    value={data.bomId}
+                    value={isSemiFgOwner ? data.semiFgLvBomId : data.bomId}
+                  />
+                </div>
+                <div>
+                  <InputLabel htmlFor={isSemiFgOwner ? 'semiFgLvBomDesc' : 'bomDesc'} value={levelBomDescLabel} />
+                  <TextInput
+                    id={isSemiFgOwner ? 'semiFgLvBomDesc' : 'bomDesc'}
+                    className="mt-1 block w-full bg-gray-100"
+                    disabled
+                    value={isSemiFgOwner ? data.semiFgLvBomDesc : data.bomDesc}
                   />
                 </div>
               </div>

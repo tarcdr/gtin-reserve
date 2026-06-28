@@ -107,7 +107,7 @@ export default function Report({ auth, InputData, materials = [] }) {
                                 <th scope="col" className="px-6 py-3">
                                     Last Update
                                 </th>
-                                <th scope="col" className="px-6 py-3">
+                                <th scope="col" className="px-6 py-3 hidden">
                                     Action
                                 </th>
                             </tr>
@@ -136,7 +136,7 @@ export default function Report({ auth, InputData, materials = [] }) {
                                 <td className="px-6 py-4">
                                     {o.last_update}
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-6 py-4 hidden">
                                     {o.status?.toLowerCase() === 'reserve' && o.last_user === auth.user.user_login ? (
                                       <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline" onClick={() => confirmActiveGtin(o.material_id)}>{o.status}</a>
                                     ) : (

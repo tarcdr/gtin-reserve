@@ -16,8 +16,16 @@ export default function NewPackMaterial({ auth, InputData, subMattypes = [], uom
   const initialSubMattype = InputData?.subMattype || '0';
   const submitRoute = InputData?.actionMode === 'edit' ? 'packmaterial.update' : 'packmaterial.create';
   let headerLabel = 'PACK';
+  let levelBomIdLabel = 'New BOM ID';
+  let levelBomDescLabel = 'New BOM Description';
   if (ownerLevel === 'semiFgLv1') {
     headerLabel = 'RAW';
+    levelBomIdLabel = 'SEMI FG LV1 BOM ID';
+    levelBomDescLabel = 'SEMI FG LV1 BOM Description';
+  } else if (ownerLevel === 'semiFgLv2') {
+    headerLabel = 'SEMI';
+    levelBomIdLabel = 'SEMI FG LV2 BOM ID';
+    levelBomDescLabel = 'SEMI FG LV2 BOM Description';
   }
   const headerTitle = InputData?.actionMode === 'edit' ? `${headerLabel} MATERIAL - Edit` : `${headerLabel} MATERIAL - Create`;
 
@@ -30,6 +38,8 @@ export default function NewPackMaterial({ auth, InputData, subMattypes = [], uom
       subMattypes={subMattypes}
       uoms={uoms}
       submitRoute={submitRoute}
+      levelBomIdLabel={levelBomIdLabel}
+      levelBomDescLabel={levelBomDescLabel}
     />
   );
 }

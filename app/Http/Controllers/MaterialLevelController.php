@@ -1345,6 +1345,8 @@ class MaterialLevelController extends Controller
     $payload['subMattype'] = $subMattype;
     $payload['bomId'] = trim((string) $semiFgLv2BomId);
     $payload['bomDesc'] = trim((string) ($request->get('levelBomDesc') ?? $request->get('bomDesc') ?? ''));
+    $payload['semiFgLvBomId'] = trim((string) $semiFgLv2BomId);
+    $payload['semiFgLvBomDesc'] = trim((string) ($request->get('levelBomDesc') ?? $request->get('bomDesc') ?? ''));
     $payload['levelBomId'] = trim((string) $semiFgLv2BomId);
     $payload['levelMaterialId'] = trim((string) $semiFgLv2Id);
     $payload['materialId'] = trim((string) $semiFgLv2Id);
@@ -1371,6 +1373,8 @@ class MaterialLevelController extends Controller
     $payload = $request->all();
     $payload['ownerLevel'] = 'semiFgLv1';
     $payload['subMattype'] = '0';
+    $payload['semiFgLvBomId'] = trim((string) ($request->get('levelBomId') ?? $request->get('bomId') ?? ''));
+    $payload['semiFgLvBomDesc'] = trim((string) ($request->get('levelBomDesc') ?? $request->get('bomDesc') ?? ''));
     return Redirect::route('packmaterial.new', $payload);
   }
 

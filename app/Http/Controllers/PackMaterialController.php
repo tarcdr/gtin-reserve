@@ -18,7 +18,9 @@ use App\Models\Proj12DmlFgComp;
 use App\Models\Proj12DmlSemiL1CompM4;
 use App\Models\Proj12DmlSemiL2CompM5;
 use App\Models\Proj12SemiFgLv1Id;
+use App\Models\Proj12SemiFgLv1Bom;
 use App\Models\Proj12SemiFgLv2Id;
+use App\Models\Proj12SemiFgLv2Bom;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -584,6 +586,104 @@ class PackMaterialController extends Controller
     ];
   }
 
+  protected function loadSemiFgLv1BomByMaterialId(?string $levelMaterialId): ?array
+  {
+    $levelMaterialId = trim((string) $levelMaterialId);
+
+    if ($levelMaterialId === '') {
+      return null;
+    }
+
+    try {
+      $idRow = Proj12SemiFgLv1Id::query()
+        ->selectRaw('
+          TRIM(FG_BOM_ID) as fg_bom_id,
+          TRIM(MATERIAL_ID_FG_1) as material_id_fg_1
+        ')
+        ->whereRaw('TRIM(SEMI_FG_LV1_ID) = ?', [$levelMaterialId])
+        ->first();
+
+      if (!$idRow) {
+        return null;
+      }
+
+      $row = Proj12SemiFgLv1Bom::query()
+        ->selectRaw('
+          TRIM(SEMI_FG_LV1_BOM_ID) as semi_fg_lv_bom_id,
+          TRIM(DESC_SEMI_FG_LV1_BOM_ID) as semi_fg_lv_bom_desc,
+          TRIM(FG_BOM_ID) as fg_bom_id,
+          TRIM(MATERIAL_ID_FG_1) as material_id_fg_1
+        ')
+        ->whereRaw('TRIM(FG_BOM_ID) = ?', [trim((string) ($idRow->fg_bom_id ?? ''))])
+        ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [trim((string) ($idRow->material_id_fg_1 ?? ''))])
+        ->first();
+    } catch (\Throwable $e) {
+      Log::debug('packmaterial.load-semi-fg-lv1-bom.failed', [
+        'levelMaterialId' => $levelMaterialId,
+        'error' => $e->getMessage(),
+      ]);
+      return null;
+    }
+
+    if (!$row) {
+      return null;
+    }
+
+    return [
+      'semiFgLvBomId' => trim((string) ($row->semi_fg_lv_bom_id ?? '')),
+      'semiFgLvBomDesc' => trim((string) ($row->semi_fg_lv_bom_desc ?? '')),
+    ];
+  }
+
+  protected function loadSemiFgLv2BomByMaterialId(?string $levelMaterialId): ?array
+  {
+    $levelMaterialId = trim((string) $levelMaterialId);
+
+    if ($levelMaterialId === '') {
+      return null;
+    }
+
+    try {
+      $idRow = Proj12SemiFgLv2Id::query()
+        ->selectRaw('
+          TRIM(FG_BOM_ID) as fg_bom_id,
+          TRIM(MATERIAL_ID_FG_1) as material_id_fg_1
+        ')
+        ->whereRaw('TRIM(SEMI_FG_LV2_ID) = ?', [$levelMaterialId])
+        ->first();
+
+      if (!$idRow) {
+        return null;
+      }
+
+      $row = Proj12SemiFgLv2Bom::query()
+        ->selectRaw('
+          TRIM(SEMI_FG_LV2_BOM_ID) as semi_fg_lv_bom_id,
+          TRIM(DESC_SEMI_FG_LV2_BOM_ID) as semi_fg_lv_bom_desc,
+          TRIM(FG_BOM_ID) as fg_bom_id,
+          TRIM(MATERIAL_ID_FG_1) as material_id_fg_1
+        ')
+        ->whereRaw('TRIM(FG_BOM_ID) = ?', [trim((string) ($idRow->fg_bom_id ?? ''))])
+        ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [trim((string) ($idRow->material_id_fg_1 ?? ''))])
+        ->first();
+    } catch (\Throwable $e) {
+      Log::debug('packmaterial.load-semi-fg-lv2-bom.failed', [
+        'levelMaterialId' => $levelMaterialId,
+        'error' => $e->getMessage(),
+      ]);
+      return null;
+    }
+
+    if (!$row) {
+      return null;
+    }
+
+    return [
+      'semiFgLvBomId' => trim((string) ($row->semi_fg_lv_bom_id ?? '')),
+      'semiFgLvBomDesc' => trim((string) ($row->semi_fg_lv_bom_desc ?? '')),
+    ];
+  }
+
   protected function loadSemiFgLv1ByMaterialId(?string $levelMaterialId): ?array
   {
     $levelMaterialId = trim((string) $levelMaterialId);
@@ -926,9 +1026,11 @@ class PackMaterialController extends Controller
     $resolvedSemiFgLv1MaterialId = '';
     $resolvedSemiFgLv1FgBomId = '';
     $resolvedSemiFgLv1FgBomDesc = '';
+    $resolvedSemiFgLv1Bom = null;
     $resolvedSemiFgLv2MaterialId = '';
     $resolvedSemiFgLv2FgBomId = '';
     $resolvedSemiFgLv2FgBomDesc = '';
+    $resolvedSemiFgLv2Bom = null;
     $defaultMattype = $ownerLevel === 'semiFgLv1' ? '4' : '5';
     $allowedMattypes = $ownerLevel === 'semiFgLv1'
       ? ['4']
@@ -937,6 +1039,7 @@ class PackMaterialController extends Controller
     if ($ownerLevel === 'semiFgLv1') {
       $resolvedSemiFgLv1MaterialId = trim((string) ($request->levelMaterialId ?: $request->materialId ?: $request->fgMaterialId ?: ''));
       $resolvedSemiFgLv1 = $this->loadSemiFgLv1ByMaterialId($resolvedSemiFgLv1MaterialId);
+      $resolvedSemiFgLv1Bom = $this->loadSemiFgLv1BomByMaterialId($resolvedSemiFgLv1MaterialId);
 
       if (is_array($resolvedSemiFgLv1)) {
         $resolvedFgMaterialId = trim((string) (
@@ -975,6 +1078,7 @@ class PackMaterialController extends Controller
     if ($ownerLevel === 'semiFgLv2') {
       $resolvedSemiFgLv2MaterialId = trim((string) ($request->levelMaterialId ?: $request->materialId ?: $request->fgMaterialId ?: ''));
       $resolvedSemiFgLv2 = $this->loadSemiFgLv2ByMaterialId($resolvedSemiFgLv2MaterialId);
+      $resolvedSemiFgLv2Bom = $this->loadSemiFgLv2BomByMaterialId($resolvedSemiFgLv2MaterialId);
       if (is_array($resolvedSemiFgLv2)) {
         $resolvedFgMaterialId = trim((string) (
           $request->fgMaterialId
@@ -1126,9 +1230,9 @@ class PackMaterialController extends Controller
         ? ($request->levelMaterialId ?: $request->get('materialId') ?: $generatedBomId)
         : ($loadedComponent['bomId'] ?? $generatedBomId));
     $resolvedBomDesc = $ownerLevel === 'semiFgLv2'
-      ? ($request->levelBomDesc ?: $request->bomDesc ?: $resolvedSemiFgLv2FgBomDesc ?: '')
+      ? ($request->semiFgLvBomDesc ?: $request->levelBomDesc ?: $request->bomDesc ?: ($resolvedSemiFgLv2Bom['semiFgLvBomDesc'] ?? '') ?: $resolvedSemiFgLv2FgBomDesc ?: '')
       : ($ownerLevel === 'semiFgLv1'
-        ? ($request->levelBomDesc ?: $request->bomDesc ?: $resolvedSemiFgLv1FgBomDesc ?: '')
+        ? ($request->semiFgLvBomDesc ?: $request->levelBomDesc ?: $request->bomDesc ?: ($resolvedSemiFgLv1Bom['semiFgLvBomDesc'] ?? '') ?: $resolvedSemiFgLv1FgBomDesc ?: '')
         : ($loadedComponent['bomDesc'] ?? $request->bomDesc));
     $resolvedFgBomId = $ownerLevel === 'semiFgLv2'
       ? ($request->fgBomId ?: $resolvedSemiFgLv2FgBomId)
@@ -1159,6 +1263,8 @@ class PackMaterialController extends Controller
       'fgMaterialId' => $resolvedFgMaterialId,
       'bomId' => $resolvedBOMId,
       'bomDesc' => $resolvedBomDesc,
+      'semiFgLvBomId' => $ownerLevel === 'fg' ? '' : ($request->semiFgLvBomId ?: ($ownerLevel === 'semiFgLv2' ? ($resolvedSemiFgLv2Bom['semiFgLvBomId'] ?? '') : ($resolvedSemiFgLv1Bom['semiFgLvBomId'] ?? ''))),
+      'semiFgLvBomDesc' => $ownerLevel === 'fg' ? '' : ($request->semiFgLvBomDesc ?: ($ownerLevel === 'semiFgLv2' ? ($resolvedSemiFgLv2Bom['semiFgLvBomDesc'] ?? '') : ($resolvedSemiFgLv1Bom['semiFgLvBomDesc'] ?? ''))),
       'fgDetail' => $request->get('fgDetail', []),
       'ownerDetail' => $request->get('ownerDetail', []),
       'components' => $request->get('components', []),
