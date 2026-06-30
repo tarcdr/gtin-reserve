@@ -51,7 +51,7 @@ class RequestFormController extends Controller
         $p_gtinPackChoose    = $request->gtinPackChoose;
 
         if ($request->material_id) {
-          $conn = oci_connect($this->username, $this->password, $this->db, 'AL32UTF8');
+          $pdo = DB::getPdo();
 
           $p_material_id      = $request->material_id;
           $p_trading_unit_pcs = 'Pcs';
@@ -82,23 +82,18 @@ class RequestFormController extends Controller
             $p_gtin_box = '';
           }
           if ($p_gtin_pcs || $p_gtin_box) {
-            if (!$conn) {
-                $e = oci_error();
-                trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-            }
-  
-            $stid0 = oci_parse($conn, 'begin proj1_button_reserve(:p_material_id, :p_trading_unit_pcs, :p_trading_unit_box, :p_gtin_pcs, :p_gtin_box, :p_user_login, :p_message_pcs, :p_message_box, :p_message); end;');
-            oci_bind_by_name($stid0, ':p_material_id',      $p_material_id);
-            oci_bind_by_name($stid0, ':p_trading_unit_pcs', $p_trading_unit_pcs);
-            oci_bind_by_name($stid0, ':p_trading_unit_box', $p_trading_unit_box);
-            oci_bind_by_name($stid0, ':p_gtin_pcs',         $p_gtin_pcs);
-            oci_bind_by_name($stid0, ':p_gtin_box',         $p_gtin_box);
-            oci_bind_by_name($stid0, ':p_user_login',       $p_user_login);
-            oci_bind_by_name($stid0, ':p_message_pcs',      $p_message_pcs, 100);
-            oci_bind_by_name($stid0, ':p_message_box',      $p_message_box, 100);
-            oci_bind_by_name($stid0, ':p_message',          $p_message, 100);
+            $stmt = $pdo->prepare('BEGIN proj1_button_reserve(:p_material_id, :p_trading_unit_pcs, :p_trading_unit_box, :p_gtin_pcs, :p_gtin_box, :p_user_login, :p_message_pcs, :p_message_box, :p_message); END;');
+            $stmt->bindValue(':p_material_id', $p_material_id, PDO::PARAM_STR);
+            $stmt->bindValue(':p_trading_unit_pcs', $p_trading_unit_pcs, PDO::PARAM_STR);
+            $stmt->bindValue(':p_trading_unit_box', $p_trading_unit_box, PDO::PARAM_STR);
+            $stmt->bindValue(':p_gtin_pcs', $p_gtin_pcs, PDO::PARAM_STR);
+            $stmt->bindValue(':p_gtin_box', $p_gtin_box, PDO::PARAM_STR);
+            $stmt->bindValue(':p_user_login', $p_user_login, PDO::PARAM_STR);
+            $stmt->bindParam(':p_message_pcs', $p_message_pcs, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+            $stmt->bindParam(':p_message_box', $p_message_box, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+            $stmt->bindParam(':p_message', $p_message, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
 
-            oci_execute($stid0);
+            $stmt->execute();
 
             $p_gtinPcsChoose  = '';
             $p_gtinPackChoose = '';
@@ -107,19 +102,14 @@ class RequestFormController extends Controller
           foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
             array_push($gtins, $m);
           }
-          if (!$conn) {
-              $e = oci_error();
-              trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-          }
+          $stmt = $pdo->prepare('BEGIN proj1_find_newgtin(:p_new_last_gtin_pcs, :p_suggest_gtin_pcs, :p_new_last_gtin_box, :p_suggest_gtin_box, :p_material_id); END;');
+          $stmt->bindParam(':p_new_last_gtin_pcs', $p_new_last_gtin_pcs, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+          $stmt->bindParam(':p_suggest_gtin_pcs', $p_suggest_gtin_pcs, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+          $stmt->bindParam(':p_new_last_gtin_box', $p_new_last_gtin_box, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+          $stmt->bindParam(':p_suggest_gtin_box', $p_suggest_gtin_box, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+          $stmt->bindValue(':p_material_id', $p_material_id, PDO::PARAM_STR);
 
-          $stid = oci_parse($conn, 'begin proj1_find_newgtin(:p_new_last_gtin_pcs, :p_suggest_gtin_pcs, :p_new_last_gtin_box, :p_suggest_gtin_box, :p_material_id); end;');
-          oci_bind_by_name($stid, ':p_new_last_gtin_pcs', $p_new_last_gtin_pcs, 100);
-          oci_bind_by_name($stid, ':p_suggest_gtin_pcs',  $p_suggest_gtin_pcs,  100);
-          oci_bind_by_name($stid, ':p_new_last_gtin_box', $p_new_last_gtin_box, 100);
-          oci_bind_by_name($stid, ':p_suggest_gtin_box',  $p_suggest_gtin_box,  100);
-          oci_bind_by_name($stid, ':p_material_id',       $p_material_id);
-  
-          oci_execute($stid);
+          $stmt->execute();
         }
 
         foreach (Material::select('brand')->whereNotNull('brand')->groupBy('brand')->orderBy('brand')->get() as $b) {
@@ -204,17 +194,11 @@ class RequestFormController extends Controller
     {
         $p_gtin       = $request->gtin;
         $p_user_login = $request->user()->user_login;
-        $conn = oci_connect($this->username, $this->password, $this->db);
-        if (!$conn) {
-            $e = oci_error();
-            trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-        }
-
-        $stid0 = oci_parse($conn, 'begin proj1_button_confirm(:p_gtin, :p_user_login); end;');
-        oci_bind_by_name($stid0, ':p_gtin',       $p_gtin);
-        oci_bind_by_name($stid0, ':p_user_login', $p_user_login);
-
-        oci_execute($stid0);
+        $pdo = DB::getPdo();
+        $stmt = $pdo->prepare('BEGIN proj1_button_confirm(:p_gtin, :p_user_login); END;');
+        $stmt->bindValue(':p_gtin', $p_gtin, PDO::PARAM_STR);
+        $stmt->bindValue(':p_user_login', $p_user_login, PDO::PARAM_STR);
+        $stmt->execute();
 
         return Redirect::route('report');
     }

@@ -128,8 +128,7 @@ class BusinessSupplyController extends Controller
   {
     $InputData = $this->businessSupplyInput($request, 'existing');
     $selectedBizSup = $this->resolveSelectedBusinessSupply($request);
-    $InputData['bizsupId'] = $selectedBizSup['bizsupId'] ?? ($request->get('bizsupId') ?? '');
-    $InputData['bizsupDesc'] = $selectedBizSup['bizsupDesc'] ?? ($request->get('bizsupDesc') ?? '');
+    $InputData['bizsupId'] = $selectedBizSup['record']['bomBsId'] ?? $this->requestString($request, 'bizsupId');
     $InputData = array_merge($InputData, $selectedBizSup['record'] ?? []);
 
     return Inertia::render('BusinessSupply/Existing', [
@@ -149,8 +148,7 @@ class BusinessSupplyController extends Controller
   {
     $InputData = $this->businessSupplyInput($request, 'existing');
     $selectedBizSup = $this->resolveSelectedBusinessSupply($request);
-    $InputData['bizsupId'] = $selectedBizSup['bizsupId'] ?? ($request->get('bizsupId') ?? '');
-    $InputData['bizsupDesc'] = $selectedBizSup['bizsupDesc'] ?? ($request->get('bizsupDesc') ?? '');
+    $InputData['bizsupId'] = $selectedBizSup['record']['bomBsId'] ?? $this->requestString($request, 'bizsupId');
     $InputData = array_merge($InputData, $selectedBizSup['record'] ?? []);
 
     return Inertia::render('BusinessSupply/Edit', [
@@ -169,32 +167,37 @@ class BusinessSupplyController extends Controller
   protected function businessSupplyInput(Request $request, string $mode = 'create'): array
   {
     return [
-      'mode' => $request->get('mode', $mode),
-      'bizsupId' => $request->get('bizsupId', ''),
-      'bizsupDesc' => $request->get('bizsupDesc', ''),
-      'underType' => $request->get('underType', 'FG'),
-      'matType' => $request->get('matType', '6'),
-      'subMatType' => $request->get('subMatType', '0'),
-      'fgMaterialId' => $request->get('fgMaterialId', ''),
-      'brand' => $request->get('brand', ''),
-      'site' => $request->get('site', ''),
-      'bsId' => $request->get('bsId', ''),
-      'bomBsId' => $request->get('bomBsId', ''),
-      'bomBsDesc' => $request->get('bomBsDesc', ''),
-      'searchDesc' => $request->get('searchDesc', ''),
-      'compDescEn' => $request->get('compDescEn', ''),
-      'compDescTh' => $request->get('compDescTh', ''),
-      'uom' => $request->get('uom', ''),
-      'productCat' => $request->get('productCat', ''),
-      'prodSubCat' => $request->get('prodSubCat', ''),
-      'componentId' => $request->get('componentId', ''),
-      'components' => $request->get('components', []),
+      'mode' => $this->requestString($request, 'mode') !== '' ? $this->requestString($request, 'mode') : $mode,
+      'bizsupId' => $this->requestString($request, 'bizsupId'),
+      'bizsupDesc' => $this->requestString($request, 'bizsupDesc'),
+      'underType' => $this->requestString($request, 'underType'),
+      'matType' => $this->requestString($request, 'matType'),
+      'subMatType' => $this->requestString($request, 'subMatType'),
+      'fgMaterialId' => $this->requestString($request, 'fgMaterialId'),
+      'brand' => $this->requestString($request, 'brand'),
+      'site' => $this->requestString($request, 'site'),
+      'bsId' => $this->requestString($request, 'bsId'),
+      'bomBsId' => $this->requestString($request, 'bomBsId'),
+      'bomBsDesc' => $this->requestString($request, 'bomBsDesc'),
+      'searchDesc' => $this->requestString($request, 'searchDesc'),
+      'compDescEn' => $this->requestString($request, 'compDescEn'),
+      'compDescTh' => $this->requestString($request, 'compDescTh'),
+      'uom' => $this->requestString($request, 'uom'),
+      'productCat' => $this->requestString($request, 'productCat'),
+      'prodSubCat' => $this->requestString($request, 'prodSubCat'),
+      'componentId' => $this->requestString($request, 'componentId'),
+      'components' => $request->input('components', []),
     ];
+  }
+
+  protected function requestString(Request $request, string $key): string
+  {
+    return trim((string) $request->input($key, ''));
   }
 
   protected function resolveSelectedBusinessSupply(Request $request): array
   {
-    $bizsupId = trim((string) $request->get('bizsupId', ''));
+    $bizsupId = $this->requestString($request, 'bizsupId');
 
     if ($bizsupId === '') {
       return [
@@ -212,7 +215,7 @@ class BusinessSupplyController extends Controller
 
     return [
       'bizsupId' => $bizsupId,
-      'bizsupDesc' => trim((string) $request->get('bizsupDesc', '')),
+      'bizsupDesc' => $this->requestString($request, 'bizsupDesc'),
       'record' => $recordData,
     ];
   }

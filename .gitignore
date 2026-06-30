@@ -24,3 +24,4 @@ Homestead.json
 public/build
 composer.lock
 package-lock.json
+.DS_Store

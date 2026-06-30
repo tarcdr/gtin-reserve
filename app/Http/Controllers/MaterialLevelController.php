@@ -706,8 +706,18 @@ class MaterialLevelController extends Controller
     $materialIdFg1 = trim((string) ($inputData['fgMaterialId'] ?? $request->get('fgMaterialId') ?? $request->get('materialId') ?? $request->get('referentMaterialId') ?? $fgDetail['materialId'] ?? ''));
     $site = trim((string) ($inputData['site'] ?? $request->get('site') ?? $fgDetail['site'] ?? ''));
     $uom = trim((string) ($inputData['uom'] ?? $request->get('uom') ?? $fgDetail['semiFgLv1']['uom'] ?? ''));
-    $fgBomId = trim((string) ($inputData['fg_bom_id'] ?? $request->get('fg_bom_id') ?? ''));
+    $semiFgL2BomId = trim((string) ($inputData['semiFgLv2BomId'] ?? $request->get('semiFgLv2BomId') ?? $request->get('semi_fg_lv2_bom_id') ?? data_get($fgDetail, 'semiFgLv2.bomId', '') ?? ''));
     $semiFgL2Id = trim((string) ($inputData['semi_fg_lv2_id'] ?? $request->get('semi_fg_lv2_id') ?? ''));
+
+    if ($semiFgL2Id === '' && $fgBomId !== '') {
+      $semiFgLv2 = $this->loadSemiFgLv2ByFgBomId($fgBomId);
+      $semiFgL2Id = trim((string) ($semiFgLv2['id'] ?? ''));
+    }
+
+    if ($semiFgL2BomId === '' && $semiFgL2Id !== '') {
+      $semiFgLv2Bom = $this->loadSemiFgLv2BomById($semiFgL2Id);
+      $semiFgL2BomId = trim((string) ($semiFgLv2Bom['bomId'] ?? ''));
+    }
 
     Log::debug('material-levels.semi-fg-lv1.save.start', [
       'mode' => $mode,
@@ -716,7 +726,7 @@ class MaterialLevelController extends Controller
       'semiFgL1Id' => $semiFgL1Id,
       'fgBomId' => $fgBomId,
       'materialIdFg1' => $materialIdFg1,
-      'fgBomId' => $fgBomId,
+      'semiFgL2BomId' => $semiFgL2BomId,
       'semiFgL2Id' => $semiFgL2Id,
     ]);
 
@@ -731,7 +741,7 @@ class MaterialLevelController extends Controller
     $stmt->bindValue(':P_SEMI_FG_L1_ID_FULL_DESC_TH', $semiFgL1IdFullDescTh, PDO::PARAM_STR);
     $stmt->bindValue(':P_FG_BOM_ID', $fgBomId, PDO::PARAM_STR);
     $stmt->bindValue(':P_MATERIAL_ID_FG_1', $materialIdFg1, PDO::PARAM_STR);
-    $stmt->bindValue(':P_SEMI_FG_L2_BOM_ID', $fgBomId, PDO::PARAM_STR);
+    $stmt->bindValue(':P_SEMI_FG_L2_BOM_ID', $semiFgL2BomId, PDO::PARAM_STR);
     $stmt->bindValue(':P_SEMI_FG_L2_ID', $semiFgL2Id, PDO::PARAM_STR);
     $stmt->bindValue(':P_SITE', $site, PDO::PARAM_STR);
     $stmt->bindValue(':P_UOM_SEMI_FG_L1ID', $uom, PDO::PARAM_STR);
@@ -943,7 +953,7 @@ class MaterialLevelController extends Controller
 
   public function semiFgLevel1(Request $request): Response
   {
-    $InputData = $this->baseInput($request, 'proj1_semi_fg_lv1', '1', $request->get('subMattype', ''));
+    $InputData = $this->baseInput($request, 'proj1_semi_fg_lv1', '3', $request->get('subMattype', ''));
     $subMattypes = $this->fetchSubMattypesFromView('PROJ1_2_MASTER_BOM_SEMI_LV1_V', $this->subMattypes);
     $levelMaterialId = $request->get('levelMaterialId');
     $referentMaterialId = $request->get('referentMaterialId');
@@ -974,6 +984,7 @@ class MaterialLevelController extends Controller
       ]);
     }
 
+    $semiFgLv2Bom = null;
     $fgDetail = null;
 
     if ($semiFgLv2) {
@@ -981,6 +992,13 @@ class MaterialLevelController extends Controller
         'fg_bom_id' => trim((string) ($semiFgLv2->fg_bom_id ?? '')),
         'semi_fg_lv2_id' => trim((string) ($semiFgLv2->semi_fg_lv2_id ?? '')),
       ];
+      $semiFgLv2Bom = $this->loadSemiFgLv2BomById($semiFgLv2['semi_fg_lv2_id']);
+      if (is_array($semiFgLv2Bom)) {
+        $semiFgLv2['bomId'] = trim((string) ($semiFgLv2Bom['bomId'] ?? ''));
+        $semiFgLv2['bomDesc'] = trim((string) ($semiFgLv2Bom['bomDesc'] ?? ''));
+        $InputData['parentLevelBomId'] = $semiFgLv2['bomId'];
+        $InputData['parentLevelBomDesc'] = $semiFgLv2['bomDesc'];
+      }
       $InputData['fg_bom_id'] = $semiFgLv2['fg_bom_id'];
       $InputData['semi_fg_lv2_id'] = $semiFgLv2['semi_fg_lv2_id'];
       $InputData['semiFgLv2'] = $semiFgLv2;
@@ -1027,6 +1045,15 @@ class MaterialLevelController extends Controller
       $InputData['uom'] = $request->get('uom') ?? $semiFgLv1['uom'] ?? '';
       $InputData['materialId'] = $request->get('levelMaterialId') ?? $semiFgLv1['id'] ?? '';
       $InputData['mode'] = $request->get('mode', 'view');
+
+      if (($InputData['parentLevelBomId'] ?? '') === '') {
+        $parentSemiFgLv2 = $this->loadSemiFgLv2ByFgBomId($InputData['fgBomId'] ?? '');
+        $parentSemiFgLv2Bom = $this->loadSemiFgLv2BomById($parentSemiFgLv2['id'] ?? '');
+        if (is_array($parentSemiFgLv2Bom)) {
+          $InputData['parentLevelBomId'] = trim((string) ($parentSemiFgLv2Bom['bomId'] ?? ''));
+          $InputData['parentLevelBomDesc'] = trim((string) ($parentSemiFgLv2Bom['bomDesc'] ?? ''));
+        }
+      }
     } else {
       $fgDetail = FgMaterialDml::query()
       ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$request->get('referentMaterialId')])
@@ -1167,15 +1194,24 @@ class MaterialLevelController extends Controller
     $fgBomId = $validated['fgBomId'];
     $mattype = $validated['mattype'];
     $subMattype = $validated['subMattype'];
+
+    if (!$this->loadSemiFgLv2ByFgBomId($fgBomId)) {
+      throw ValidationException::withMessages([
+        'fgBomId' => 'Create Semi FG Level 2 first.',
+      ]);
+    }
+
+    $userLogin = (string) ($request->user()?->user_login ?? '');
     $levelBomId = null;
     $levelMaterialId = null;
     $error = null;
     $pdo = DB::getPdo();
-    $stmt = $pdo->prepare('BEGIN proj1_2_gen_semifg_lv1(:p_fg_matid, :p_fg_bomid, :p_mattype, :p_sub_mattype, :p_semifg_lv2_bomid, :p_semifg_lv2_id, :P_ERROR); END;');
+    $stmt = $pdo->prepare('BEGIN proj1_2_gen_semifg_lv1(:p_fg_matid, :p_fg_bomid, :p_mattype, :p_sub_mattype, :p_user_login, :p_semifg_lv2_bomid, :p_semifg_lv2_id, :P_ERROR); END;');
     $stmt->bindParam(':p_fg_matid', $fgMaterialId, PDO::PARAM_STR);
     $stmt->bindParam(':p_fg_bomid', $fgBomId, PDO::PARAM_STR);
     $stmt->bindParam(':p_mattype', $mattype, PDO::PARAM_STR);
     $stmt->bindParam(':p_sub_mattype', $subMattype, PDO::PARAM_STR);
+    $stmt->bindParam(':p_user_login', $userLogin, PDO::PARAM_STR);
     $stmt->bindParam(':p_semifg_lv2_bomid', $levelBomId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':p_semifg_lv2_id', $levelMaterialId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
@@ -1212,11 +1248,13 @@ class MaterialLevelController extends Controller
     $levelMaterialId = null;
     $error = null;
     $pdo = DB::getPdo();
-    $stmt = $pdo->prepare('BEGIN proj1_2_gen_semifg_lv2(:p_fg_matid, :p_fg_bomid, :p_mattype, :p_sub_mattype, :p_semifg_lv2_bomid, :p_semifg_lv2_id, :P_ERROR); END;');
+    $userLogin = (string) ($request->user()?->user_login ?? '');
+    $stmt = $pdo->prepare('BEGIN proj1_2_gen_semifg_lv2(:p_fg_matid, :p_fg_bomid, :p_mattype, :p_sub_mattype, :p_user_login, :p_semifg_lv2_bomid, :p_semifg_lv2_id, :P_ERROR); END;');
     $stmt->bindParam(':p_fg_matid', $fgMaterialId, PDO::PARAM_STR);
     $stmt->bindParam(':p_fg_bomid', $fgBomId, PDO::PARAM_STR);
     $stmt->bindParam(':p_mattype', $mattype, PDO::PARAM_STR);
     $stmt->bindParam(':p_sub_mattype', $subMattype, PDO::PARAM_STR);
+    $stmt->bindParam(':p_user_login', $userLogin, PDO::PARAM_STR);
     $stmt->bindParam(':p_semifg_lv2_bomid', $levelBomId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':p_semifg_lv2_id', $levelMaterialId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
@@ -1250,6 +1288,12 @@ class MaterialLevelController extends Controller
     ]);
 
     $inputData = $this->baseInput($request, 'proj1_semi_fg_lv1', '1', $validated['subMattype']);
+    $semiFgLv2BomId = trim((string) (
+      data_get($request->get('fgDetail', []), 'semiFgLv2.bomId')
+      ?: $request->get('semiFgLv2BomId')
+      ?: $request->get('semi_fg_lv2_bom_id')
+      ?: ''
+    ));
     $this->callSaveSemiFgLevel1Procedure($request, array_merge($inputData, [
       'levelBomId' => $validated['levelBomId'],
       'levelBomDesc' => $validated['levelBomDesc'],
@@ -1259,6 +1303,7 @@ class MaterialLevelController extends Controller
       'fullDescTh' => $validated['fullDescTh'],
       'uom' => $validated['uom'],
       'subMattype' => $validated['subMattype'],
+      'semiFgLv2BomId' => $semiFgLv2BomId,
     ]), $request->user()?->user_login, $request->user()?->role);
 
     $fgDetail = $request->get('fgDetail', []);
@@ -1317,15 +1362,17 @@ class MaterialLevelController extends Controller
     $fgBomId = trim((string) $validated['fgBomId']);
     $mattype = trim((string) ($validated['mattype'] ?? '2'));
     $subMattype = trim((string) ($validated['subMattype'] ?? '0'));
+    $userLogin = (string) ($request->user()?->user_login ?? '');
     $semiFgLv2BomId = null;
     $semiFgLv2Id = null;
     $error = null;
     $pdo = DB::connection('oracle')->getPdo();
-    $stmt = $pdo->prepare('BEGIN proj1_2_gen_semifg_lv2(:p_fg_matid, :p_fg_bomid, :p_mattype, :p_sub_mattype, :p_semifg_lv2_bomid, :p_semifg_lv2_id, :P_ERROR); END;');
+    $stmt = $pdo->prepare('BEGIN proj1_2_gen_semifg_lv2(:p_fg_matid, :p_fg_bomid, :p_mattype, :p_sub_mattype, :p_user_login, :p_semifg_lv2_bomid, :p_semifg_lv2_id, :P_ERROR); END;');
     $stmt->bindValue(':p_fg_matid', $fgMaterialId, PDO::PARAM_STR);
     $stmt->bindValue(':p_fg_bomid', $fgBomId, PDO::PARAM_STR);
     $stmt->bindValue(':p_mattype', $mattype, PDO::PARAM_STR);
     $stmt->bindValue(':p_sub_mattype', $subMattype, PDO::PARAM_STR);
+    $stmt->bindValue(':p_user_login', $userLogin, PDO::PARAM_STR);
     $stmt->bindParam(':p_semifg_lv2_bomid', $semiFgLv2BomId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':p_semifg_lv2_id', $semiFgLv2Id, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
@@ -1365,7 +1412,7 @@ class MaterialLevelController extends Controller
       'uom' => trim((string) ($request->get('uom') ?? '')),
     ]);
 
-    return Redirect::route('packmaterial.new', $payload);
+    return Redirect::route('packmaterial.semi-fg-lv2-bom.new', $payload);
   }
 
   public function createComponentSemiFgLevel1(Request $request): RedirectResponse
@@ -1375,7 +1422,7 @@ class MaterialLevelController extends Controller
     $payload['subMattype'] = '0';
     $payload['semiFgLvBomId'] = trim((string) ($request->get('levelBomId') ?? $request->get('bomId') ?? ''));
     $payload['semiFgLvBomDesc'] = trim((string) ($request->get('levelBomDesc') ?? $request->get('bomDesc') ?? ''));
-    return Redirect::route('packmaterial.new', $payload);
+    return Redirect::route('packmaterial.semi-fg-lv1-bom.new', $payload);
   }
 
 }

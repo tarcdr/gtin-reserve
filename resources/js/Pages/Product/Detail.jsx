@@ -65,16 +65,18 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   };
 
   const goToPackMaterial = () => {
-    router.get(route('packmaterial.new'), {
+    router.get(route('packmaterial.fg-bom.new'), {
       ownerLevel: 'fg',
       backRoute: 'product.view',
       referentMaterialId: data.materialId,
+      bomDesc: data.bomDesc,
+      fgBomDesc: data.bomDesc,
       actionMode: 'create',
     });
   };
 
   const goToPackMaterialAction = (actionMode, item) => {
-    router.get(route('packmaterial.new'), {
+    router.get(route('packmaterial.fg-bom.new'), {
       ownerLevel: 'fg',
       backRoute: 'product.view',
       referentMaterialId: data.materialId,
@@ -460,20 +462,20 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                           <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                               <div>
-                                <InputLabel htmlFor="fgMaterialId" value="Semi FG Level 2" />
+                                <InputLabel htmlFor="fgMaterialId" value="SEMI FG LV2 BOM ID" />
                                 <TextInput
                                   id="fgMaterialId"
                                   className="mt-1 block w-full bg-gray-100"
-                                  value={semiFgLv2.id}
+                                  value={semiFgLv2.bomId}
                                   disabled
                                 />
                               </div>
                               <div>
-                                <InputLabel htmlFor="fgBomId" value="Semi FG Level 2 Description" />
+                                <InputLabel htmlFor="fgBomId" value="SEMI FG LV2 BOM Description" />
                                 <TextInput
                                   id="fgBomId"
                                   className="mt-1 block w-full bg-gray-100"
-                                  value={semiFgLv2.desc}
+                                  value={semiFgLv2.bomDesc}
                                   disabled
                                 />
                               </div>
@@ -504,20 +506,20 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                           <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                               <div>
-                                <InputLabel htmlFor="fgMaterialId" value="Semi FG Level 1" />
+                                <InputLabel htmlFor="fgMaterialId" value="SEMI FG LV1 BOM ID" />
                                 <TextInput
                                   id="fgMaterialId"
                                   className="mt-1 block w-full bg-gray-100"
-                                  value={semiFgLv1.id}
+                                  value={semiFgLv1.bomId}
                                   disabled
                                 />
                               </div>
                               <div>
-                                <InputLabel htmlFor="fgBomId" value="Semi FG Level 1 Description" />
+                                <InputLabel htmlFor="fgBomId" value="SEMI FG LV1 BOM Description" />
                                 <TextInput
                                   id="fgBomId"
                                   className="mt-1 block w-full bg-gray-100"
-                                  value={semiFgLv1.desc}
+                                  value={semiFgLv1.bomDesc}
                                   disabled
                                 />
                               </div>

@@ -33,6 +33,9 @@ export default function MaterialLevelForm({
   showLevelBomFields = false,
   levelBomIdLabel = 'Level BOM ID',
   levelBomDescLabel = 'Level BOM Description',
+  parentLevelBomIdLabel = 'Parent Level BOM ID',
+  parentLevelBomDescLabel = 'Parent Level BOM Description',
+  showParentLevelBomFields = false,
   levelIdLabel = '',
   searchDescLabel = 'Search Description',
   fullDescEnLabel = 'Full Description (EN)',
@@ -62,6 +65,8 @@ export default function MaterialLevelForm({
     fgBomDesc: InputData?.fgBomDesc || '',
     parentMattype: InputData?.parentMattype || '',
     parentSubMattype: InputData?.parentSubMattype || '',
+    parentLevelBomId: InputData?.parentLevelBomId || '',
+    parentLevelBomDesc: InputData?.parentLevelBomDesc || '',
     mattype: InputData?.mattype || '',
     subMattype: InputData?.subMattype || '',
     levelBomId: InputData?.levelBomId || InputData?.bomId || '',
@@ -186,10 +191,6 @@ export default function MaterialLevelForm({
     levelMaterialId: data.materialId || data.levelMaterialId || '',
     backMaterialId: data.levelMaterialId || data.materialId || '',
     referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
-    semiFgLvBomId: data.levelBomId || '',
-    semiFgLvBomDesc: data.levelBomDesc || '',
-    bomId: data.levelBomId || '',
-    bomDesc: data.levelBomDesc || '',
     ...(actionMode !== 'create' && item?.code ? { componentId: item.code } : {}),
   });
 
@@ -200,21 +201,17 @@ export default function MaterialLevelForm({
     levelMaterialId: data.materialId || data.levelMaterialId || '',
     backMaterialId: data.levelMaterialId || data.materialId || '',
     referentMaterialId: data.fgMaterialId || data.referentMaterialId || '',
-    semiFgLvBomId: data.levelBomId || '',
-    semiFgLvBomDesc: data.levelBomDesc || '',
-    bomId: data.levelBomId || '',
-    bomDesc: data.levelBomDesc || '',
     ...(actionMode !== 'create' && item?.code ? { componentId: item.code } : {}),
   });
 
   const goCreateComponent = () => {
     if (levelKey === 'semiFgLv2') {
-      router.get(route('packmaterial.new'), buildSemiFgLv2ComponentPayload('create'));
+      router.get(route('packmaterial.semi-fg-lv2-bom.new'), buildSemiFgLv2ComponentPayload('create'));
       return;
     }
 
     if (levelKey === 'semiFgLv1') {
-      router.get(route('packmaterial.new'), buildSemiFgLv1ComponentPayload('create'));
+      router.get(route('packmaterial.semi-fg-lv1-bom.new'), buildSemiFgLv1ComponentPayload('create'));
       return;
     }
 
@@ -263,12 +260,12 @@ export default function MaterialLevelForm({
 
   const goComponentAction = (actionMode, item = {}) => {
     if (levelKey === 'semiFgLv2') {
-      router.get(route('packmaterial.new'), buildSemiFgLv2ComponentPayload(actionMode, item));
+      router.get(route('packmaterial.semi-fg-lv2-bom.new'), buildSemiFgLv2ComponentPayload(actionMode, item));
       return;
     }
 
     if (levelKey === 'semiFgLv1') {
-      router.get(route('packmaterial.new'), buildSemiFgLv1ComponentPayload(actionMode, item));
+      router.get(route('packmaterial.semi-fg-lv1-bom.new'), buildSemiFgLv1ComponentPayload(actionMode, item));
       return;
     }
 
@@ -390,8 +387,8 @@ export default function MaterialLevelForm({
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {showStorageTable && (
+              {showStorageTable && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <InputLabel htmlFor="storageTable" value="Storage Table" />
                     <TextInput
@@ -401,8 +398,30 @@ export default function MaterialLevelForm({
                       disabled
                     />
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+              {showParentLevelBomFields && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <InputLabel htmlFor="parentLevelBomId" value={parentLevelBomIdLabel} />
+                    <TextInput
+                      id="parentLevelBomId"
+                      className="mt-1 block w-full bg-gray-100"
+                      value={data.parentLevelBomId}
+                      disabled
+                    />
+                  </div>
+                  <div>
+                    <InputLabel htmlFor="parentLevelBomDesc" value={parentLevelBomDescLabel} />
+                    <TextInput
+                      id="parentLevelBomDesc"
+                      className="mt-1 block w-full bg-gray-100"
+                      value={data.parentLevelBomDesc}
+                      disabled
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

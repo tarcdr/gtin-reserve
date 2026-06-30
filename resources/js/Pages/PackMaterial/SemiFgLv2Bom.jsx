@@ -2,21 +2,27 @@ import BomMaterialForm from '@/Components/BomMaterialForm';
 import useBomMaterialFormController from '@/Components/useBomMaterialFormController';
 import { router } from '@inertiajs/react';
 
-export default function RawMaterial(props) {
-  const ownerLevel = 'fg';
-  const isSemiFgOwner = false;
-  const defaultBackRoute = 'product.view';
+export default function SemiFgLv2Bom({ auth, InputData, subMattypes = [], uoms = [] }) {
+  const ownerLevel = 'semiFgLv2';
+  const isSemiFgOwner = true;
+  const defaultBackRoute = 'material-levels.semi-fg-lv2.new';
+  const pageId = InputData?.actionMode === 'create' ? '1CSML2' : '2CSML2';
   const form = useBomMaterialFormController({
-    InputData: props.InputData,
-    submitRoute: 'material-levels.raw.save',
+    InputData: { ...(InputData || {}), ownerLevel },
+    submitRoute: 'packmaterial.semi-fg-lv2-bom.save',
     ownerLevel,
     isSemiFgOwner,
     defaultBackRoute,
   });
 
   const handleBack = () => {
-    router.get(route('product.view'), {
-      materialId: form.data.backMaterialId || form.data.fgMaterialId || form.data.materialId || '',
+    router.get(route(defaultBackRoute), {
+      mode: 'view',
+      levelMaterialId: form.data.backMaterialId || form.data.levelMaterialId || form.data.materialId || '',
+      semiFgLvBomId: form.data.semiFgLvBomId || form.data.bomId || '',
+      semiFgLvBomDesc: form.data.semiFgLvBomDesc || form.data.bomDesc || '',
+      bomId: form.data.semiFgLvBomId || form.data.bomId || '',
+      bomDesc: form.data.semiFgLvBomDesc || form.data.bomDesc || '',
     });
   };
 
@@ -24,14 +30,12 @@ export default function RawMaterial(props) {
 
   return (
     <BomMaterialForm
-      auth={props.auth}
-      headerTitle="RAW MATERIAL - Create"
-      pageIdentity={{
-        pageId: 'RM',
-      }}
-      InputData={props.InputData}
-      subMattypes={props.subMattypes}
-      uoms={props.uoms}
+      auth={auth}
+      headerTitle={`SEMI FG LV2 BOM - ${InputData?.actionMode === 'edit' ? 'Edit' : 'Create'}`}
+      pageIdentity={{ pageId }}
+      InputData={{ ...(InputData || {}), ownerLevel }}
+      subMattypes={subMattypes}
+      uoms={uoms}
       data={form.data}
       errors={form.errors}
       processing={form.processing}
@@ -43,8 +47,8 @@ export default function RawMaterial(props) {
       isSubMattypeLocked={form.isSubMattypeLocked}
       isProductSubCatLocked={form.isProductSubCatLocked}
       isDeleteMode={form.isDeleteMode}
-      levelBomIdLabel="New BOM ID"
-      levelBomDescLabel="New BOM Description"
+      levelBomIdLabel="SEMI FG LV2 BOM ID"
+      levelBomDescLabel="SEMI FG LV2 BOM Description"
       primaryActionLabel={form.primaryActionLabel}
       backLabel={form.backLabel}
       onSubmit={form.handleSubmit}

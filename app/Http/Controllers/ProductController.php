@@ -18,7 +18,9 @@ use App\Models\MasterMattypeFg;
 use App\Models\MasterUOM;
 use App\Models\MasterLogisitcSite;
 use App\Models\Proj12SemiFgLv1Id;
+use App\Models\Proj12SemiFgLv1Bom;
 use App\Models\Proj12SemiFgLv2Id;
+use App\Models\Proj12SemiFgLv2Bom;
 use App\Services\MasterCatLookup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -54,6 +56,11 @@ class ProductController extends Controller
         "label" => $b->site,
       ];
     })->toArray();
+  }
+
+  protected function requestString(Request $request, string $key): string
+  {
+    return trim((string) $request->input($key, ''));
   }
 
   static $mattypes = [[
@@ -186,6 +193,14 @@ class ProductController extends Controller
       ->whereRaw('TRIM(FG_BOM_ID) = ?', [$fgBomId])
       ->first();
 
+    $semiFgLv1Bom = Proj12SemiFgLv1Bom::query()
+      ->selectRaw('
+        TRIM(SEMI_FG_LV1_BOM_ID) as semi_fg_lv1_bom_id,
+        TRIM(DESC_SEMI_FG_LV1_BOM_ID) as desc_semi_fg_lv1_bom_id
+      ')
+      ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$row->material_id_fg_1 ?? ''])
+      ->first();
+
     if (!$row) {
       Log::debug('product.load-semi-fg-lv1.not-found', [
         'fgBomId' => $fgBomId,
@@ -206,6 +221,8 @@ class ProductController extends Controller
       'site' => trim((string) ($row->site ?? '')),
       'components' => [],
       'statusRow' => trim((string) ($row->status_row ?? '')),
+      'bomId' => trim((string) ($semiFgLv1Bom->semi_fg_lv1_bom_id ?? '')),
+      'bomDesc' => trim((string) ($semiFgLv1Bom->desc_semi_fg_lv1_bom_id ?? '')),
     ];
 
     Log::debug('product.load-semi-fg-lv1.found', [
@@ -241,6 +258,14 @@ class ProductController extends Controller
       ->whereRaw('TRIM(FG_BOM_ID) = ?', [$fgBomId])
       ->first();
 
+    $semiFgLv2Bom = Proj12SemiFgLv2Bom::query()
+      ->selectRaw('
+        TRIM(SEMI_FG_LV2_BOM_ID) as semi_fg_lv2_bom_id,
+        TRIM(DESC_SEMI_FG_LV2_BOM_ID) as desc_semi_fg_lv2_bom_id
+      ')
+      ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$row->material_id_fg_1 ?? ''])
+      ->first();
+
     if (!$row) {
       Log::debug('product.load-semi-fg-lv2.not-found', [
         'fgBomId' => $fgBomId,
@@ -261,6 +286,8 @@ class ProductController extends Controller
       'site' => trim((string) ($row->site ?? '')),
       'components' => [],
       'statusRow' => trim((string) ($row->status_row ?? '')),
+      'bomId' => trim((string) ($semiFgLv2Bom->semi_fg_lv2_bom_id ?? '')),
+      'bomDesc' => trim((string) ($semiFgLv2Bom->desc_semi_fg_lv2_bom_id ?? '')),
     ];
 
     Log::debug('product.load-semi-fg-lv2.found', [
@@ -332,7 +359,7 @@ class ProductController extends Controller
 
   protected function loadFgMaterialInput(Request $request): ?array
   {
-    return $this->loadFgMaterialInputByMaterialId((string) $request->get('materialId', ''));
+    return $this->loadFgMaterialInputByMaterialId($this->requestString($request, 'materialId'));
   }
 
   protected function loadFgMaterialInputByMaterialId(string $materialId): ?array
@@ -408,9 +435,9 @@ class ProductController extends Controller
   protected function redirectToExistingSearch(Request $request, string $message): RedirectResponse
   {
     $query = array_filter([
-      'brand' => trim((string) $request->get('brand', '')),
-      'mattype' => trim((string) $request->get('mattype', '')),
-      'subMattype' => trim((string) $request->get('subMattype', '')),
+      'brand' => $this->requestString($request, 'brand'),
+      'mattype' => $this->requestString($request, 'mattype'),
+      'subMattype' => $this->requestString($request, 'subMattype'),
     ], fn ($value) => $value !== '');
 
     return Redirect::route('product.search.bom', array_merge($query, [
@@ -420,8 +447,8 @@ class ProductController extends Controller
 
   protected function callSaveMatIdProcedure(array $inputData, ?string $userLogin = null, ?string $userRole = null): void
   {
-    $userLogin = $userLogin ?: 'system';
-    $userRole = $userRole ?: 'GTIN';
+    $userLogin = trim((string) ($userLogin ?? ''));
+    $userRole = trim((string) ($userRole ?? ''));
     $pdo = DB::connection('oracle')->getPdo();
     $error = null;
 
@@ -485,44 +512,43 @@ class ProductController extends Controller
 
   protected function buildProductInput(Request $request): array
   {
-    $normalizeComponents = function ($items) {
-      return collect($items ?? [])
+    $normalizeComponents = function ($items): array {
+      return collect(is_array($items) ? $items : [])
         ->filter(fn($item) => is_array($item) && array_key_exists('code', $item) && $item['code'] !== null && $item['code'] !== '')
-        ->keyBy('code')
         ->values()
         ->all();
     };
 
-    $semiFgLv2 = $request->get('semiFgLv2');
+    $semiFgLv2 = $request->input('semiFgLv2', []);
     if (is_array($semiFgLv2)) {
       $semiFgLv2['components'] = $normalizeComponents($semiFgLv2['components'] ?? []);
     }
 
-    $semiFgLv1 = $request->get('semiFgLv1');
+    $semiFgLv1 = $request->input('semiFgLv1', []);
     if (is_array($semiFgLv1)) {
       $semiFgLv1['components'] = $normalizeComponents($semiFgLv1['components'] ?? []);
     }
 
-    $businessSupply = $request->get('businessSupply');
+    $businessSupply = $request->input('businessSupply', []);
     if (is_array($businessSupply)) {
       $businessSupply['components'] = $normalizeComponents($businessSupply['components'] ?? []);
     }
 
     return [
-      'brand'          => $request->brand,
-      'mattype'        => $request->mattype,
-      'subMattype'     => $request->subMattype,
-      'materialId'     => $request->materialId,
-      'fgStatus'       => $request->fgStatus ?: 'INS',
-      'bomId'          => $request->bomId,
-      'bomDesc'        => $request->bomDesc,
-      'finishGoods'    => $request->finishGoods,
-      'fullDescEn'     => $request->fullDescEn,
-      'fullDescTh'     => $request->fullDescTh,
-      'searchDesc'     => $request->searchDesc,
-      'site'           => $request->site,
-      'uom'            => $request->uom,
-      'fgComponents'   => $normalizeComponents($request->get('fgComponents', [])),
+      'brand'          => $this->requestString($request, 'brand'),
+      'mattype'        => $this->requestString($request, 'mattype'),
+      'subMattype'     => $this->requestString($request, 'subMattype'),
+      'materialId'     => $this->requestString($request, 'materialId'),
+      'fgStatus'       => $this->requestString($request, 'fgStatus'),
+      'bomId'          => $this->requestString($request, 'bomId'),
+      'bomDesc'        => $this->requestString($request, 'bomDesc'),
+      'finishGoods'    => $this->requestString($request, 'finishGoods'),
+      'fullDescEn'     => $this->requestString($request, 'fullDescEn'),
+      'fullDescTh'     => $this->requestString($request, 'fullDescTh'),
+      'searchDesc'     => $this->requestString($request, 'searchDesc'),
+      'site'           => $this->requestString($request, 'site'),
+      'uom'            => $this->requestString($request, 'uom'),
+      'fgComponents'   => $normalizeComponents($request->input('fgComponents', [])),
       'semiFgLv2'      => $semiFgLv2,
       'semiFgLv1'      => $semiFgLv1,
       'businessSupply' => $businessSupply,
@@ -555,22 +581,11 @@ class ProductController extends Controller
     $sites = $this->masterSite;
     $finishGoods = $this->mk->subcategoriesOf('10');
     $masterUom = $this->masterUom;
-    $requestedMaterialId = trim((string) $request->get('materialId', ''));
+    $requestedMaterialId = $this->requestString($request, 'materialId');
     $InputData = $this->loadFgMaterialInput($request);
 
-    if ($requestedMaterialId !== '' && !$InputData) {
-      Log::warning('product.view.material-not-found', [
-        'materialId' => $requestedMaterialId,
-        'brand' => $request->get('brand'),
-        'mattype' => $request->get('mattype'),
-        'subMattype' => $request->get('subMattype'),
-      ]);
-
-      return $this->redirectToExistingSearch($request, "Material ID {$requestedMaterialId} not found.");
-    }
-
     Log::debug('product.view', [
-      'requestMaterialId' => $request->get('materialId'),
+      'requestMaterialId' => $this->requestString($request, 'materialId'),
       'resolvedInputData' => $InputData,
     ]);
     return Inertia::render('Product/Detail', compact('InputData', 'brands', 'mattypes', 'sites', 'masterUom', 'finishGoods'));
@@ -590,7 +605,7 @@ class ProductController extends Controller
       'materialId' => $InputData['materialId'] ?? null,
     ]);
     return Redirect::route('product.view', [
-      'materialId' => $savedInputData['materialId'] ?? ($InputData['materialId'] ?? null),
+      'materialId' => $savedInputData['materialId'],
     ]);
   }
 
@@ -598,16 +613,13 @@ class ProductController extends Controller
   {
     $brands = $this->brands;
     $mattypes = $this->fgMattypes();
-    $mattype = trim((string) $request->get('mattype', ''));
-    if ($mattype === '' && count($mattypes) > 0) {
-      $mattype = $mattypes[0]['code'] ?? '';
-    }
+    $mattype = $this->requestString($request, 'mattype');
     $InputData = [
-      'brand' => $request->brand,
+      'brand' => $this->requestString($request, 'brand'),
       'mattype' => $mattype,
-      'subMattype' => $request->subMattype,
-      'subMattypeOptions' => $this->normalizeSubMattypeOptions($request->get('subMattypeOptions', [])),
-      'startStep' => $request->get('startStep'),
+      'subMattype' => $this->requestString($request, 'subMattype'),
+      'subMattypeOptions' => $this->normalizeSubMattypeOptions($request->input('subMattypeOptions', [])),
+      'startStep' => $request->input('startStep'),
     ];
     return Inertia::render('Product/Search', compact('brands', 'mattypes', 'InputData'));
   }
@@ -617,9 +629,9 @@ class ProductController extends Controller
     $brands = $this->brands;
     $mattypes = $this->fgMattypes();
     $materials = [];
-    $brand = trim((string) $request->get('brand', ''));
-    $mattype = trim((string) $request->get('mattype', ''));
-    $subMattype = trim((string) $request->get('subMattype', ''));
+    $brand = $this->requestString($request, 'brand');
+    $mattype = $this->requestString($request, 'mattype');
+    $subMattype = $this->requestString($request, 'subMattype');
 
     if ($brand !== '' && $mattype !== '' && $subMattype !== '') {
       try {
@@ -651,9 +663,9 @@ class ProductController extends Controller
     }
 
     $InputData = [
-      'brand'      => $request->brand,
-      'mattype'    => $request->mattype,
-      'subMattype' => $request->subMattype,
+      'brand'      => $this->requestString($request, 'brand'),
+      'mattype'    => $this->requestString($request, 'mattype'),
+      'subMattype' => $this->requestString($request, 'subMattype'),
       'status'     => '',
     ];
     return Inertia::render('Product/SearchBom', compact('InputData', 'brands', 'mattypes', 'materials'));
@@ -720,19 +732,8 @@ class ProductController extends Controller
     $sites = $this->masterSite;
     $finishGoods = $this->mk->subcategoriesOf('10');
     $masterUom = $this->masterUom;
-    $requestedMaterialId = trim((string) $request->get('materialId', ''));
+    $requestedMaterialId = $this->requestString($request, 'materialId');
     $InputData = $this->loadFgMaterialInput($request);
-
-    if ($requestedMaterialId !== '' && !$InputData) {
-      Log::warning('product.edit.material-not-found', [
-        'materialId' => $requestedMaterialId,
-        'brand' => $request->get('brand'),
-        'mattype' => $request->get('mattype'),
-        'subMattype' => $request->get('subMattype'),
-      ]);
-
-      return $this->redirectToExistingSearch($request, "Material ID {$requestedMaterialId} not found.");
-    }
 
     $isDisabled = false;
     $isEditMode = true;
@@ -742,21 +743,20 @@ class ProductController extends Controller
   public function find(ProductSearchRequest $request): RedirectResponse
   {
     return Redirect::route('product.search.bom', [
-      'brand' => $request->brand,
-      'mattype' => $request->mattype,
-      'subMattype' => $request->subMattype,
+      'brand' => $this->requestString($request, 'brand'),
+      'mattype' => $this->requestString($request, 'mattype'),
+      'subMattype' => $this->requestString($request, 'subMattype'),
     ]);
   }
 
   public function findBom(ProductSearchBomRequest $request): RedirectResponse
   {
-    $InputData = $this->loadFgMaterialInput($request) ?? [
-      'brand' => $request->brand,
-      'mattype' => $request->mattype,
-      'subMattype' => $request->subMattype,
-      'materialId' => $request->materialId,
-    ];
-    return Redirect::route('product.view', $InputData);
+    return Redirect::route('product.view', [
+      'brand' => $this->requestString($request, 'brand'),
+      'mattype' => $this->requestString($request, 'mattype'),
+      'subMattype' => $this->requestString($request, 'subMattype'),
+      'materialId' => $this->requestString($request, 'materialId'),
+    ]);
   }
 
   public function generateMaterialId(Request $request): JsonResponse
@@ -769,12 +769,14 @@ class ProductController extends Controller
 
     $materialId = null;
     $error = null;
+    $userLogin = (string) ($request->user()?->user_login ?? '');
     $pdo = DB::getPdo();
-    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_MATID(:p_brand, :p_mattype, :p_sub_mattype, :p_suggest_material_id, :p_error); END;');
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_MATID(:p_brand, :p_mattype, :p_submat, :p_user_login, :p_suggest_id, :p_error); END;');
     $stmt->bindParam(':p_brand', $validated['brand'], PDO::PARAM_STR);
     $stmt->bindParam(':p_mattype', $validated['mattype'], PDO::PARAM_STR);
-    $stmt->bindParam(':p_sub_mattype', $validated['subMattype'], PDO::PARAM_STR);
-    $stmt->bindParam(':p_suggest_material_id', $materialId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
+    $stmt->bindParam(':p_submat', $validated['subMattype'], PDO::PARAM_STR);
+    $stmt->bindParam(':p_user_login', $userLogin, PDO::PARAM_STR);
+    $stmt->bindParam(':p_suggest_id', $materialId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':p_error', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
     $stmt->execute();
 
@@ -792,20 +794,16 @@ class ProductController extends Controller
       'site' => ['required'],
     ]);
 
-    $bomId = null;
-    $error = null;
-    $pdo = DB::getPdo();
-    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_BOMID_FG(:p_suggest_id, :p_site, :p_out_bomid, :p_error); END;');
-    $stmt->bindParam(':p_suggest_id', $validated['suggestId'], PDO::PARAM_STR);
-    $stmt->bindParam(':p_site', $validated['site'], PDO::PARAM_STR);
-    $stmt->bindParam(':p_out_bomid', $bomId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
-    $stmt->bindParam(':p_error', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
-    $stmt->execute();
+    $generated = $this->generateFgBomIdProcedure(
+      (string) $validated['suggestId'],
+      (string) $validated['site'],
+      (string) ($request->user()?->user_login ?? '')
+    );
 
     return response()->json([
       'program' => 'PROJ1_2_GEN_BOMID_FG',
-      'bomId' => $bomId,
-      'error' => $this->resolveProcedureErrorMessage($error),
+      'bomId' => $generated['bomId'],
+      'error' => $generated['error'],
     ]);
   }
 
@@ -820,16 +818,16 @@ class ProductController extends Controller
     $this->callSaveMatIdProcedure($InputData, $request->user()?->user_login, $request->user()?->role);
     $savedInputData = $this->assertFgMaterialSaved((string) ($InputData['materialId'] ?? ''));
     Log::debug('product.update.redirect', [
-      'materialId' => $savedInputData['materialId'] ?? ($InputData['materialId'] ?? null),
+      'materialId' => $savedInputData['materialId'],
     ]);
     return Redirect::route('product.view', [
-      'materialId' => $savedInputData['materialId'] ?? ($InputData['materialId'] ?? null),
+      'materialId' => $savedInputData['materialId'],
     ]);
   }
 
   public function delete(Request $request): RedirectResponse
   {
-    $this->deleteFgMaterial((string) $request->get('materialId'));
+    $this->deleteFgMaterial($this->requestString($request, 'materialId'));
 
     return Redirect::route('product.search');
   }

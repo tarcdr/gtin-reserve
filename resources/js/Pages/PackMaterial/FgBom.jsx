@@ -2,13 +2,14 @@ import BomMaterialForm from '@/Components/BomMaterialForm';
 import useBomMaterialFormController from '@/Components/useBomMaterialFormController';
 import { router } from '@inertiajs/react';
 
-export default function RawMaterial(props) {
+export default function FgBom({ auth, InputData, subMattypes = [], uoms = [] }) {
   const ownerLevel = 'fg';
   const isSemiFgOwner = false;
   const defaultBackRoute = 'product.view';
+  const pageId = InputData?.actionMode === 'create' ? '1CFG' : '2CFG';
   const form = useBomMaterialFormController({
-    InputData: props.InputData,
-    submitRoute: 'material-levels.raw.save',
+    InputData: { ...(InputData || {}), ownerLevel },
+    submitRoute: 'packmaterial.fg-bom.save',
     ownerLevel,
     isSemiFgOwner,
     defaultBackRoute,
@@ -24,14 +25,12 @@ export default function RawMaterial(props) {
 
   return (
     <BomMaterialForm
-      auth={props.auth}
-      headerTitle="RAW MATERIAL - Create"
-      pageIdentity={{
-        pageId: 'RM',
-      }}
-      InputData={props.InputData}
-      subMattypes={props.subMattypes}
-      uoms={props.uoms}
+      auth={auth}
+      headerTitle={`FG BOM - ${InputData?.actionMode === 'edit' ? 'Edit' : 'Create'}`}
+      pageIdentity={{ pageId }}
+      InputData={{ ...(InputData || {}), ownerLevel }}
+      subMattypes={subMattypes}
+      uoms={uoms}
       data={form.data}
       errors={form.errors}
       processing={form.processing}
@@ -43,8 +42,8 @@ export default function RawMaterial(props) {
       isSubMattypeLocked={form.isSubMattypeLocked}
       isProductSubCatLocked={form.isProductSubCatLocked}
       isDeleteMode={form.isDeleteMode}
-      levelBomIdLabel="New BOM ID"
-      levelBomDescLabel="New BOM Description"
+      levelBomIdLabel="FG BOM ID"
+      levelBomDescLabel="FG BOM Description"
       primaryActionLabel={form.primaryActionLabel}
       backLabel={form.backLabel}
       onSubmit={form.handleSubmit}

@@ -18,16 +18,6 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class MaterialController extends Controller
 {
-    public function __construct()
-    {
-        $this->host     = env('DB_HOST', '');
-        $this->port     = env('DB_PORT', '');
-        $this->database = env('DB_DATABASE', '');
-        $this->username = env('DB_USERNAME', '');
-        $this->password = env('DB_PASSWORD', '');
-
-        $this->db = '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=' . $this->host . ')(PORT=' . $this->port . '))(CONNECT_DATA=(SERVICE_NAME = ' . $this->database . ')))';
-    }
     /**
      * Display the user's profile form.
      */
