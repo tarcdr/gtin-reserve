@@ -367,24 +367,46 @@ class BusinessSupplyController extends Controller
   public function generate(BusinessSupplyGenerateRequest $request): JsonResponse
   {
     $validated = $request->validated();
-    $selectedValue = (string) ($validated['underType'] === 'FG'
-      ? ($validated['fgMaterialId'] ?? '')
-      : ($validated['underType'] === 'BRAND'
-        ? ($validated['brand'] ?? '')
-        : ''));
+    $underType = (string) $validated['underType'];
+    $typeBs = match ($underType) {
+      'FG' => '1',
+      'BRAND' => '2',
+      'NOT ALL' => '3',
+      default => $underType,
+    };
+    $matType = (string) $validated['matType'];
+    $subMatType = (string) $validated['subMatType'];
+    $materialIdFg = $underType === 'FG' ? (string) ($validated['fgMaterialId'] ?? '') : '';
+    $brand = $underType === 'BRAND' ? (string) ($validated['brand'] ?? '') : '';
+    $site = (string) $validated['site'];
+    $userLogin = (string) ($request->user()?->user_login ?? '');
 
-    $bsId = null;
-    $bomBsId = null;
-    $error = null;
+    $bsId = '';
+    $bomBsId = '';
+    $error = '';
     $pdo = DB::getPdo();
-    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_BS_ID(:p_mattype, :p_sub_mattype, :p_brand, :p_site, :p_bs_id, :p_bom_bs_id, :p_error); END;');
-    $stmt->bindValue(':p_mattype', (string) $validated['matType'], PDO::PARAM_STR);
-    $stmt->bindValue(':p_sub_mattype', (string) $validated['subMatType'], PDO::PARAM_STR);
-    $stmt->bindValue(':p_brand', $selectedValue, PDO::PARAM_STR);
-    $stmt->bindValue(':p_site', (string) $validated['site'], PDO::PARAM_STR);
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_GEN_BS_ID(:p_type_bs, :p_mattype, :p_sub_mattype, :p_material_id_fg, :p_brand, :p_site, :p_user_login, :p_bs_id, :p_bom_bs_id, :p_error); END;');
+    $stmt->bindParam(':p_type_bs', $typeBs, PDO::PARAM_STR);
+    $stmt->bindParam(':p_mattype', $matType, PDO::PARAM_STR);
+    $stmt->bindParam(':p_sub_mattype', $subMatType, PDO::PARAM_STR);
+    $stmt->bindParam(':p_material_id_fg', $materialIdFg, PDO::PARAM_STR);
+    $stmt->bindParam(':p_brand', $brand, PDO::PARAM_STR);
+    $stmt->bindParam(':p_site', $site, PDO::PARAM_STR);
+    $stmt->bindParam(':p_user_login', $userLogin, PDO::PARAM_STR);
     $stmt->bindParam(':p_bs_id', $bsId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':p_bom_bs_id', $bomBsId, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
     $stmt->bindParam(':p_error', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
+
+    Log::debug('business supply generate start', [
+      'underType' => $underType,
+      'typeBs' => $typeBs,
+      'matType' => $matType,
+      'subMatType' => $subMatType,
+      'materialIdFg' => $materialIdFg,
+      'brand' => $brand,
+      'site' => $site,
+      'userLogin' => $userLogin,
+    ]);
 
     try {
       $stmt->execute();
@@ -398,11 +420,28 @@ class BusinessSupplyController extends Controller
       ], 500);
     }
 
-    return response()->json([
-      'program' => 'PROJ1_2_GEN_BS_ID',
+    $resolvedError = $this->resolveProcedureErrorMessage($error);
+
+    Log::debug('business supply generate finish', [
+      'underType' => $underType,
+      'typeBs' => $typeBs,
+      'matType' => $matType,
+      'subMatType' => $subMatType,
+      'materialIdFg' => $materialIdFg,
+      'brand' => $brand,
+      'site' => $site,
+      'userLogin' => $userLogin,
       'bsId' => $bsId,
       'bomBsId' => $bomBsId,
-      'error' => $this->resolveProcedureErrorMessage($error),
+      'error' => $error,
+      'resolvedError' => $resolvedError,
+    ]);
+
+    return response()->json([
+      'program' => 'PROJ1_2_GEN_BS_ID',
+      'bsId' => trim((string) $bsId),
+      'bomBsId' => trim((string) $bomBsId),
+      'error' => $resolvedError,
     ]);
   }
 

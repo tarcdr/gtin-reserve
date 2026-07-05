@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class BusinessSupplyGenerateRequest extends FormRequest
 {
@@ -15,7 +16,7 @@ class BusinessSupplyGenerateRequest extends FormRequest
   {
     return [
       'site' => ['required'],
-      'underType' => ['required', 'in:FG,BRAND,NOT ALL'],
+      'underType' => ['required', Rule::in(['FG', 'BRAND', 'NOT ALL'])],
       'fgMaterialId' => ['required_if:underType,FG'],
       'brand' => ['required_if:underType,BRAND'],
       'matType' => ['required'],

@@ -109,7 +109,7 @@ export default function BusinessSupplyDetail({
               <option value="">---- Select UOM ----</option>
               {uoms.map((item) => (
                 <option key={`uom-${item.value}`} value={item.value}>
-                  {item.label}
+                  {`${item.value} - ${item.label}`}
                 </option>
               ))}
             </select>

@@ -74,6 +74,25 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
     clearErrors();
   };
 
+  const setAxiosValidationErrors = (error) => {
+    const responseErrors = error?.response?.data?.errors;
+
+    if (error?.response?.status !== 422 || !responseErrors || typeof responseErrors !== 'object') {
+      return false;
+    }
+
+    const normalizedErrors = Object.entries(responseErrors).reduce((nextErrors, [field, messages]) => {
+      const message = Array.isArray(messages) ? messages[0] : messages;
+
+      nextErrors[field === 'componentId' ? 'bsId' : field] = message;
+
+      return nextErrors;
+    }, {});
+
+    setError(normalizedErrors);
+    return true;
+  };
+
   const resetStepOne = () => {
     setUnderType('FG');
     setFgMaterialId('');
@@ -90,6 +109,43 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
     setSaveError('');
     setSuccessMessage('');
     clearErrors();
+
+    let hasError = false;
+
+    if (!underType) {
+      setError('underType', 'The Business Supply Under Type field is required.');
+      hasError = true;
+    }
+
+    if (underType === 'FG' && !fgMaterialId) {
+      setError('fgMaterialId', 'The Material ID FG field is required.');
+      hasError = true;
+    }
+
+    if (underType === 'BRAND' && !brand) {
+      setError('brand', 'The Brand field is required.');
+      hasError = true;
+    }
+
+    if (!site) {
+      setError('site', 'The Site field is required.');
+      hasError = true;
+    }
+
+    if (!matType) {
+      setError('matType', 'The Mattype field is required.');
+      hasError = true;
+    }
+
+    if (!subMatType) {
+      setError('subMatType', 'The Sub Mattype field is required.');
+      hasError = true;
+    }
+
+    if (hasError) {
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
@@ -109,15 +165,23 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
         throw new Error(payloadError);
       }
 
-      setBsId(payload?.bsId || '');
-      setBomBsId(payload?.bomBsId || '');
-      setStep(2);
+      const nextBsId = (payload?.bsId || '').trim();
+      const nextBomBsId = (payload?.bomBsId || '').trim();
 
-      if (!payload?.bsId || !payload?.bomBsId) {
-        setGenerationError('Procedure returned empty Business Supply IDs.');
+      if (!nextBsId || !nextBomBsId) {
+        setBsId('');
+        setBomBsId('');
+        setStep(1);
+        throw new Error('Procedure did not return Business Supply IDs.');
       }
+
+      setBsId(nextBsId);
+      setBomBsId(nextBomBsId);
+      setStep(2);
     } catch (error) {
-      setGenerationError(getAxiosErrorMessage(error, 'Unable to generate Business Supply ID.'));
+      if (!setAxiosValidationErrors(error)) {
+        setGenerationError(getAxiosErrorMessage(error, 'Unable to generate Business Supply ID.'));
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -129,6 +193,12 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
     clearErrors();
 
     if (!bomBsId || !bsId) {
+      if (!bomBsId) {
+        setError('bomBsId', 'Generate BOM ID for Business Supply first.');
+      }
+      if (!bsId) {
+        setError('bsId', 'Generate Business Supply ID first.');
+      }
       setSaveError('Generate Business Supply IDs first.');
       return;
     }
@@ -194,7 +264,9 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
         componentId: bsId,
       }));
     } catch (error) {
-      setSaveError(getAxiosErrorMessage(error, 'Unable to save Business Supply.'));
+      if (!setAxiosValidationErrors(error)) {
+        setSaveError(getAxiosErrorMessage(error, 'Unable to save Business Supply.'));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -332,7 +404,7 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
                     <option value="">---- Select Site ----</option>
                     {sites.map((item) => (
                       <option key={`site-${item.value}`} value={item.value}>
-                        {item.label}
+                        {`${item.value} - ${item.label}`}
                       </option>
                     ))}
                   </select>
