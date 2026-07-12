@@ -23,7 +23,9 @@ use App\Models\SheetUomChar;
 use App\Models\Labels;
 use App\Models\OracleTable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use PDO;
 
 // use Illuminate\Support\Facades\DB;
 // เปิด Query Log
@@ -835,7 +837,7 @@ class RmController extends Controller
             ->with('success', 'Data deleted successfully.');
     }
 
-    private function buildExportResponse(Request $request)
+    private function buildExportResponse(Request $request, bool $comOnly = false)
     {
       $user_login = $request->user()->user_login;
       $tabs = ['AVAILABILITY', 'BOM_GENERAL', 'CUST_PART_NUM', 'FINANCIAL', 'GENERAL', 'GTINS', 'INPUT_PRODUCTS', 'LOGISTICS', 'PLANNING', 'QTY_CONVERS', 'SALES_DATA', 'SUPP_PART_NUM', 'UOM_CHAR'];
@@ -860,7 +862,13 @@ class RmController extends Controller
       foreach ($tabs as $tab) {
           $model = "\\App\\Models\\Sheet" . Str::studly(Str::lower($tab));
           if (class_exists($model)) {
-              $sheets[$tab] = $model::where('user_create', $user_login)->get();
+              $query = $model::query()->where('user_create', $user_login);
+
+              if ($comOnly) {
+                $query->whereRaw('TRIM(status_row) = ?', ['COM']);
+              }
+
+              $sheets[$tab] = $query->get();
           }
       }
 
@@ -918,8 +926,38 @@ class RmController extends Controller
       return $this->buildExportResponse($request);
     }
 
+    private function callExportToSapProcedure(Request $request, string $confirm): void
+    {
+      $userLogin = (string) ($request->user()?->user_login ?? '');
+      $roleLogin = (string) ($request->user()?->role ?? '');
+      $error = null;
+
+      $pdo = DB::connection('oracle')->getPdo();
+      $stmt = $pdo->prepare('BEGIN proj1_2_Export_to_SAP(:p_user_login, :p_role_login, :p_confirm, :P_ERROR); END;');
+      $stmt->bindValue(':p_user_login', $userLogin, PDO::PARAM_STR);
+      $stmt->bindValue(':p_role_login', $roleLogin, PDO::PARAM_STR);
+      $stmt->bindValue(':p_confirm', $confirm, PDO::PARAM_STR);
+      $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
+      $stmt->execute();
+
+      $resolvedError = $this->resolveProcedureErrorMessage($error);
+      if (trim($resolvedError) !== '') {
+        throw ValidationException::withMessages([
+          'p_confirm' => $resolvedError,
+        ]);
+      }
+    }
+
     public function exportToSap(Request $request)
     {
-      return $this->buildExportResponse($request);
+      $validated = $request->validate([
+        'p_confirm' => ['required', 'string', 'max:4000'],
+      ]);
+
+      $response = $this->buildExportResponse($request, true);
+
+      $this->callExportToSapProcedure($request, $validated['p_confirm']);
+
+      return $response;
     }
 }

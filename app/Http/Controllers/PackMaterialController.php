@@ -438,12 +438,12 @@ class PackMaterialController extends Controller
           TRIM(SEARCH_DESCRIPTION) as search_description,
           TRIM(FULL_DESCRIPTION_EN) as full_description_en,
           TRIM(FULL_DESCRIPTION_TH) as full_description_th,
-          TRIM(SEMI_FG_LV1_BOM_NO) as semi_fg_lv1_bom_no,
+          TRIM(SEMI_FG_LV1_BOM_ID) as semi_fg_lv1_bom_id,
           TRIM(SITE) as site,
           TRIM(UOM) as uom,
           TRIM(STATUS_ROW) as status_row
         ')
-        ->whereRaw('TRIM(SEMI_FG_LV1_BOM_NO) = ?', [$bomId])
+        ->whereRaw('TRIM(SEMI_FG_LV1_BOM_ID) = ?', [$bomId])
         ->whereRaw('TRIM(MATERIAL_ID_M4) = ?', [$componentId])
         ->first();
 
@@ -459,7 +459,7 @@ class PackMaterialController extends Controller
       $componentIdValue = trim((string) ($source['component_id'] ?? ''));
 
       return [
-        'bomId' => trim((string) ($source['semi_fg_lv1_bom_no'] ?? $bomId)),
+        'bomId' => trim((string) ($source['semi_fg_lv1_bom_id'] ?? $bomId)),
         'bomDesc' => $bomDesc,
         'componentId' => $componentIdValue,
         'productSubCat' => $componentIdValue !== '' ? substr($componentIdValue, 0, 4) : '',
@@ -503,12 +503,12 @@ class PackMaterialController extends Controller
           TRIM(SEARCH_DESCRIPTION) as search_description,
           TRIM(FULL_DESCRIPTION_EN) as full_description_en,
           TRIM(FULL_DESCRIPTION_TH) as full_description_th,
-          TRIM(SEMI_FG_LV2_BOM_NO) as semi_fg_lv2_bom_no,
+          TRIM(SEMI_FG_LV2_BOM_ID) as semi_fg_lv2_bom_id,
           TRIM(SITE) as site,
           TRIM(UOM) as uom,
           TRIM(STATUS_ROW) as status_row
         ')
-        ->whereRaw('TRIM(SEMI_FG_LV2_BOM_NO) = ?', [$bomId])
+        ->whereRaw('TRIM(SEMI_FG_LV2_BOM_ID) = ?', [$bomId])
         ->whereRaw('TRIM(MATERIAL_ID_M5) = ?', [$componentId])
         ->first();
 
@@ -524,7 +524,7 @@ class PackMaterialController extends Controller
       $componentIdValue = trim((string) ($source['component_id'] ?? ''));
 
       return [
-        'bomId' => trim((string) ($source['semi_fg_lv2_bom_no'] ?? $bomId)),
+        'bomId' => trim((string) ($source['semi_fg_lv2_bom_id'] ?? $bomId)),
         'bomDesc' => $bomDesc,
         'componentId' => $componentIdValue,
         'productSubCat' => $componentIdValue !== '' ? substr($componentIdValue, 0, 4) : '',
@@ -807,7 +807,7 @@ class PackMaterialController extends Controller
     }
 
     $row = Proj12DmlFgComp::query()
-      ->whereRaw('TRIM(BOM_FG_ID) = ?', [$bomId])
+      ->whereRaw('TRIM(FG_BOM_ID) = ?', [$bomId])
       ->whereRaw('TRIM(COMPONENT_ID) = ?', [$componentId])
       ->first();
 
@@ -1047,17 +1047,6 @@ class PackMaterialController extends Controller
       $fgDetail['businessSupply'] = array_merge($fgDetail['businessSupply'] ?? [], $ownerDetail, ['components' => $components]);
       $backRoute = $request->get('backRoute', 'business-supply.new');
       return Redirect::route($backRoute, [
-        'mode' => 'view',
-        'fgDetail' => $fgDetail,
-        'materialId' => $fgDetail['materialId'] ?? null,
-        'bomId' => $fgDetail['bomId'] ?? null,
-        'bomDesc' => $fgDetail['bomDesc'] ?? null,
-        'levelMaterialId' => $ownerDetail['id'] ?? null,
-        'searchDesc' => $ownerDetail['searchDesc'] ?? null,
-        'fullDescEn' => $ownerDetail['fullDescEn'] ?? null,
-        'fullDescTh' => $ownerDetail['fullDescTh'] ?? null,
-        'uom' => $ownerDetail['uom'] ?? null,
-        'components' => $components,
         'bizsupId' => $ownerDetail['id'] ?? null,
       ]);
     }
@@ -1081,6 +1070,12 @@ class PackMaterialController extends Controller
 
   public function new(Request $request): Response
   {
+    $sessionContext = $request->session()->pull('packmaterialContext', []);
+
+    if (is_array($sessionContext) && $sessionContext !== []) {
+      $request->merge($sessionContext);
+    }
+
     $subMattypes = $this->packSubMattypesList;
     $referentMaterialId = trim((string) ($request->referentMaterialId ?: $request->materialId ?: $request->fgMaterialId ?: ''));
     $actionMode = $request->actionMode ?: 'create';

@@ -15,31 +15,41 @@ class BusinessSupplySaveRequest extends FormRequest
   {
     return [
       'bomBsId' => ['required'],
+      'bomBsDesc' => ['nullable'],
+      'bsId' => ['required'],
+      'underType' => ['required'],
       'matType' => ['required'],
       'subMatType' => ['required'],
-      'productCat' => ['required'],
-      'prodSubCat' => ['nullable'],
-      'componentId' => ['required'],
+      'brand' => ['nullable'],
+      'fgMaterialId' => ['nullable'],
+      'site' => ['required'],
       'searchDesc' => ['required'],
       'compDescEn' => ['required'],
       'compDescTh' => ['required'],
       'uom' => ['required'],
+      'productCat' => ['nullable'],
+      'prodSubCat' => ['nullable'],
     ];
   }
 
   public function attributes(): array
   {
     return [
-      'bomBsId' => 'BOM ID for Business Supply',
+      'bomBsId' => 'Business Supply BOM ID',
+      'bomBsDesc' => 'Business Supply BOM Description',
+      'bsId' => 'Business Supply ID',
+      'underType' => 'Business Supply Type',
       'matType' => 'Mattype',
       'subMatType' => 'Sub Mattype',
-      'productCat' => 'Product Category',
-      'prodSubCat' => 'Product Sub Category',
-      'componentId' => 'Business Supply ID',
+      'brand' => 'Brand',
+      'fgMaterialId' => 'Material ID FG',
+      'site' => 'Site',
       'searchDesc' => 'Search Description',
       'compDescEn' => 'Full Description (EN)',
       'compDescTh' => 'Full Description (TH)',
       'uom' => 'UOM',
+      'productCat' => 'Product Category',
+      'prodSubCat' => 'Product Sub Category',
     ];
   }
 }

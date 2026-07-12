@@ -8,7 +8,7 @@ import TextInput from '@/Components/TextInput';
 import { getAxiosErrorMessage, getFirstErrorMessage } from '@/Utils/apiError';
 import axios from 'axios';
 import ReactSelect from 'react-select';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import BusinessSupplyDetail from '@/Components/BusinessSupply/BusinessSupplyDetail';
 
 const DEFAULT_MATTYPE = '6';
@@ -24,6 +24,7 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
   const [subMatType, setSubMatType] = useState(InputData?.subMatType || DEFAULT_SUB_MATTYPE);
   const [bsId, setBsId] = useState(InputData?.bsId || '');
   const [bomBsId, setBomBsId] = useState(InputData?.bomBsId || '');
+  const [bomBsDesc, setBomBsDesc] = useState(InputData?.bomBsDesc || '');
   const [searchDesc, setSearchDesc] = useState(InputData?.searchDesc || '');
   const [compDescEn, setCompDescEn] = useState(InputData?.compDescEn || '');
   const [compDescTh, setCompDescTh] = useState(InputData?.compDescTh || '');
@@ -33,6 +34,7 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
   const [successMessage, setSuccessMessage] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const pageId = `${step}NBS`;
   const { errors, setError, clearErrors } = useForm({
     underType: InputData?.underType || 'FG',
     fgMaterialId: InputData?.fgMaterialId || '',
@@ -45,24 +47,12 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
   });
 
   const selectedFgMaterial = fgMaterials.find((item) => item.value === fgMaterialId) || null;
-  const sourceLabel = underType === 'FG' ? 'Material ID FG' : underType === 'BRAND' ? 'Brand' : 'NOT ALL';
   const isStepOneLocked = step === 2;
-
-  const sourceValue = useMemo(() => {
-    if (underType === 'FG') {
-      return fgMaterialId;
-    }
-
-    if (underType === 'BRAND') {
-      return brand;
-    }
-
-    return '';
-  }, [underType, fgMaterialId, brand]);
 
   const clearGeneratedOutput = () => {
     setBsId('');
     setBomBsId('');
+    setBomBsDesc('');
     setSearchDesc('');
     setCompDescEn('');
     setCompDescTh('');
@@ -230,11 +220,14 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
     try {
       const { data: payload } = await axios.patch(route('business-supply.save'), {
         bomBsId,
+        bomBsDesc,
+        bsId,
+        underType,
         matType,
         subMatType,
-        productCat: underType,
-        prodSubCat: sourceValue || underType,
-        componentId: bsId,
+        fgMaterialId,
+        brand,
+        site,
         searchDesc,
         compDescEn,
         compDescTh,
@@ -243,25 +236,15 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
         headers: { Accept: 'application/json' },
       });
 
+      const nextBsId = (payload?.bsId || bsId || '').trim();
+      const nextBomBsId = (payload?.bomBsId || bomBsId || '').trim();
+
+      setBsId(nextBsId);
+      setBomBsId(nextBomBsId);
       setSuccessMessage(payload?.message || 'Business Supply saved.');
 
       router.get(route('business-supply.existing', {
-        bizsupId: bsId,
-        bomBsId,
-        matType,
-        subMatType,
-        underType,
-        fgMaterialId,
-        brand,
-        site,
-        bsId,
-        searchDesc,
-        compDescEn,
-        compDescTh,
-        uom,
-        productCat: underType,
-        prodSubCat: sourceValue || underType,
-        componentId: bsId,
+        bizsupId: nextBomBsId,
       }));
     } catch (error) {
       if (!setAxiosValidationErrors(error)) {
@@ -335,18 +318,19 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
 
   const detailValues = {
     bomBsId,
+    bomBsDesc,
     bsId,
     searchDesc,
     compDescEn,
     compDescTh,
     uom,
-    sourceLabel,
   };
 
   return (
     <AuthenticatedLayout
       user={auth.user}
       header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">NEW BUSINESS SUPPLY</h2>}
+      pageIdentity={{ pageId }}
     >
       <Head title="New Business Supply" />
 
@@ -403,7 +387,7 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
                   >
                     <option value="">---- Select Site ----</option>
                     {sites.map((item) => (
-                      <option key={`site-${item.value}`} value={item.value}>
+                      <option key={`site-${item.value}`} value={item.label}>
                         {`${item.value} - ${item.label}`}
                       </option>
                     ))}
@@ -457,8 +441,10 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
                 values={detailValues}
                 errors={errors}
                 uoms={uoms}
-                sourceLabel={sourceLabel}
+                businessSupplyType={underType}
+                showSourceField={false}
                 onChange={(field, value) => {
+                  if (field === 'bomBsDesc') setBomBsDesc(value);
                   if (field === 'searchDesc') setSearchDesc(value);
                   if (field === 'compDescEn') setCompDescEn(value);
                   if (field === 'compDescTh') setCompDescTh(value);

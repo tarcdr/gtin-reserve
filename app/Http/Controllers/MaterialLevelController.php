@@ -248,7 +248,7 @@ class MaterialLevelController extends Controller
             TRIM(SEARCH_DESCRIPTION) as label,
             TRIM(FULL_DESCRIPTION_EN) as full_desc_en,
             TRIM(FULL_DESCRIPTION_TH) as full_desc_th,
-            TRIM(SEMI_FG_LV2_BOM_NO) as semi_fg_lv2_bom_no,
+            TRIM(SEMI_FG_LV2_BOM_ID) as semi_fg_lv2_bom_id,
             TRIM(SITE) as site,
             TRIM(UOM) as uom,
             TRIM(STATUS_ROW) as status_row,
@@ -258,7 +258,7 @@ class MaterialLevelController extends Controller
             TRIM(USER_UPDATE) as user_update,
             TRIM(UPDATE_DATE) as update_date
           ')
-          ->whereRaw('TRIM(SEMI_FG_LV2_BOM_NO) = ?', [$candidate])
+          ->whereRaw('TRIM(SEMI_FG_LV2_BOM_ID) = ?', [$candidate])
           ->orderByRaw('TRIM(MATERIAL_ID_M5)')
           ->get();
 
@@ -333,7 +333,7 @@ class MaterialLevelController extends Controller
             TRIM(SEARCH_DESCRIPTION) as label,
             TRIM(FULL_DESCRIPTION_EN) as full_desc_en,
             TRIM(FULL_DESCRIPTION_TH) as full_desc_th,
-            TRIM(SEMI_FG_LV1_BOM_NO) as semi_fg_lv1_bom_no,
+            TRIM(SEMI_FG_LV1_BOM_ID) as semi_fg_lv1_bom_id,
             TRIM(SITE) as site,
             TRIM(UOM) as uom,
             TRIM(STATUS_ROW) as status_row,
@@ -343,7 +343,7 @@ class MaterialLevelController extends Controller
             TRIM(USER_UPDATE) as user_update,
             TRIM(UPDATE_DATE) as update_date
           ')
-          ->whereRaw('TRIM(SEMI_FG_LV1_BOM_NO) = ?', [$candidate])
+          ->whereRaw('TRIM(SEMI_FG_LV1_BOM_ID) = ?', [$candidate])
           ->orderByRaw('TRIM(MATERIAL_ID_M4)')
           ->get();
 

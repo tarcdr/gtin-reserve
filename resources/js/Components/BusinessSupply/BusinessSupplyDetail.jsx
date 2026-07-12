@@ -11,6 +11,8 @@ export default function BusinessSupplyDetail({
   errors = {},
   uoms = [],
   sourceLabel = '',
+  businessSupplyType = '',
+  showSourceField = true,
   isEditing = false,
   showActions = true,
   onChange,
@@ -28,7 +30,7 @@ export default function BusinessSupplyDetail({
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-          <InputLabel htmlFor="bomBsId" value="BOM ID for Business Supply" />
+          <InputLabel htmlFor="bomBsId" value="Business Supply BOM ID" />
           <TextInput
             id="bomBsId"
             className={readOnlyClass}
@@ -37,7 +39,17 @@ export default function BusinessSupplyDetail({
           />
           <InputError className="mt-2" message={errors.bomBsId} />
         </div>
-        <div />
+        <div>
+          <InputLabel htmlFor="bomBsDesc" value="Business Supply BOM Description" />
+          <TextInput
+            id="bomBsDesc"
+            className={isReadOnly ? readOnlyClass : editableTextClass}
+            value={values.bomBsDesc || ''}
+            disabled={isReadOnly}
+            onChange={(e) => onChange?.('bomBsDesc', e.target.value)}
+          />
+          <InputError className="mt-2" message={errors.bomBsDesc} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -116,14 +128,25 @@ export default function BusinessSupplyDetail({
           )}
           <InputError className="mt-2" message={errors.uom} />
         </div>
-        <div>
-          <InputLabel value="Business Supply Source" />
-          <TextInput
-            className={readOnlyClass}
-            value={sourceLabel || values.sourceLabel || ''}
-            disabled
-          />
-        </div>
+        {showSourceField ? (
+          <div>
+            <InputLabel value="Business Supply Source" />
+            <TextInput
+              className={readOnlyClass}
+              value={sourceLabel || values.sourceLabel || ''}
+              disabled
+            />
+          </div>
+        ) : (
+          <div>
+            <InputLabel value="Business Supply Type" />
+            <TextInput
+              className={readOnlyClass}
+              value={businessSupplyType || ''}
+              disabled
+            />
+          </div>
+        )}
       </div>
 
       {showActions ? (

@@ -310,7 +310,7 @@ class ProductController extends Controller
     $query = Proj12DmlFgComp::query();
 
     if ($bomId !== '') {
-      $query->whereRaw('TRIM(BOM_FG_ID) = ?', [$bomId]);
+      $query->whereRaw('TRIM(FG_BOM_ID) = ?', [$bomId]);
     } elseif ($materialId !== '') {
       $query->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$materialId]);
     }

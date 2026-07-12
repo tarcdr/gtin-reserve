@@ -13,26 +13,47 @@ import BusinessSupplyComponents from '@/Components/BusinessSupply/BusinessSupply
 export default function BusinessSupplyExisting({
   auth,
   InputData,
+  brands = [],
+  fgMaterials = [],
+  sites = [],
   businessSupplies = [],
   selectedBusinessSupply = null,
 }) {
   const selectedBizsupId = InputData?.bizsupId || selectedBusinessSupply?.bizsupId || '';
   const selectedBizsupDesc = InputData?.bizsupDesc || selectedBusinessSupply?.bizsupDesc || '';
   const isLocked = Boolean(selectedBizsupId);
+  const pageId = `${isLocked ? 2 : 1}EBS`;
+  const readOnlyClass = 'mt-1 block w-full border-gray-300 rounded-md bg-gray-100';
 
   const detailValues = useMemo(() => ({
     bomBsId: selectedBusinessSupply?.record?.bomBsId || InputData?.bomBsId || '',
+    bomBsDesc: selectedBusinessSupply?.record?.bomBsDesc || InputData?.bomBsDesc || '',
     bsId: selectedBusinessSupply?.record?.bsId || InputData?.bsId || selectedBizsupId,
     searchDesc: selectedBusinessSupply?.record?.searchDesc || InputData?.searchDesc || '',
     compDescEn: selectedBusinessSupply?.record?.compDescEn || InputData?.compDescEn || '',
     compDescTh: selectedBusinessSupply?.record?.compDescTh || InputData?.compDescTh || '',
     uom: selectedBusinessSupply?.record?.uom || InputData?.uom || '',
     sourceLabel: selectedBusinessSupply?.record?.sourceLabel || selectedBizsupDesc || InputData?.sourceLabel || '',
-    fgMaterialId: InputData?.fgMaterialId || '',
-    site: InputData?.site || '',
+    fgMaterialId: selectedBusinessSupply?.record?.fgMaterialId || InputData?.fgMaterialId || '',
+    site: selectedBusinessSupply?.record?.site || InputData?.site || '',
+    components: selectedBusinessSupply?.record?.components || InputData?.components || [],
   }), [InputData, selectedBusinessSupply, selectedBizsupDesc, selectedBizsupId]);
 
-  const components = selectedBusinessSupply?.record?.components || InputData?.components || [];
+  const normalizeUnderType = (value) => {
+    const normalized = String(value || '').trim().toUpperCase();
+
+    if (normalized === '1') return 'FG';
+    if (normalized === '2') return 'BRAND';
+    if (normalized === '3') return 'NOT ALL';
+
+    return normalized || 'FG';
+  };
+
+  const underType = normalizeUnderType(InputData?.underType || selectedBusinessSupply?.record?.productCat || InputData?.productCat);
+  const businessSupplyType = underType;
+  const selectedFgMaterial = fgMaterials.find((item) => item.value === detailValues.fgMaterialId) || null;
+  const selectedSite = sites.find((item) => item.value === detailValues.site) || null;
+  const selectedBrand = brands.find((item) => item.value === (selectedBusinessSupply?.record?.brand || InputData?.brand || '')) || null;
 
   const selectedBizsupOption = businessSupplies.find((item) => item.value === selectedBizsupId) || (
     selectedBizsupId
@@ -44,10 +65,48 @@ export default function BusinessSupplyExisting({
     router.get(route('business-supply.existing'));
   };
 
+  const renderSourceDisplay = () => {
+    if (underType === 'FG') {
+      return (
+        <div>
+          <InputLabel htmlFor="detailFgMaterialId" value="Material ID FG" />
+          <TextInput
+            id="detailFgMaterialId"
+            className={readOnlyClass}
+            value={selectedFgMaterial?.label || detailValues.fgMaterialId || ''}
+            disabled
+          />
+        </div>
+      );
+    }
+
+    if (underType === 'BRAND') {
+      return (
+        <div>
+          <InputLabel htmlFor="detailBrand" value="Brand" />
+          <TextInput
+            id="detailBrand"
+            className={readOnlyClass}
+            value={selectedBrand?.label || selectedBusinessSupply?.record?.brand || InputData?.brand || ''}
+            disabled
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <InputLabel value="Business Supply Source" />
+        <TextInput className={readOnlyClass} value="NOT ALL" disabled />
+      </div>
+    );
+  };
+
   return (
     <AuthenticatedLayout
       user={auth.user}
       header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">EXISTING BUSINESS SUPPLY</h2>}
+      pageIdentity={{ pageId }}
     >
       <Head title="Existing Business Supply" />
 
@@ -56,12 +115,12 @@ export default function BusinessSupplyExisting({
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div className="space-y-6">
               <div className="text-sm text-gray-500">
-                Select a Business Supply ID to view the saved record and component list.
+                Select a Business Supply ID to view the saved header and detail.
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <InputLabel htmlFor="bizsupId" value="Business Supply Id" />
+                  <InputLabel htmlFor="bizsupId" value="Business Supply BOM ID" />
                   <ReactSelect
                     inputId="bizsupId"
                     options={businessSupplies}
@@ -86,68 +145,112 @@ export default function BusinessSupplyExisting({
 
               {selectedBizsupId ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <InputLabel htmlFor="detailFgMaterialId" value="Material ID FG" />
-                      <TextInput id="detailFgMaterialId" className="mt-1 block w-full border-gray-300 rounded-md bg-gray-100" value={InputData?.fgMaterialId || ''} disabled />
+                  <div>
+                    <InputLabel value="Business Supply Under Type" />
+                    <div className="mt-3 flex flex-wrap gap-6">
+                      {['FG', 'BRAND', 'NOT ALL'].map((value) => (
+                        <label key={value} className="inline-flex items-center gap-2 text-sm text-gray-700">
+                          <input
+                            type="radio"
+                            name="underType"
+                            value={value}
+                            checked={underType === value}
+                            disabled
+                            className="border-gray-300 text-gray-900 focus:ring-gray-700"
+                            readOnly
+                          />
+                          <span>{value}</span>
+                        </label>
+                      ))}
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>{renderSourceDisplay()}</div>
                     <div>
                       <InputLabel htmlFor="detailSite" value="Site" />
-                      <TextInput id="detailSite" className="mt-1 block w-full border-gray-300 rounded-md bg-gray-100" value={InputData?.site || ''} disabled />
+                      <TextInput
+                        id="detailSite"
+                        className={readOnlyClass}
+                        value={selectedSite ? `${selectedSite.value} - ${selectedSite.label}` : detailValues.site || ''}
+                        disabled
+                      />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
                       <InputLabel htmlFor="detailMatType" value="Mattype" />
-                      <TextInput id="detailMatType" className="mt-1 block w-full border-gray-300 rounded-md bg-gray-100" value={InputData?.matType || ''} disabled />
+                      <TextInput id="detailMatType" className={readOnlyClass} value={InputData?.matType || ''} disabled />
                     </div>
                     <div>
                       <InputLabel htmlFor="detailSubMatType" value="Sub Mattype" />
-                      <TextInput id="detailSubMatType" className="mt-1 block w-full border-gray-300 rounded-md bg-gray-100" value={InputData?.subMatType || ''} disabled />
+                      <TextInput id="detailSubMatType" className={readOnlyClass} value={InputData?.subMatType || ''} disabled />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <InputLabel htmlFor="detailBrand" value="Brand" />
-                      <TextInput id="detailBrand" className="mt-1 block w-full border-gray-300 rounded-md bg-gray-100" value={InputData?.brand || ''} disabled />
-                    </div>
-                    <div />
-                  </div>
-
-                  <BusinessSupplyDetail
-                    mode="existing"
-                    values={detailValues}
-                    sourceLabel={detailValues.sourceLabel}
-                    showActions={false}
-                  />
-
-                  <BusinessSupplyComponents
-                    components={components}
-                    onAddComponent={() => {}}
-                  />
-
-                  <div className="flex flex-wrap justify-center gap-3 mt-8">
-                    <SecondaryButton type="button" onClick={handleCancel}>
-                      Cancel
-                    </SecondaryButton>
-                    <PrimaryButton
-                      type="button"
-                      onClick={() => router.get(route('business-supply.edit', {
-                        bizsupId: selectedBizsupId,
-                      }))}
-                    >
-                      Edit
-                    </PrimaryButton>
-                    <DangerButton type="button" onClick={() => {}}>
-                      Delete
-                    </DangerButton>
                   </div>
                 </>
               ) : null}
             </div>
           </div>
+
+          {selectedBizsupId ? (
+            <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+              <BusinessSupplyDetail
+                mode="existing"
+                values={detailValues}
+                sourceLabel={detailValues.sourceLabel}
+                businessSupplyType={businessSupplyType}
+                showSourceField={false}
+                showActions={false}
+              />
+
+              <BusinessSupplyComponents
+                components={detailValues.components}
+                onAddComponent={() => router.get(route('business-supply.create-component', {
+                  bizsupId: detailValues.bomBsId,
+                }))}
+                onEditComponent={(item) => {
+                  if (item?.sourceType !== 'component') {
+                    return;
+                  }
+
+                  router.get(route('business-supply.edit-component', {
+                    bizsupId: detailValues.bomBsId,
+                    actionMode: 'edit',
+                    componentId: item.code || item.componentId || '',
+                  }));
+                }}
+                onDeleteComponent={(item) => {
+                  if (item?.sourceType !== 'component') {
+                    return;
+                  }
+
+                  router.get(route('business-supply.edit-component', {
+                    bizsupId: detailValues.bomBsId,
+                    actionMode: 'delete',
+                    componentId: item.code || item.componentId || '',
+                  }));
+                }}
+              />
+
+              <div className="flex flex-wrap justify-center gap-3 mt-8">
+                <SecondaryButton type="button" onClick={handleCancel}>
+                  Cancel
+                </SecondaryButton>
+                <PrimaryButton
+                  type="button"
+                  onClick={() => router.get(route('business-supply.edit', {
+                    bizsupId: detailValues.bomBsId,
+                  }))}
+                >
+                  Edit
+                </PrimaryButton>
+                <DangerButton type="button" onClick={() => {}}>
+                  Delete
+                </DangerButton>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </AuthenticatedLayout>

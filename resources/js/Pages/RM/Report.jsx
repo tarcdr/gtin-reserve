@@ -8,15 +8,18 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Report({ auth, activeTab, columns = [], datas = [], labels = [], fieldOptions = {} }) {
   const [confirmingActive, setConfirmingActive] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [dataLabels, setDataLabels] = useState({});
   const [formErrors, setFormErrors] = useState({});
+  const [confirmingExportSap, setConfirmingExportSap] = useState(false);
+  const [exportSapConfirm, setExportSapConfirm] = useState('');
   const [showGoToBottom, setShowGoToBottom] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const exportSapFormRef = useRef(null);
 
   // เพิ่ม useState สำหรับ sidebar toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -356,6 +359,21 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
       });
   };
 
+  const openExportSapModal = () => {
+    setExportSapConfirm('');
+    setConfirmingExportSap(true);
+  };
+
+  const closeExportSapModal = () => {
+    setConfirmingExportSap(false);
+  };
+
+  const submitExportSap = (e) => {
+    e.preventDefault();
+    exportSapFormRef.current?.submit();
+    closeExportSapModal();
+  };
+
   // ฟังก์ชันเลื่อนขึ้นบนสุด
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -444,7 +462,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                 {/* ปุ่ม Download */}
                 <div className="flex justify-end gap-2 mb-4">
                   <PrimaryButton
-                    onClick={() => window.open(route('rm.export-sap'))}
+                    onClick={openExportSapModal}
                     disabled={!isAdmin}
                     title={!isAdmin ? 'Admin only' : undefined}
                   >
@@ -452,6 +470,21 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                   </PrimaryButton>
                   <PrimaryButton onClick={() => window.open(route('rm.export'))}>Download</PrimaryButton>
                 </div>
+                <form
+                  ref={exportSapFormRef}
+                  method="POST"
+                  action={route('rm.export-sap')}
+                  target="_blank"
+                  className="hidden"
+                >
+                  <input
+                    type="hidden"
+                    name="_token"
+                    value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''}
+                    readOnly
+                  />
+                  <input type="hidden" name="p_confirm" value={exportSapConfirm} readOnly />
+                </form>
 
                 {/* Scrollable Table */}
                 <div className="bg-white shadow-sm sm:rounded-lg w-full">
@@ -560,6 +593,34 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                       <SecondaryButton onClick={closeModalDelete}>Cancel</SecondaryButton>
                       <DangerButton disabled={processing}>Delete</DangerButton>
                     </div>
+                </form>
+              </div>
+            </Modal>
+            <Modal show={confirmingExportSap} onClose={closeExportSapModal}>
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden max-w-2xl mx-auto">
+                <div className="bg-blue-100 border-b border-blue-300 px-6 py-4">
+                  <h2 className="text-xl font-semibold text-blue-800">
+                    Export to SAP
+                  </h2>
+                </div>
+
+                <form onSubmit={submitExportSap} className="p-6">
+                  <div>
+                    <InputLabel htmlFor="export_sap_confirm" value="Confirm" />
+                    <textarea
+                      id="export_sap_confirm"
+                      className="mt-1 block w-full min-h-[160px] rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      value={exportSapConfirm}
+                      maxLength={4000}
+                      required
+                      onChange={(e) => setExportSapConfirm(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-center gap-4 mt-6 border-t pt-4">
+                    <SecondaryButton type="button" onClick={closeExportSapModal}>Cancel</SecondaryButton>
+                    <PrimaryButton>Confirm</PrimaryButton>
+                  </div>
                 </form>
               </div>
             </Modal>

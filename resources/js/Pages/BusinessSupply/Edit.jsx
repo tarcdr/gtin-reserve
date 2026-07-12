@@ -13,10 +13,11 @@ export default function BusinessSupplyEdit({
   uoms = [],
   selectedBusinessSupply = null,
 }) {
+  const pageId = '3EBS';
   const selectedBizsupId = InputData?.bizsupId || selectedBusinessSupply?.bizsupId || '';
-  const selectedBizsupDesc = InputData?.bizsupDesc || selectedBusinessSupply?.bizsupDesc || '';
   const detailValues = useMemo(() => ({
     bomBsId: selectedBusinessSupply?.record?.bomBsId || InputData?.bomBsId || '',
+    bomBsDesc: selectedBusinessSupply?.record?.bomBsDesc || InputData?.bomBsDesc || '',
     bsId: selectedBusinessSupply?.record?.bsId || InputData?.bsId || selectedBizsupId,
     searchDesc: selectedBusinessSupply?.record?.searchDesc || InputData?.searchDesc || '',
     compDescEn: selectedBusinessSupply?.record?.compDescEn || InputData?.compDescEn || '',
@@ -24,6 +25,18 @@ export default function BusinessSupplyEdit({
     uom: selectedBusinessSupply?.record?.uom || InputData?.uom || '',
     sourceLabel: selectedBusinessSupply?.record?.sourceLabel || InputData?.sourceLabel || '',
   }), [InputData, selectedBusinessSupply, selectedBizsupId]);
+  const normalizeUnderType = (value) => {
+    const normalized = String(value || '').trim().toUpperCase();
+
+    if (normalized === '1') return 'FG';
+    if (normalized === '2') return 'BRAND';
+    if (normalized === '3') return 'NOT ALL';
+
+    return normalized || 'FG';
+  };
+  const businessSupplyType = normalizeUnderType(
+    InputData?.underType || selectedBusinessSupply?.record?.productCat || InputData?.productCat
+  );
 
   const [initialValues, setInitialValues] = useState(detailValues);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,7 +51,7 @@ export default function BusinessSupplyEdit({
   const handleCancel = () => {
     setData(initialValues);
     router.get(route('business-supply.existing', {
-      bizsupId: selectedBizsupId,
+      bizsupId: data.bomBsId || initialValues.bomBsId,
     }));
   };
 
@@ -72,6 +85,14 @@ export default function BusinessSupplyEdit({
     try {
       await axios.patch(route('business-supply.existing.update'), {
         bomBsId: data.bomBsId,
+        bsId: data.bsId,
+        bomBsDesc: data.bomBsDesc,
+        underType: businessSupplyType,
+        matType: InputData?.matType || selectedBusinessSupply?.record?.matType || '6',
+        subMatType: InputData?.subMatType || selectedBusinessSupply?.record?.subMatType || '0',
+        fgMaterialId: selectedBusinessSupply?.record?.fgMaterialId || InputData?.fgMaterialId || '',
+        brand: selectedBusinessSupply?.record?.brand || InputData?.brand || '',
+        site: selectedBusinessSupply?.record?.site || InputData?.site || '',
         searchDesc: data.searchDesc,
         compDescEn: data.compDescEn,
         compDescTh: data.compDescTh,
@@ -81,7 +102,7 @@ export default function BusinessSupplyEdit({
       });
 
       router.get(route('business-supply.existing', {
-        bizsupId: selectedBizsupId,
+        bizsupId: data.bomBsId,
       }));
     } catch (error) {
       setError('save', getAxiosErrorMessage(error, 'Unable to update Business Supply.'));
@@ -94,6 +115,7 @@ export default function BusinessSupplyEdit({
     <AuthenticatedLayout
       user={auth.user}
       header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">EDIT BUSINESS SUPPLY</h2>}
+      pageIdentity={{ pageId }}
     >
       <Head title="Edit Business Supply" />
 
@@ -101,43 +123,14 @@ export default function BusinessSupplyEdit({
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Material ID FG</label>
-                  <div className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-gray-700">
-                    {InputData?.fgMaterialId || '-'}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Site</label>
-                  <div className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-gray-700">
-                    {InputData?.site || '-'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Business Supply Id</label>
-                  <div className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-gray-700">
-                    {selectedBizsupId || '-'}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Business Supply Description</label>
-                  <div className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-gray-700">
-                    {selectedBizsupDesc || '-'}
-                  </div>
-                </div>
-              </div>
-
               <BusinessSupplyDetail
                 mode="existing"
                 values={data}
                 errors={errors}
                 uoms={uoms}
-                sourceLabel={data.sourceLabel}
+                businessSupplyType={businessSupplyType}
                 isEditing
+                showSourceField={false}
                 showActions={false}
                 onChange={(field, value) => setData(field, value)}
               />

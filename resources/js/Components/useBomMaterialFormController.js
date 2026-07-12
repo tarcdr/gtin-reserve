@@ -41,6 +41,8 @@ export default function useBomMaterialFormController({
 
   const filteredProductCategories = productCategoryOptions;
   const filteredProductSubCategories = productSubCategoryOptions;
+  const currentMatType = data.matType || data.mattype || '';
+  const currentSubMattype = data.subMatType || data.subMattype || '';
   const selectedProductCategory = filteredProductCategories.find(
     (option) => option.code === data.productCat
   ) || null;
@@ -64,7 +66,7 @@ export default function useBomMaterialFormController({
       return;
     }
 
-    if (!data.subMattype) {
+    if (!currentSubMattype) {
       setProductCategoryOptions([]);
       setProductSubCategoryOptions([]);
       if (data.productCat && !isEditMode) {
@@ -78,9 +80,9 @@ export default function useBomMaterialFormController({
 
     const controller = new AbortController();
     fetch(route('packmaterial.product-categories', buildProductCategoriesRequestParams({
-      subMattype: data.subMattype,
+      subMattype: currentSubMattype,
       ownerLevel: data.ownerLevel,
-      mattype: data.mattype,
+      mattype: currentMatType,
     })), {
       headers: {
         Accept: 'application/json',
@@ -112,10 +114,57 @@ export default function useBomMaterialFormController({
       .catch(() => {});
 
     return () => controller.abort();
-  }, [data.subMattype]);
+  }, [currentSubMattype]);
 
   const handleProductSubCategoryChange = async (nextProductSubCat) => {
     setData('productSubCat', nextProductSubCat);
+
+    if (data.ownerLevel === 'businessSupply' && data.actionMode === 'create') {
+      setData('componentId', '');
+      clearErrors('componentId');
+
+      if (!nextProductSubCat) {
+        return;
+      }
+
+      setIsGeneratingComponentId(true);
+
+      try {
+        const response = await fetch(route('business-supply.generate-component-id', buildGenerateComponentIdParams({
+          productSubCat: nextProductSubCat,
+          ownerLevel: data.ownerLevel,
+        })), {
+          headers: {
+            Accept: 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(await getResponseErrorMessage(response, 'Unable to generate Component ID.'));
+        }
+
+        const payload = await response.json();
+        const payloadError = getFirstErrorMessage(payload, '');
+        if (payloadError) {
+          throw new Error(payloadError);
+        }
+        const nextComponentId = payload?.componentId || '';
+
+        if (!nextComponentId) {
+          throw new Error('Empty Component ID.');
+        }
+
+        setData('componentId', nextComponentId);
+        clearErrors('componentId');
+      } catch (error) {
+        setData('componentId', '');
+        setError('componentId', getAxiosErrorMessage(error, 'Unable to generate Component ID.'));
+      } finally {
+        setIsGeneratingComponentId(false);
+      }
+
+      return;
+    }
 
     if (!isFgCreateMode && !isSemiFgCreateMode) {
       return;
@@ -167,28 +216,32 @@ export default function useBomMaterialFormController({
 
   const handleSubMattypeChange = (nextSubMattype) => {
     setData('subMattype', nextSubMattype);
+    setData('subMatType', nextSubMattype);
     setData('productCat', '');
     setData('productSubCat', '');
+    setData('componentId', '');
     clearErrors('productCat', 'productSubCat');
 
     if (isFgCreateMode) {
       setData('componentId', '');
       clearErrors('componentId');
+    } else if (data.ownerLevel === 'businessSupply' && data.actionMode === 'create') {
+      clearErrors('componentId');
     }
   };
 
   useEffect(() => {
-    if (!data.subMattype || !data.productCat) {
+    if (!currentSubMattype || !data.productCat) {
       if (isEditMode) {
         return;
       }
 
       setData('productSubCat', '');
-      if (isFgCreateMode) {
+      if (isFgCreateMode || (data.ownerLevel === 'businessSupply' && data.actionMode === 'create')) {
         setData('componentId', '');
       }
     }
-  }, [data.subMattype, data.productCat, data.productSubCat]);
+  }, [currentSubMattype, data.productCat, data.productSubCat]);
 
   const primaryActionLabel = data.actionMode === 'edit' ? 'Update' : 'Save';
   const backLabel = data.ownerLevel === 'fg'

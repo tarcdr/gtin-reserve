@@ -33,7 +33,7 @@ begin
          USER_UPDATE         = P_USER,
          UPDATE_DATE         = sysdate
    where trim(MATERIAL_ID_M5) = trim(P_COMPONENT_ID)
-     and trim(SEMI_FG_LV2_BOM_NO) = trim(P_BOM_SEMI_LV2_ID);
+     and trim(SEMI_FG_LV2_BOM_ID) = trim(P_BOM_SEMI_LV2_ID);
 
   if SQL%ROWCOUNT = 0 then
     insert into PROJ1_2_DML_SEMI_L2_COMP_M5(
@@ -42,7 +42,7 @@ begin
       SEARCH_DESCRIPTION,
       FULL_DESCRIPTION_EN,
       FULL_DESCRIPTION_TH,
-      SEMI_FG_LV2_BOM_NO,
+      SEMI_FG_LV2_BOM_ID,
       SITE,
       UOM,
       STATUS_ROW,

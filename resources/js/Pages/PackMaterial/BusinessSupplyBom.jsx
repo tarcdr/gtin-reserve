@@ -2,17 +2,24 @@ import BomMaterialForm from '@/Components/BomMaterialForm';
 import useBomMaterialFormController from '@/Components/useBomMaterialFormController';
 import { router } from '@inertiajs/react';
 
-export default function BusinessSupplyBom({ auth, InputData, subMattypes = [], uoms = [] }) {
+export default function BusinessSupplyBom({
+  auth,
+  InputData,
+  subMattypes = [],
+  uoms = [],
+  submitRouteName = null,
+  defaultBackRoute = 'business-supply.new',
+}) {
   const ownerLevel = InputData?.ownerLevel || 'businessSupply';
   const isSemiFgOwner = false;
-  const defaultBackRoute = 'business-supply.new';
+  const resolvedBackRoute = InputData?.backRoute || defaultBackRoute;
   const pageId = InputData?.actionMode === 'create' ? '1CBNS' : '2CBNS';
   const pageConfig = {
     headerLabel: 'BUSINESS SUPPLY BOM',
     levelBomIdLabel: 'BUSINESS SUPPLY BOM ID',
     levelBomDescLabel: 'BUSINESS SUPPLY BOM Description',
   };
-  const submitRoute = InputData?.actionMode === 'edit' ? 'packmaterial.update' : 'packmaterial.create';
+  const submitRoute = submitRouteName || (InputData?.actionMode === 'edit' ? 'packmaterial.update' : 'packmaterial.create');
   const actionLabel = InputData?.actionMode === 'edit' ? 'Edit' : 'Create';
   const headerTitle = `${pageConfig.headerLabel} - ${actionLabel}`;
   const initialSubMattype = InputData?.subMattype || '0';
@@ -25,20 +32,8 @@ export default function BusinessSupplyBom({ auth, InputData, subMattypes = [], u
   });
 
   const handleBack = () => {
-    router.get(route(defaultBackRoute), {
-      mode: 'view',
-      fgDetail: form.data.fgDetail,
-      materialId: form.data.fgDetail?.materialId,
-      semiFgLvBomId: form.data.semiFgLvBomId || form.data.bomId || '',
-      semiFgLvBomDesc: form.data.semiFgLvBomDesc || form.data.bomDesc || '',
-      bomId: form.data.semiFgLvBomId || form.data.bomId || '',
-      bomDesc: form.data.semiFgLvBomDesc || form.data.bomDesc || '',
-      levelMaterialId: form.data.ownerDetail?.id,
-      searchDesc: form.data.ownerDetail?.searchDesc,
-      fullDescEn: form.data.ownerDetail?.fullDescEn,
-      fullDescTh: form.data.ownerDetail?.fullDescTh,
-      uom: form.data.ownerDetail?.uom,
-      components: form.data.components,
+    router.get(route(resolvedBackRoute), {
+      bizsupId: form.data.ownerDetail?.id || InputData?.bizsupId || '',
     });
   };
 
