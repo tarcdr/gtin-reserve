@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BusinessSupplyGenerateRequest;
 use App\Http\Requests\BusinessSupplyComponentSaveRequest;
+use App\Http\Requests\BusinessSupplyMaterialIdSaveRequest;
 use App\Http\Requests\BusinessSupplySaveRequest;
 use App\Http\Requests\BusinessSupplyUpdateRequest;
 use App\Models\ExistingMaterial;
@@ -14,6 +15,7 @@ use App\Models\Proj12BrandV;
 use App\Models\Proj12DmlBizsupBom;
 use App\Models\Proj12DmlBizsupCompMatId;
 use App\Models\Proj12DmlBizsupCompM6;
+use App\Models\Proj12ListCompBsMatidV;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +30,7 @@ use PDO;
 class BusinessSupplyController extends Controller
 {
   protected $subMattypes;
+  protected $mattypes;
   protected $uoms;
   protected $brands;
   protected $fgMaterials;
@@ -42,6 +45,13 @@ class BusinessSupplyController extends Controller
       ['code' => '2', 'label' => '2'],
       ['code' => '3', 'label' => '3'],
     ];
+    $this->mattypes = [
+      ['code' => '1', 'label' => '1'],
+      ['code' => '5', 'label' => '5'],
+      ['code' => '7', 'label' => '7'],
+      ['code' => '8', 'label' => '8'],
+      ['code' => '9', 'label' => '9'],
+    ];
     $this->uoms = MasterUOM::all()->map(function ($row) {
       return [
         'value' => trim((string) $row->code_uom),
@@ -49,16 +59,18 @@ class BusinessSupplyController extends Controller
       ];
     })->toArray();
     $this->brands = Proj12BrandV::query()
-      ->selectRaw('TRIM(BRAND_ABB) as brand_abb, TRIM(BRAND_LIST) as brand_list')
+      ->selectRaw('TRIM(BRAND_ABB) as brand_abb, TRIM(BRAND) as brand, TRIM(BRAND_LIST) as brand_list')
       ->orderByRaw('TRIM(BRAND_LIST)')
       ->get()
       ->map(function ($row) {
         $brandAbb = trim((string) ($row->brand_abb ?? ''));
+        $brand = trim((string) ($row->brand ?? ''));
         $brandList = trim((string) ($row->brand_list ?? ''));
 
         return [
           'value' => $brandAbb,
           'label' => $brandList,
+          'brand' => $brand,
         ];
       })
       ->filter(fn ($item) => $item['value'] !== '' && $item['label'] !== '')
@@ -333,6 +345,7 @@ class BusinessSupplyController extends Controller
       ->map(function ($row, $index) use ($sourceType) {
         $source = $this->toLowercaseArray($row);
         $code = $this->pick($source, [
+          'comp_bs_material_id',
           'material_id_bizsup_comp_mat_id',
           'material_id_bizsup_comp_m6',
           'component_id',
@@ -345,18 +358,92 @@ class BusinessSupplyController extends Controller
           'desc_bizsup_id',
           'description',
         ]);
+        $brand = $this->pick($source, ['brand']);
+        $matType = $this->pick($source, ['mattype', 'mat_type']);
+        $subMatType = $this->pick($source, ['sub_mat_type', 'sub_mattype', 'submattype']);
+        $site = $this->pick($source, ['site']);
+        $materialLookup = $sourceType === 'matid'
+          ? $this->loadBusinessSupplyMaterialIdLookupByMaterialId($code, $brand, $matType, $subMatType)
+          : null;
+
+        if ($materialLookup) {
+          $description = $materialLookup['searchDesc'] ?: $description;
+        }
 
         return [
           'id' => $this->pick($source, ['no'], (string) $index),
           'code' => $code,
-          'label' => $description,
+          'label' => $sourceType === 'matid' ? ($materialLookup['searchDesc'] ?? $description) : $description,
           'description' => $description,
+          'searchDesc' => $materialLookup['searchDesc'] ?? $description,
+          'fullDescEn' => $materialLookup['fullDescEn'] ?? '',
+          'fullDescTh' => $materialLookup['fullDescTh'] ?? '',
+          'componentId' => $materialLookup['componentId'] ?? $code,
+          'materialId' => $materialLookup['materialId'] ?? $code,
+          'listMatId' => $materialLookup['componentId'] ?? '',
+          'brand' => $brand,
+          'matType' => $matType,
+          'subMatType' => $subMatType,
+          'site' => $site,
           'sourceType' => $sourceType,
         ];
       })
       ->filter(fn ($item) => trim((string) $item['code']) !== '')
       ->values()
       ->all();
+  }
+
+  protected function loadBusinessSupplyMaterialIdLookupByMaterialId(string $materialId, string $brand = '', string $matType = '', string $subMatType = ''): ?array
+  {
+    $materialId = trim($materialId);
+
+    if ($materialId === '') {
+      return null;
+    }
+
+    try {
+      $query = Proj12ListCompBsMatidV::query()
+        ->selectRaw('TRIM(LIST_MAT_ID) as list_mat_id, TRIM(MATERIAL_ID) as material_id, TRIM(SEARCH_DESC) as search_desc, TRIM(MATERIAL_DESC_EN) as material_desc_en, TRIM(MATERIAL_DESC_TH) as material_desc_th')
+        ->whereRaw('TRIM(MATERIAL_ID) = ?', [$materialId]);
+
+      if (trim($brand) !== '') {
+        $query->whereRaw('TRIM(LIST_BRAND) = ?', [trim($brand)]);
+      }
+
+      if (trim($matType) !== '') {
+        $query->whereRaw('TRIM(LIST_MAT_TYPE) = ?', [trim($matType)]);
+      }
+
+      if (trim($subMatType) !== '') {
+        $query->whereRaw('TRIM(LIST_SUB_TYPE) = ?', [trim($subMatType)]);
+      }
+
+      $row = $query->orderByRaw('TRIM(LIST_MAT_ID)')->first();
+    } catch (\Throwable $e) {
+      Log::warning('business supply material-id component lookup failed', [
+        'materialId' => $materialId,
+        'brand' => $brand,
+        'matType' => $matType,
+        'subMatType' => $subMatType,
+        'error' => $e->getMessage(),
+      ]);
+
+      return null;
+    }
+
+    if (!$row) {
+      return null;
+    }
+
+    $source = $this->toLowercaseArray($row);
+
+    return [
+      'componentId' => $this->pick($source, ['list_mat_id']),
+      'materialId' => $this->pick($source, ['material_id'], $materialId),
+      'searchDesc' => $this->pick($source, ['search_desc']),
+      'fullDescEn' => $this->pick($source, ['material_desc_en']),
+      'fullDescTh' => $this->pick($source, ['material_desc_th']),
+    ];
   }
 
   protected function toLowercaseArray($row): array
@@ -746,6 +833,365 @@ class BusinessSupplyController extends Controller
       'uoms' => $this->uoms,
       'selectedBusinessSupply' => $selectedBizSup,
     ]);
+  }
+
+  protected function loadBusinessSupplyMaterialIdDropdownOptions(string $column, string $valueKey = 'value'): array
+  {
+    $allowedColumns = [
+      'LIST_BRAND',
+      'LIST_MAT_TYPE',
+      'LIST_SUB_TYPE',
+      'LIST_MAT_ID',
+    ];
+
+    if (!in_array($column, $allowedColumns, true)) {
+      return [];
+    }
+
+    try {
+      return Proj12ListCompBsMatidV::query()
+        ->selectRaw("TRIM({$column}) as value")
+        ->whereRaw("TRIM({$column}) IS NOT NULL")
+        ->distinct()
+        ->orderByRaw("TRIM({$column})")
+        ->get()
+        ->map(function ($row) use ($valueKey) {
+          $source = $this->toLowercaseArray($row);
+          $value = $this->pick($source, ['value']);
+
+          return [
+            $valueKey => $value,
+            'value' => $value,
+            'label' => $value,
+          ];
+        })
+        ->filter(fn ($item) => trim((string) ($item['value'] ?? '')) !== '')
+        ->values()
+        ->all();
+    } catch (\Throwable $e) {
+      Log::warning('business supply material-id dropdown lookup failed', [
+        'column' => $column,
+        'error' => $e->getMessage(),
+      ]);
+
+      return [];
+    }
+  }
+
+  protected function loadBusinessSupplyMaterialIdOptions(array $selectedBizSup, Request $request): array
+  {
+    $brand = $this->requestString($request, 'brand');
+    $matType = $this->requestString($request, 'matType');
+    $subMatType = $this->requestString($request, 'subMatType');
+
+    if ($brand === '' || $matType === '' || $subMatType === '') {
+      return [];
+    }
+
+    try {
+      $query = Proj12ListCompBsMatidV::query();
+
+      $query->whereRaw('TRIM(LIST_BRAND) = ?', [$brand]);
+      $query->whereRaw('TRIM(LIST_MAT_TYPE) = ?', [$matType]);
+      $query->whereRaw('TRIM(LIST_SUB_TYPE) = ?', [$subMatType]);
+
+      $rows = $query
+        ->selectRaw('TRIM(LIST_MAT_ID) as list_mat_id, TRIM(MATERIAL_ID) as material_id, TRIM(SEARCH_DESC) as search_desc, TRIM(MATERIAL_DESC_EN) as material_desc_en, TRIM(MATERIAL_DESC_TH) as material_desc_th')
+        ->whereRaw('TRIM(LIST_MAT_ID) IS NOT NULL')
+        ->orderByRaw('TRIM(LIST_MAT_ID)')
+        ->get();
+
+      return $rows
+        ->map(function ($row) {
+          $source = $this->toLowercaseArray($row);
+          $materialId = $this->pick($source, ['list_mat_id']);
+
+          return [
+            'value' => $materialId,
+            'label' => $materialId,
+            'componentId' => $materialId,
+            'materialId' => $this->pick($source, ['material_id']),
+            'searchDesc' => $this->pick($source, ['search_desc']),
+            'fullDescEn' => $this->pick($source, ['material_desc_en']),
+            'fullDescTh' => $this->pick($source, ['material_desc_th']),
+            'materialDesc' => $this->pick($source, ['search_desc']),
+          ];
+        })
+        ->filter(fn ($item) => trim((string) ($item['value'] ?? '')) !== '')
+        ->unique('value')
+        ->values()
+        ->all();
+    } catch (\Throwable $e) {
+      Log::warning('business supply material-id options lookup failed', [
+        'bizsupId' => $selectedBizSup['bizsupId'] ?? '',
+        'brand' => $brand,
+        'matType' => $matType,
+        'subMatType' => $subMatType,
+        'error' => $e->getMessage(),
+      ]);
+
+      return [];
+    }
+  }
+
+  protected function loadMaterialIdDetail(string $materialId, ?Request $request = null): ?array
+  {
+    $materialId = trim($materialId);
+
+    if ($materialId === '') {
+      return null;
+    }
+
+    try {
+      $query = Proj12ListCompBsMatidV::query()
+        ->where(function ($query) use ($materialId) {
+          $query->whereRaw('TRIM(LIST_MAT_ID) = ?', [$materialId])
+            ->orWhereRaw('TRIM(MATERIAL_ID) = ?', [$materialId]);
+        });
+
+      if ($request) {
+        $brand = $this->requestString($request, 'brand');
+        $matType = $this->requestString($request, 'matType');
+        $subMatType = $this->requestString($request, 'subMatType');
+
+        if ($brand !== '') {
+          $query->whereRaw('TRIM(LIST_BRAND) = ?', [$brand]);
+        }
+
+        if ($matType !== '') {
+          $query->whereRaw('TRIM(LIST_MAT_TYPE) = ?', [$matType]);
+        }
+
+        if ($subMatType !== '') {
+          $query->whereRaw('TRIM(LIST_SUB_TYPE) = ?', [$subMatType]);
+        }
+      }
+
+      $row = $query->first();
+    } catch (\Throwable $e) {
+      Log::warning('business supply material-id detail lookup failed', [
+        'materialId' => $materialId,
+        'error' => $e->getMessage(),
+      ]);
+
+      return null;
+    }
+
+    if (!$row) {
+      return null;
+    }
+
+    $source = $this->toLowercaseArray($row);
+    $searchDesc = $this->pick($source, ['search_desc']);
+    $fullDescEn = $this->pick($source, ['material_desc_en']);
+    $fullDescTh = $this->pick($source, ['material_desc_th']);
+
+    return [
+      'componentId' => $this->pick($source, ['list_mat_id'], $materialId),
+      'materialId' => $this->pick($source, ['material_id']),
+      'searchDesc' => $searchDesc,
+      'fullDescEn' => $fullDescEn,
+      'fullDescTh' => $fullDescTh,
+      'materialDesc' => $searchDesc,
+    ];
+  }
+
+  public function createMaterialId(Request $request): Response
+  {
+    $selectedBizSup = $this->resolveSelectedBusinessSupply($request);
+    $actionMode = $this->requestString($request, 'actionMode') ?: 'create';
+    $materialOptions = $this->loadBusinessSupplyMaterialIdOptions($selectedBizSup, $request);
+    $selectedMaterialId = $this->requestString($request, 'materialId');
+    $selectedComponentMaterialId = $this->requestString($request, 'componentMaterialId');
+    $selectedMaterial = ($selectedMaterialId !== '' || $selectedComponentMaterialId !== '')
+      ? collect($materialOptions)->first(function ($item) use ($selectedMaterialId, $selectedComponentMaterialId) {
+        $value = trim((string) ($item['value'] ?? ''));
+        $materialId = trim((string) ($item['materialId'] ?? ''));
+
+        return ($selectedMaterialId !== '' && $value === $selectedMaterialId)
+          || ($selectedComponentMaterialId !== '' && $materialId === $selectedComponentMaterialId);
+      })
+      : null;
+    $brands = $this->loadBusinessSupplyMaterialIdDropdownOptions('LIST_BRAND', 'brand');
+    $mattypes = $this->loadBusinessSupplyMaterialIdDropdownOptions('LIST_MAT_TYPE', 'code');
+    $subMattypes = $this->loadBusinessSupplyMaterialIdDropdownOptions('LIST_SUB_TYPE', 'code');
+
+    return Inertia::render('BusinessSupply/MaterialId', [
+      'InputData' => [
+        'mode' => $actionMode,
+        'actionMode' => $actionMode,
+        'bizsupId' => $selectedBizSup['bizsupId'] ?? $this->requestString($request, 'bizsupId'),
+        'brand' => $this->requestString($request, 'brand'),
+        'matType' => $this->requestString($request, 'matType'),
+        'subMatType' => $this->requestString($request, 'subMatType'),
+        'componentId' => $selectedMaterial['componentId'] ?? $this->requestString($request, 'materialId'),
+        'materialId' => $selectedMaterial['materialId'] ?? $selectedComponentMaterialId,
+      ],
+      'brands' => $brands,
+      'mattypes' => $mattypes,
+      'subMattypes' => $subMattypes,
+      'selectedBusinessSupply' => $selectedBizSup,
+      'materialOptions' => $materialOptions,
+      'selectedMaterial' => $selectedMaterial,
+    ]);
+  }
+
+  public function materialIdOptions(Request $request): JsonResponse
+  {
+    $selectedBizSup = $this->resolveSelectedBusinessSupply($request);
+    $options = $this->loadBusinessSupplyMaterialIdOptions($selectedBizSup, $request);
+
+    return response()->json([
+      'materialOptions' => $options,
+    ]);
+  }
+
+  public function materialIdDetail(Request $request): JsonResponse
+  {
+    $validated = $request->validate([
+      'materialId' => ['required'],
+      'brand' => ['nullable'],
+      'matType' => ['nullable'],
+      'subMatType' => ['nullable'],
+    ]);
+
+    $detail = $this->loadMaterialIdDetail((string) $validated['materialId'], $request);
+
+    return response()->json([
+      'material' => $detail,
+    ]);
+  }
+
+  public function saveMaterialId(BusinessSupplyMaterialIdSaveRequest $request): RedirectResponse|JsonResponse
+  {
+    $validated = $request->validated();
+    $bomBsId = trim((string) $validated['bomBsId']);
+    $matType = trim((string) $validated['matType']);
+    $subMatType = trim((string) $validated['subMatType']);
+    $componentId = trim((string) $validated['componentId']);
+    $materialId = trim((string) ($validated['materialId'] ?? ''));
+    $componentBsMaterialId = $materialId !== '' ? $materialId : $componentId;
+    $actionMode = trim((string) ($validated['actionMode'] ?? 'create')) ?: 'create';
+    $brand = trim((string) ($validated['brand'] ?? ''));
+    $site = trim((string) ($validated['site'] ?? ''));
+    if ($site === '') {
+      $selectedBizSup = $this->resolveSelectedBusinessSupply($request);
+      $site = trim((string) data_get($selectedBizSup, 'record.site', ''));
+    }
+    $userRole = (string) ($request->user()?->role ?? '');
+    $userLogin = (string) ($request->user()?->user_login ?? '');
+    $error = '';
+
+    Log::info('business supply material-id save requested', [
+      'actionMode' => $actionMode,
+      'bomBsId' => $bomBsId,
+      'matType' => $matType,
+      'subMatType' => $subMatType,
+      'componentId' => $componentId,
+      'materialId' => $materialId,
+      'componentBsMaterialId' => $componentBsMaterialId,
+      'brand' => $brand,
+      'site' => $site,
+      'userRole' => $userRole,
+      'userLogin' => $userLogin,
+    ]);
+
+    if ($actionMode === 'delete') {
+      // TODO: call material-id delete procedure here when Oracle provides the procedure name/signature.
+      Log::info('business supply material-id delete prepared', [
+        'bomBsId' => $bomBsId,
+        'componentId' => $componentId,
+        'materialId' => $materialId,
+        'componentBsMaterialId' => $componentBsMaterialId,
+        'brand' => $brand,
+        'matType' => $matType,
+        'subMatType' => $subMatType,
+        'site' => $site,
+        'userRole' => $userRole,
+        'userLogin' => $userLogin,
+      ]);
+
+      if ($request->expectsJson()) {
+        return response()->json([
+          'message' => 'Business Supply Material ID delete prepared.',
+          'program' => null,
+          'bizsupId' => $bomBsId,
+          'componentId' => $componentId,
+          'materialId' => $materialId,
+        ]);
+      }
+
+      return Redirect::route('business-supply.existing', [
+        'bizsupId' => $bomBsId !== '' ? $bomBsId : $request->input('bizsupId', ''),
+      ])->setStatusCode(303);
+    }
+
+    $pdo = DB::connection('oracle')->getPdo();
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_SAVE_COMP_BOM_BS_MATID(:P_COMP_BS_MATERIAL_ID, :P_BIZSUP_ID, :P_BRAND, :P_MATTYPE, :P_SUB_MATTYPE, :P_SITE, :P_USER_LOGIN, :P_USER_ROLE, :P_ERROR); END;');
+    $stmt->bindValue(':P_COMP_BS_MATERIAL_ID', $componentBsMaterialId, PDO::PARAM_STR);
+    $stmt->bindValue(':P_BIZSUP_ID', $bomBsId, PDO::PARAM_STR);
+    $stmt->bindValue(':P_BRAND', $brand, PDO::PARAM_STR);
+    $stmt->bindValue(':P_MATTYPE', $matType, PDO::PARAM_STR);
+    $stmt->bindValue(':P_SUB_MATTYPE', $subMatType, PDO::PARAM_STR);
+    $stmt->bindValue(':P_SITE', $site, PDO::PARAM_STR);
+    $stmt->bindValue(':P_USER_LOGIN', $userLogin, PDO::PARAM_STR);
+    $stmt->bindValue(':P_USER_ROLE', $userRole, PDO::PARAM_STR);
+    $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
+
+    try {
+      $stmt->execute();
+    } catch (\Throwable $e) {
+      Log::error('business supply material-id save failed', [
+        'error' => $e->getMessage(),
+        'bomBsId' => $bomBsId,
+        'componentId' => $componentId,
+        'materialId' => $materialId,
+      ]);
+
+      if ($request->expectsJson()) {
+        return response()->json([
+          'error' => 'Unable to save Business Supply Material ID.',
+        ], 500);
+      }
+
+      return Redirect::back()->withErrors([
+        'save' => 'Unable to save Business Supply Material ID.',
+      ]);
+    }
+
+    Log::info('business supply material-id save executed', [
+      'bomBsId' => $bomBsId,
+      'componentId' => $componentId,
+      'materialId' => $materialId,
+      'procError' => $error,
+    ]);
+
+    $resolvedError = $this->resolveProcedureErrorMessage($error);
+    if ($resolvedError !== '') {
+      if ($request->expectsJson()) {
+        return response()->json([
+          'error' => $resolvedError,
+        ], 422);
+      }
+
+      return Redirect::back()->withErrors([
+        'save' => $resolvedError,
+      ]);
+    }
+
+    if ($request->expectsJson()) {
+      return response()->json([
+        'message' => 'Business Supply Material ID saved.',
+        'program' => 'PROJ1_2_SAVE_COMP_BOM_BS_MATID',
+        'bizsupId' => $bomBsId,
+        'componentId' => $componentId,
+        'materialId' => $materialId,
+      ]);
+    }
+
+    return Redirect::route('business-supply.existing', [
+      'bizsupId' => $bomBsId !== '' ? $bomBsId : $request->input('bizsupId', ''),
+    ])->setStatusCode(303);
   }
 
   protected function loadBusinessSupplyComponentForEdit(string $bizsupId, string $componentId): ?array

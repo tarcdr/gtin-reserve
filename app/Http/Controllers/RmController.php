@@ -837,7 +837,7 @@ class RmController extends Controller
             ->with('success', 'Data deleted successfully.');
     }
 
-    private function buildExportResponse(Request $request, bool $comOnly = false)
+    private function buildExportResponse(Request $request, bool $comOnly = false, bool $allUsers = false)
     {
       $user_login = $request->user()->user_login;
       $tabs = ['AVAILABILITY', 'BOM_GENERAL', 'CUST_PART_NUM', 'FINANCIAL', 'GENERAL', 'GTINS', 'INPUT_PRODUCTS', 'LOGISTICS', 'PLANNING', 'QTY_CONVERS', 'SALES_DATA', 'SUPP_PART_NUM', 'UOM_CHAR'];
@@ -862,7 +862,11 @@ class RmController extends Controller
       foreach ($tabs as $tab) {
           $model = "\\App\\Models\\Sheet" . Str::studly(Str::lower($tab));
           if (class_exists($model)) {
-              $query = $model::query()->where('user_create', $user_login);
+              $query = $model::query();
+
+              if (!$allUsers) {
+                $query->where('user_create', $user_login);
+              }
 
               if ($comOnly) {
                 $query->whereRaw('TRIM(status_row) = ?', ['COM']);
@@ -954,7 +958,7 @@ class RmController extends Controller
         'p_confirm' => ['required', 'string', 'max:4000'],
       ]);
 
-      $response = $this->buildExportResponse($request, true);
+      $response = $this->buildExportResponse($request, true, true);
 
       $this->callExportToSapProcedure($request, $validated['p_confirm']);
 

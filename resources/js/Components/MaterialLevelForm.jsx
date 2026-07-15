@@ -7,6 +7,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import SuccessButton from '@/Components/SuccessButton';
 import TextInput from '@/Components/TextInput';
 import DangerButton from '@/Components/DangerButton';
+import Modal from '@/Components/Modal';
 import { getAxiosErrorMessage, getResponseErrorMessage } from '@/Utils/apiError';
 import { useEffect, useState } from 'react';
 
@@ -23,6 +24,7 @@ export default function MaterialLevelForm({
   submitRoute,
   backRoute,
   createComponentRoute,
+  completeRoute = '',
   levelKey,
   levelRoute,
   fixedMattypeDisplayValue = '',
@@ -51,6 +53,9 @@ export default function MaterialLevelForm({
 }) {
   const [componentRows, setComponentRows] = useState(components);
   const [isGeneratingLevelData, setIsGeneratingLevelData] = useState(false);
+  const [confirmingComplete, setConfirmingComplete] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState('');
   const mode = InputData?.mode || (InputData?.materialId ? 'view' : 'create');
   const isViewMode = mode === 'view';
   const isEditMode = mode === 'edit';
@@ -76,6 +81,7 @@ export default function MaterialLevelForm({
     fullDescEn: InputData?.fullDescEn || '',
     fullDescTh: InputData?.fullDescTh || '',
     uom: InputData?.uom || '',
+    statusRow: InputData?.statusRow || '',
     components: components,
     fg_bom_id: semiFgLv2?.fg_bom_id || '',
     semi_fg_lv2_id: semiFgLv2?.semi_fg_lv2_id || '',
@@ -329,11 +335,66 @@ export default function MaterialLevelForm({
     router.get(route(levelRoute), buildLevelLookupPayload('edit'));
   };
 
+  const openCompleteModal = () => {
+    setCompleteError('');
+    setConfirmingComplete(true);
+  };
+
+  const closeCompleteModal = () => {
+    if (isCompleting) {
+      return;
+    }
+
+    setConfirmingComplete(false);
+    setCompleteError('');
+  };
+
+  const handleComplete = () => {
+    if (!completeRoute) {
+      return;
+    }
+
+    setIsCompleting(true);
+    setCompleteError('');
+
+    router.patch(route(completeRoute), {
+      fgBomId: data.fgBomId,
+      levelMaterialId: data.materialId,
+    }, {
+      preserveScroll: true,
+      onSuccess: () => {
+        setConfirmingComplete(false);
+        setCompleteError('');
+
+        router.visit(route(levelRoute), {
+          method: 'get',
+          data: {
+            mode: 'view',
+            levelMaterialId: data.materialId,
+          },
+          preserveState: false,
+          preserveScroll: false,
+          replace: true,
+        });
+      },
+      onError: (nextErrors) => {
+        setCompleteError(nextErrors?.complete || nextErrors?.fgBomId || nextErrors?.levelMaterialId || 'Unable to complete Semi FG.');
+      },
+      onFinish: () => {
+        setIsCompleting(false);
+      },
+    });
+  };
+
   const backLabel = isEditMode
     ? `Back to ${title}`
     : backRoute === 'product.view'
       ? 'Back to FG'
       : 'Back';
+  const showCompleteButton = isViewMode && completeRoute;
+  const normalizedStatusRow = String(data.statusRow || '').trim().toUpperCase();
+  const isCompleteDisabled = isCompleting || normalizedStatusRow !== 'INS';
+  const isSemiFgCompleted = ['semiFgLv1', 'semiFgLv2'].includes(levelKey) && normalizedStatusRow === 'COM';
 
   return (
     <AuthenticatedLayout
@@ -581,6 +642,17 @@ export default function MaterialLevelForm({
                   </select>
                   <InputError className="mt-2" message={errors.uom} />
                 </div>
+                {data.statusRow ? (
+                  <div>
+                    <InputLabel htmlFor="statusRow" value="Status" />
+                    <TextInput
+                      id="statusRow"
+                      className="mt-1 block w-full bg-gray-100"
+                      value={data.statusRow}
+                      disabled
+                    />
+                  </div>
+                ) : null}
               </div>
 
               {(isViewMode || (showComponentSectionWhenNotView && !isCreateMode)) && (
@@ -588,7 +660,7 @@ export default function MaterialLevelForm({
                   <legend className="px-2 text-gray-600">{componentLegend || `${title} Components`}</legend>
                   {isViewMode && (
                     <div className="flex items-center justify-end gap-4 mb-2">
-                      <SuccessButton type="button" onClick={goCreateComponent} disabled={!createComponentRoute}>
+                      <SuccessButton type="button" onClick={goCreateComponent} disabled={!createComponentRoute || isSemiFgCompleted}>
                         {createComponentLabel}
                       </SuccessButton>
                     </div>
@@ -619,8 +691,8 @@ export default function MaterialLevelForm({
                               <td className="px-6 py-4">
                                 {isViewMode ? (
                                   <div className="flex items-center gap-2">
-                                    <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>EDIT</PrimaryButton>
-                                    <DangerButton type="button" onClick={() => goComponentAction('delete', item)}>DELETE</DangerButton>
+                                    <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)} disabled={isSemiFgCompleted}>EDIT</PrimaryButton>
+                                    <DangerButton type="button" onClick={() => goComponentAction('delete', item)} disabled={isSemiFgCompleted}>DELETE</DangerButton>
                                   </div>
                                 ) : (
                                   <span className="text-gray-400">View Only</span>
@@ -640,7 +712,14 @@ export default function MaterialLevelForm({
                   {backLabel}
                 </SecondaryButton>
                 {isViewMode ? (
-                  <PrimaryButton type="button" onClick={goToEdit}>Edit</PrimaryButton>
+                  <>
+                    <PrimaryButton type="button" onClick={goToEdit} disabled={isSemiFgCompleted}>Edit</PrimaryButton>
+                    {showCompleteButton ? (
+                      <SuccessButton type="button" onClick={openCompleteModal} disabled={isCompleteDisabled}>
+                        COMPLETE
+                      </SuccessButton>
+                    ) : null}
+                  </>
                 ) : (
                   <SuccessButton disabled={processing || isGeneratingLevelData}>Save</SuccessButton>
                 )}
@@ -649,6 +728,23 @@ export default function MaterialLevelForm({
           </div>
         </div>
       </div>
+      <Modal show={confirmingComplete} maxWidth="xl" onClose={closeCompleteModal}>
+        <div className="bg-blue-100 border-b border-blue-300 px-6 py-4">
+          <h2 className="text-xl font-semibold text-blue-800">Complete Semi FG</h2>
+        </div>
+        <div className="p-6 space-y-4">
+          <p className="text-gray-700">ข้อมูลของคุณพร้อมขึ้นระบบ SAP แล้วใช่ไหม</p>
+          <InputError message={completeError} />
+          <div className="flex items-center justify-center gap-4 border-t pt-4">
+            <SecondaryButton type="button" onClick={closeCompleteModal} disabled={isCompleting}>
+              CANCEL
+            </SecondaryButton>
+            <SuccessButton type="button" onClick={handleComplete} disabled={isCompleting}>
+              CONFIRM
+            </SuccessButton>
+          </div>
+        </div>
+      </Modal>
     </AuthenticatedLayout>
   );
 }

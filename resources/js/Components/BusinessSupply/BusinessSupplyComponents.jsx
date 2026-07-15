@@ -14,29 +14,29 @@ export default function BusinessSupplyComponents({
       <legend className="px-2 text-gray-700">Business Supply Components</legend>
       <div className="mb-3 flex items-center justify-end gap-3">
         <SuccessButton type="button" onClick={onAddMaterialId} disabled={!onAddMaterialId}>
-          Add Material ID
+          ADD MATERIAL ID
         </SuccessButton>
         <SuccessButton type="button" onClick={onAddComponent} disabled={!onAddComponent}>
-          Add Component
+          ADD COMPONENT
         </SuccessButton>
       </div>
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <table className="w-full text-left text-sm text-gray-800">
-          <thead className="bg-gray-50 text-xs">
-            <tr>
-              <th scope="col" className="px-6 py-3">
-                #
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Material ID/Component ID
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Description
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Action
-              </th>
-            </tr>
+      <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
+          <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+              <tr>
+                  <th scope="col" className="px-6 py-3" width="50">
+                      #
+                  </th>
+                  <th scope="col" className="px-6 py-3" width="220">
+                      Material ID/Component ID
+                  </th>
+                  <th scope="col" className="px-6 py-3">
+                      Description
+                  </th>
+                  <th scope="col" className="px-6 py-3" width="220">
+                      Action
+                  </th>
+              </tr>
           </thead>
           <tbody>
             {components.length === 0 ? (
@@ -46,37 +46,43 @@ export default function BusinessSupplyComponents({
                 </td>
               </tr>
             ) : (
-              components.map((item, index) => (
-                <tr key={`${item.code || item.componentId || index}`}>
-                  <th scope="row" className="px-6 py-4">
-                    {index + 1}
-                  </th>
-                  <th scope="row" className="px-6 py-4">
-                    {item.code || item.componentId || '-'}
-                  </th>
-                  <td className="px-6 py-4">
-                    {item.label || item.description || '-'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-2">
-                      <PrimaryButton
-                        type="button"
-                        onClick={() => onEditComponent?.(item)}
-                        disabled={!onEditComponent || item.sourceType !== 'component'}
-                      >
-                        Edit
-                      </PrimaryButton>
-                      <DangerButton
-                        type="button"
-                        onClick={() => onDeleteComponent?.(item)}
-                        disabled={!onDeleteComponent || item.sourceType !== 'component'}
-                      >
-                        Delete
-                      </DangerButton>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              components.map((item, index) => {
+                const description = item.sourceType === 'matid'
+                  ? item.searchDesc || item.description || item.label || '-'
+                  : item.label || item.description || '-';
+
+                return (
+                  <tr key={`${item.code || item.componentId || index}`}>
+                    <th scope="row" className="px-6 py-4">
+                      {index + 1}
+                    </th>
+                    <th scope="row" className="px-6 py-4">
+                      {item.code || item.componentId || '-'}
+                    </th>
+                    <th scope="row" className="px-6 py-4">
+                      {description}
+                    </th>
+                    <td className="px-6 py-4 flex gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        <PrimaryButton
+                          type="button"
+                          onClick={() => onEditComponent?.(item)}
+                          disabled={!onEditComponent}
+                        >
+                          Edit
+                        </PrimaryButton>
+                        <DangerButton
+                          type="button"
+                          onClick={() => onDeleteComponent?.(item)}
+                          disabled={!onDeleteComponent}
+                        >
+                          Delete
+                        </DangerButton>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

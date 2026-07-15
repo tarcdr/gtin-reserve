@@ -62,11 +62,13 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/material-levels/semi-fg-lv2', [MaterialLevelController::class, 'semiFgLevel2'])->name('material-levels.semi-fg-lv2.new');
     Route::patch('/material-levels/semi-fg-lv2', [MaterialLevelController::class, 'saveSemiFgLevel2'])->name('material-levels.semi-fg-lv2.save');
+    Route::patch('/material-levels/semi-fg-lv2/complete', [MaterialLevelController::class, 'completeSemiFgLevel2'])->name('material-levels.semi-fg-lv2.complete');
     Route::get('/material-levels/semi-fg-lv2/create-component', [MaterialLevelController::class, 'createComponentSemiFgLevel2'])->name('material-levels.semi-fg-lv2.create-component');
     Route::get('/material-levels/semi-fg-lv2/generate', [MaterialLevelController::class, 'generateSemiFgLevel2'])->name('material-levels.semi-fg-lv2.generate');
 
     Route::get('/material-levels/semi-fg-lv1', [MaterialLevelController::class, 'semiFgLevel1'])->name('material-levels.semi-fg-lv1.new');
     Route::patch('/material-levels/semi-fg-lv1', [MaterialLevelController::class, 'saveSemiFgLevel1'])->name('material-levels.semi-fg-lv1.save');
+    Route::patch('/material-levels/semi-fg-lv1/complete', [MaterialLevelController::class, 'completeSemiFgLevel1'])->name('material-levels.semi-fg-lv1.complete');
     Route::get('/material-levels/semi-fg-lv1/create-component', [MaterialLevelController::class, 'createComponentSemiFgLevel1'])->name('material-levels.semi-fg-lv1.create-component');
     Route::get('/material-levels/semi-fg-lv1/generate', [MaterialLevelController::class, 'generateSemiFgLevel1'])->name('material-levels.semi-fg-lv1.generate');
 
@@ -76,6 +78,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/business-supply/generate', [BusinessSupplyController::class, 'generate'])->name('business-supply.generate');
     Route::patch('/business-supply/save', [BusinessSupplyController::class, 'save'])->name('business-supply.save');
     Route::patch('/business-supply/existing', [BusinessSupplyController::class, 'updateExisting'])->name('business-supply.existing.update');
+    Route::get('/business-supply/create-material-id', [BusinessSupplyController::class, 'createMaterialId'])->name('business-supply.create-material-id');
+    Route::get('/business-supply/create-material-id/options', [BusinessSupplyController::class, 'materialIdOptions'])->name('business-supply.create-material-id.options');
+    Route::get('/business-supply/create-material-id/detail', [BusinessSupplyController::class, 'materialIdDetail'])->name('business-supply.create-material-id.detail');
+    Route::patch('/business-supply/create-material-id', [BusinessSupplyController::class, 'saveMaterialId'])->name('business-supply.create-material-id.save');
     Route::get('/business-supply/create-component', [BusinessSupplyController::class, 'createComponent'])->name('business-supply.create-component');
     Route::patch('/business-supply/create-component', [BusinessSupplyController::class, 'saveComponent'])->name('business-supply.create-component.save');
     Route::get('/business-supply/edit-component', [BusinessSupplyController::class, 'editComponent'])->name('business-supply.edit-component');

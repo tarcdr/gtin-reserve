@@ -9,6 +9,7 @@ import DangerButton from '@/Components/DangerButton';
 import { useMemo } from 'react';
 import BusinessSupplyDetail from '@/Components/BusinessSupply/BusinessSupplyDetail';
 import BusinessSupplyComponents from '@/Components/BusinessSupply/BusinessSupplyComponents';
+import SuccessButton from '@/Components/SuccessButton';
 
 export default function BusinessSupplyExisting({
   auth,
@@ -206,11 +207,23 @@ export default function BusinessSupplyExisting({
 
               <BusinessSupplyComponents
                 components={detailValues.components}
+                onAddMaterialId={() => router.get(route('business-supply.create-material-id', {
+                  bizsupId: detailValues.bomBsId,
+                }))}
                 onAddComponent={() => router.get(route('business-supply.create-component', {
                   bizsupId: detailValues.bomBsId,
                 }))}
                 onEditComponent={(item) => {
-                  if (item?.sourceType !== 'component') {
+                  if (item?.sourceType === 'matid') {
+                    router.get(route('business-supply.create-material-id', {
+                      bizsupId: detailValues.bomBsId,
+                      actionMode: 'edit',
+                      materialId: item.listMatId || item.componentId || '',
+                      componentMaterialId: item.materialId || item.code || '',
+                      brand: item.brand || '',
+                      matType: item.matType || '',
+                      subMatType: item.subMatType || '',
+                    }));
                     return;
                   }
 
@@ -221,7 +234,16 @@ export default function BusinessSupplyExisting({
                   }));
                 }}
                 onDeleteComponent={(item) => {
-                  if (item?.sourceType !== 'component') {
+                  if (item?.sourceType === 'matid') {
+                    router.get(route('business-supply.create-material-id', {
+                      bizsupId: detailValues.bomBsId,
+                      actionMode: 'delete',
+                      materialId: item.listMatId || item.componentId || '',
+                      componentMaterialId: item.materialId || item.code || '',
+                      brand: item.brand || '',
+                      matType: item.matType || '',
+                      subMatType: item.subMatType || '',
+                    }));
                     return;
                   }
 
@@ -248,6 +270,9 @@ export default function BusinessSupplyExisting({
                 <DangerButton type="button" onClick={() => {}}>
                   Delete
                 </DangerButton>
+                <SuccessButton type="button" onClick={() => {}}>
+                  COMPLETE
+                </SuccessButton>
               </div>
             </div>
           ) : null}

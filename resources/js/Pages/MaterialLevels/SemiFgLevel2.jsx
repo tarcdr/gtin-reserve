@@ -33,6 +33,7 @@ export default function SemiFgLevel2(props) {
             : 'SEMI FG LV.2 - Create'
       }
       submitRoute="material-levels.semi-fg-lv2.save"
+      completeRoute="material-levels.semi-fg-lv2.complete"
       backRoute="product.view"
       createComponentRoute="material-levels.semi-fg-lv2.create-component"
     />

@@ -157,6 +157,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   };
 
   const lockedIdentityFields = isEditMode || isDisabled;
+  const normalizedFgStatus = String(data.fgStatus || '').trim().toUpperCase();
+  const isFgCompleteDisabled = normalizedFgStatus !== 'INS';
   
   useEffect(() => {
     let dispSite = false;
@@ -462,20 +464,31 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                           <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                               <div>
-                                <InputLabel htmlFor="fgMaterialId" value="SEMI FG LV2 BOM ID" />
+                                <InputLabel htmlFor="semiFgLv2BomId" value="SEMI FG LV2 BOM ID" />
                                 <TextInput
-                                  id="fgMaterialId"
+                                  id="semiFgLv2BomId"
                                   className="mt-1 block w-full bg-gray-100"
                                   value={semiFgLv2.bomId}
                                   disabled
                                 />
                               </div>
                               <div>
-                                <InputLabel htmlFor="fgBomId" value="SEMI FG LV2 BOM Description" />
+                                <InputLabel htmlFor="semiFgLv2BomDesc" value="SEMI FG LV2 BOM Description" />
                                 <TextInput
-                                  id="fgBomId"
+                                  id="semiFgLv2BomDesc"
                                   className="mt-1 block w-full bg-gray-100"
                                   value={semiFgLv2.bomDesc}
+                                  disabled
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                              <div>
+                                <InputLabel htmlFor="semiFgLv2Status" value="Status" />
+                                <TextInput
+                                  id="semiFgLv2Status"
+                                  className="mt-1 block w-full bg-gray-100"
+                                  value={semiFgLv2.statusRow || ''}
                                   disabled
                                 />
                               </div>
@@ -506,20 +519,31 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                           <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                               <div>
-                                <InputLabel htmlFor="fgMaterialId" value="SEMI FG LV1 BOM ID" />
+                                <InputLabel htmlFor="semiFgLv1BomId" value="SEMI FG LV1 BOM ID" />
                                 <TextInput
-                                  id="fgMaterialId"
+                                  id="semiFgLv1BomId"
                                   className="mt-1 block w-full bg-gray-100"
                                   value={semiFgLv1.bomId}
                                   disabled
                                 />
                               </div>
                               <div>
-                                <InputLabel htmlFor="fgBomId" value="SEMI FG LV1 BOM Description" />
+                                <InputLabel htmlFor="semiFgLv1BomDesc" value="SEMI FG LV1 BOM Description" />
                                 <TextInput
-                                  id="fgBomId"
+                                  id="semiFgLv1BomDesc"
                                   className="mt-1 block w-full bg-gray-100"
                                   value={semiFgLv1.bomDesc}
+                                  disabled
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                              <div>
+                                <InputLabel htmlFor="semiFgLv1Status" value="Status" />
+                                <TextInput
+                                  id="semiFgLv1Status"
+                                  className="mt-1 block w-full bg-gray-100"
+                                  value={semiFgLv1.statusRow || ''}
                                   disabled
                                 />
                               </div>
@@ -556,7 +580,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                   <>
                     <PrimaryButton type="button" onClick={goToEdit}>Edit FG</PrimaryButton>
                     <DangerButton type="button" onClick={handleDelete}>DELETE FG</DangerButton>
-                    <SuccessButton type="button" onClick={handleComplete} disabled={data.fgStatus === 'COM'}>Complete</SuccessButton>
+                    <SuccessButton type="button" onClick={handleComplete} disabled={isFgCompleteDisabled}>Complete</SuccessButton>
                   </>
                 ) : (
                   <SuccessButton disabled={processing}>Save FG</SuccessButton>

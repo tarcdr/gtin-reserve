@@ -8,7 +8,8 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 
 export default function Report({ auth, activeTab, columns = [], datas = [], labels = [], fieldOptions = {} }) {
   const [confirmingActive, setConfirmingActive] = useState(false);
@@ -17,9 +18,10 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
   const [formErrors, setFormErrors] = useState({});
   const [confirmingExportSap, setConfirmingExportSap] = useState(false);
   const [exportSapConfirm, setExportSapConfirm] = useState('');
+  const [exportSapError, setExportSapError] = useState('');
+  const [isExportingSap, setIsExportingSap] = useState(false);
   const [showGoToBottom, setShowGoToBottom] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const exportSapFormRef = useRef(null);
 
   // เพิ่ม useState สำหรับ sidebar toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -361,17 +363,96 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
 
   const openExportSapModal = () => {
     setExportSapConfirm('');
+    setExportSapError('');
     setConfirmingExportSap(true);
   };
 
   const closeExportSapModal = () => {
+    if (isExportingSap) {
+      return;
+    }
+
     setConfirmingExportSap(false);
   };
 
-  const submitExportSap = (e) => {
+  const getExportSapFilename = (contentDisposition) => {
+    const fallback = `export_excel_${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}.xml`;
+
+    if (!contentDisposition) {
+      return fallback;
+    }
+
+    const encodedMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+    if (encodedMatch?.[1]) {
+      return decodeURIComponent(encodedMatch[1].replace(/"/g, ''));
+    }
+
+    const match = contentDisposition.match(/filename="?([^"]+)"?/i);
+    return match?.[1] || fallback;
+  };
+
+  const getExportSapErrorMessage = async (error) => {
+    const fallback = 'Unable to export to SAP.';
+    const payload = error?.response?.data;
+
+    if (payload instanceof Blob) {
+      try {
+        const text = await payload.text();
+        const json = JSON.parse(text);
+        const errorsPayload = json?.errors;
+
+        if (errorsPayload && typeof errorsPayload === 'object') {
+          const firstError = Object.values(errorsPayload).flat().find(Boolean);
+          if (firstError) {
+            return firstError;
+          }
+        }
+
+        return json?.message || json?.error || fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    return error?.response?.data?.message || error?.response?.data?.error || fallback;
+  };
+
+  const submitExportSap = async (e) => {
     e.preventDefault();
-    exportSapFormRef.current?.submit();
-    closeExportSapModal();
+    setExportSapError('');
+    setIsExportingSap(true);
+
+    try {
+      const response = await axios.post(route('rm.export-sap'), {
+        p_confirm: exportSapConfirm,
+      }, {
+        responseType: 'blob',
+        headers: { Accept: 'application/xml, application/octet-stream, application/json' },
+      });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+
+      link.href = blobUrl;
+      link.download = getExportSapFilename(response.headers?.['content-disposition']);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+
+      setConfirmingExportSap(false);
+      setExportSapConfirm('');
+
+      router.visit(`/rm/report/${activeTab}`, {
+        method: 'get',
+        preserveState: false,
+        preserveScroll: false,
+        replace: true,
+      });
+    } catch (error) {
+      setExportSapError(await getExportSapErrorMessage(error));
+    } finally {
+      setIsExportingSap(false);
+    }
   };
 
   // ฟังก์ชันเลื่อนขึ้นบนสุด
@@ -470,22 +551,6 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                   </PrimaryButton>
                   <PrimaryButton onClick={() => window.open(route('rm.export'))}>Download</PrimaryButton>
                 </div>
-                <form
-                  ref={exportSapFormRef}
-                  method="POST"
-                  action={route('rm.export-sap')}
-                  target="_blank"
-                  className="hidden"
-                >
-                  <input
-                    type="hidden"
-                    name="_token"
-                    value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''}
-                    readOnly
-                  />
-                  <input type="hidden" name="p_confirm" value={exportSapConfirm} readOnly />
-                </form>
-
                 {/* Scrollable Table */}
                 <div className="bg-white shadow-sm sm:rounded-lg w-full">
                   <div className="max-h-[calc(100vh-240px)] overflow-auto">
@@ -613,13 +678,17 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                       value={exportSapConfirm}
                       maxLength={4000}
                       required
+                      disabled={isExportingSap}
                       onChange={(e) => setExportSapConfirm(e.target.value)}
                     />
+                    <InputError className="mt-2" message={exportSapError} />
                   </div>
 
                   <div className="flex items-center justify-center gap-4 mt-6 border-t pt-4">
-                    <SecondaryButton type="button" onClick={closeExportSapModal}>Cancel</SecondaryButton>
-                    <PrimaryButton>Confirm</PrimaryButton>
+                    <SecondaryButton type="button" onClick={closeExportSapModal} disabled={isExportingSap}>Cancel</SecondaryButton>
+                    <PrimaryButton disabled={isExportingSap}>
+                      {isExportingSap ? 'Processing...' : 'Confirm'}
+                    </PrimaryButton>
                   </div>
                 </form>
               </div>

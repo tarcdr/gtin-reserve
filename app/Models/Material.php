@@ -9,6 +9,8 @@ class Material extends Model
 {
     use HasFactory;
 
+    protected $connection = 'oracle';
+
     /**
      * The table associated with the model.
      *
