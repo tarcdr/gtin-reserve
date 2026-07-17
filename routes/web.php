@@ -79,6 +79,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/business-supply/save', [BusinessSupplyController::class, 'save'])->name('business-supply.save');
     Route::patch('/business-supply/existing', [BusinessSupplyController::class, 'updateExisting'])->name('business-supply.existing.update');
     Route::get('/business-supply/create-material-id', [BusinessSupplyController::class, 'createMaterialId'])->name('business-supply.create-material-id');
+    Route::get('/business-supply/create-material-id/related-options', [BusinessSupplyController::class, 'materialIdRelatedOptions'])->name('business-supply.create-material-id.related-options');
     Route::get('/business-supply/create-material-id/options', [BusinessSupplyController::class, 'materialIdOptions'])->name('business-supply.create-material-id.options');
     Route::get('/business-supply/create-material-id/detail', [BusinessSupplyController::class, 'materialIdDetail'])->name('business-supply.create-material-id.detail');
     Route::patch('/business-supply/create-material-id', [BusinessSupplyController::class, 'saveMaterialId'])->name('business-supply.create-material-id.save');

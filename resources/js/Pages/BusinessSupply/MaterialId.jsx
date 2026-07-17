@@ -37,14 +37,18 @@ export default function BusinessSupplyMaterialId({
   const [brand, setBrand] = useState(defaultBrand);
   const [matType, setMatType] = useState(defaultMatType);
   const [subMatType, setSubMatType] = useState(defaultSubMatType);
+  const [availableMattypes, setAvailableMattypes] = useState(mattypes || []);
+  const [availableSubMattypes, setAvailableSubMattypes] = useState(subMattypes || []);
   const [options, setOptions] = useState(materialOptions);
   const [componentId, setComponentId] = useState(InputData?.componentId || selectedMaterial?.componentId || '');
   const [materialDetail, setMaterialDetail] = useState(selectedMaterial);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+  const [isLoadingRelatedOptions, setIsLoadingRelatedOptions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const hasLoadedOptionsRef = useRef(false);
+  const relatedOptionsRequestRef = useRef(0);
 
   const clearErrors = () => setErrors({});
 
@@ -73,6 +77,14 @@ export default function BusinessSupplyMaterialId({
   useEffect(() => {
     setOptions(materialOptions || []);
   }, [materialOptions]);
+
+  useEffect(() => {
+    setAvailableMattypes(mattypes || []);
+  }, [mattypes]);
+
+  useEffect(() => {
+    setAvailableSubMattypes(subMattypes || []);
+  }, [subMattypes]);
 
   useEffect(() => {
     if (step !== 3) {
@@ -145,8 +157,52 @@ export default function BusinessSupplyMaterialId({
     setComponentId('');
     setMaterialDetail(null);
     setOptions([]);
+    hasLoadedOptionsRef.current = false;
     setSaveError('');
     clearErrors();
+  };
+
+  const loadRelatedOptions = async (nextBrand, nextMatType = '') => {
+    const requestId = relatedOptionsRequestRef.current + 1;
+    relatedOptionsRequestRef.current = requestId;
+
+    if (!nextBrand) {
+      setAvailableMattypes([]);
+      setAvailableSubMattypes([]);
+      setIsLoadingRelatedOptions(false);
+      return;
+    }
+
+    setIsLoadingRelatedOptions(true);
+    setSaveError('');
+
+    try {
+      const { data: payload } = await axios.get(route('business-supply.create-material-id.related-options', {
+        brand: nextBrand,
+        matType: nextMatType,
+      }), {
+        headers: { Accept: 'application/json' },
+      });
+
+      if (requestId !== relatedOptionsRequestRef.current) {
+        return;
+      }
+
+      setAvailableMattypes(payload?.mattypes || []);
+      setAvailableSubMattypes(payload?.subMattypes || []);
+    } catch (error) {
+      if (requestId !== relatedOptionsRequestRef.current) {
+        return;
+      }
+
+      setAvailableMattypes([]);
+      setAvailableSubMattypes([]);
+      setSaveError(getAxiosErrorMessage(error, 'Unable to load related Mattype options.'));
+    } finally {
+      if (requestId === relatedOptionsRequestRef.current) {
+        setIsLoadingRelatedOptions(false);
+      }
+    }
   };
 
   const handleReset = () => {
@@ -154,6 +210,8 @@ export default function BusinessSupplyMaterialId({
     setBrand(defaultBrand);
     setMatType(defaultMatType);
     setSubMatType(defaultSubMatType);
+    setAvailableMattypes(mattypes || []);
+    setAvailableSubMattypes(subMattypes || []);
     setOptions(materialOptions || []);
     setComponentId(InputData?.componentId || selectedMaterial?.componentId || '');
     setMaterialDetail(selectedMaterial);
@@ -164,14 +222,22 @@ export default function BusinessSupplyMaterialId({
 
   const handleBrandChange = (nextBrand) => {
     setBrand(nextBrand);
+    setMatType('');
+    setSubMatType('');
+    setAvailableMattypes([]);
+    setAvailableSubMattypes([]);
     setStep(1);
     resetSelection();
+    loadRelatedOptions(nextBrand);
   };
 
   const handleMatTypeChange = (nextMatType) => {
     setMatType(nextMatType);
+    setSubMatType('');
+    setAvailableSubMattypes([]);
     setStep(1);
     resetSelection();
+    loadRelatedOptions(brand, nextMatType);
   };
 
   const handleSubMatTypeChange = (nextSubMatType) => {
@@ -315,10 +381,10 @@ export default function BusinessSupplyMaterialId({
             className="mt-1 block w-full border-gray-300 rounded-md"
             value={matType}
             onChange={(e) => handleMatTypeChange(e.target.value)}
-            disabled={isDeleteMode}
+            disabled={isDeleteMode || !brand || isLoadingRelatedOptions}
           >
             <option value="">---- Select Mattype ----</option>
-            {mattypes.map((item) => (
+            {availableMattypes.map((item) => (
               <option key={`matType-${item.code}`} value={item.code}>
                 {item.label}
               </option>
@@ -335,7 +401,7 @@ export default function BusinessSupplyMaterialId({
         <SecondaryButton type="button" onClick={handleReset} disabled={isDeleteMode}>
           RESET
         </SecondaryButton>
-        <PrimaryButton type="button" onClick={handleNextStep} disabled={!brand || !matType}>
+        <PrimaryButton type="button" onClick={handleNextStep} disabled={!brand || !matType || isLoadingRelatedOptions}>
           NEXT
         </PrimaryButton>
       </div>
@@ -363,10 +429,10 @@ export default function BusinessSupplyMaterialId({
             className="mt-1 block w-full border-gray-300 rounded-md"
             value={subMatType}
             onChange={(e) => handleSubMatTypeChange(e.target.value)}
-            disabled={isDeleteMode}
+            disabled={isDeleteMode || !matType || isLoadingRelatedOptions}
           >
             <option value="">---- Select Sub Mattype ----</option>
-            {subMattypes.map((item) => (
+            {availableSubMattypes.map((item) => (
               <option key={`subMatType-${item.code}`} value={item.code}>
                 {item.label}
               </option>
@@ -384,7 +450,7 @@ export default function BusinessSupplyMaterialId({
         <SecondaryButton type="button" onClick={handleReset} disabled={isDeleteMode}>
           RESET
         </SecondaryButton>
-        <PrimaryButton type="button" onClick={handleNextStep} disabled={!subMatType}>
+        <PrimaryButton type="button" onClick={handleNextStep} disabled={!subMatType || isLoadingRelatedOptions}>
           SEARCH FG
         </PrimaryButton>
       </div>
@@ -419,10 +485,10 @@ export default function BusinessSupplyMaterialId({
               className="mt-1 block w-full border-gray-300 rounded-md"
               value={subMatType}
               onChange={(e) => handleSubMatTypeChange(e.target.value)}
-              disabled={isDeleteMode}
+              disabled={isDeleteMode || !matType || isLoadingRelatedOptions}
             >
               <option value="">---- Select Sub Mattype ----</option>
-              {subMattypes.map((item) => (
+              {availableSubMattypes.map((item) => (
                 <option key={`subMatType3-${item.code}`} value={item.code}>
                   {item.label}
                 </option>

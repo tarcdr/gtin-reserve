@@ -835,7 +835,7 @@ class BusinessSupplyController extends Controller
     ]);
   }
 
-  protected function loadBusinessSupplyMaterialIdDropdownOptions(string $column, string $valueKey = 'value'): array
+  protected function loadBusinessSupplyMaterialIdDropdownOptions(string $column, string $valueKey = 'value', array $filters = []): array
   {
     $allowedColumns = [
       'LIST_BRAND',
@@ -843,15 +843,33 @@ class BusinessSupplyController extends Controller
       'LIST_SUB_TYPE',
       'LIST_MAT_ID',
     ];
+    $allowedFilters = [
+      'LIST_BRAND',
+      'LIST_MAT_TYPE',
+      'LIST_SUB_TYPE',
+    ];
 
     if (!in_array($column, $allowedColumns, true)) {
       return [];
     }
 
     try {
-      return Proj12ListCompBsMatidV::query()
+      $query = Proj12ListCompBsMatidV::query()
         ->selectRaw("TRIM({$column}) as value")
-        ->whereRaw("TRIM({$column}) IS NOT NULL")
+        ->whereRaw("TRIM({$column}) IS NOT NULL");
+
+      foreach ($filters as $filterColumn => $filterValue) {
+        $filterColumn = strtoupper(trim((string) $filterColumn));
+        $filterValue = trim((string) $filterValue);
+
+        if ($filterValue === '' || !in_array($filterColumn, $allowedFilters, true)) {
+          continue;
+        }
+
+        $query->whereRaw("TRIM({$filterColumn}) = ?", [$filterValue]);
+      }
+
+      return $query
         ->distinct()
         ->orderByRaw("TRIM({$column})")
         ->get()
@@ -871,6 +889,7 @@ class BusinessSupplyController extends Controller
     } catch (\Throwable $e) {
       Log::warning('business supply material-id dropdown lookup failed', [
         'column' => $column,
+        'filters' => $filters,
         'error' => $e->getMessage(),
       ]);
 
@@ -1012,17 +1031,28 @@ class BusinessSupplyController extends Controller
           || ($selectedComponentMaterialId !== '' && $materialId === $selectedComponentMaterialId);
       })
       : null;
+    $selectedBrand = $this->requestString($request, 'brand');
+    $selectedMatType = $this->requestString($request, 'matType');
     $brands = $this->loadBusinessSupplyMaterialIdDropdownOptions('LIST_BRAND', 'brand');
-    $mattypes = $this->loadBusinessSupplyMaterialIdDropdownOptions('LIST_MAT_TYPE', 'code');
-    $subMattypes = $this->loadBusinessSupplyMaterialIdDropdownOptions('LIST_SUB_TYPE', 'code');
+    $mattypes = $selectedBrand !== ''
+      ? $this->loadBusinessSupplyMaterialIdDropdownOptions('LIST_MAT_TYPE', 'code', [
+        'LIST_BRAND' => $selectedBrand,
+      ])
+      : [];
+    $subMattypes = $selectedBrand !== '' && $selectedMatType !== ''
+      ? $this->loadBusinessSupplyMaterialIdDropdownOptions('LIST_SUB_TYPE', 'code', [
+        'LIST_BRAND' => $selectedBrand,
+        'LIST_MAT_TYPE' => $selectedMatType,
+      ])
+      : [];
 
     return Inertia::render('BusinessSupply/MaterialId', [
       'InputData' => [
         'mode' => $actionMode,
         'actionMode' => $actionMode,
         'bizsupId' => $selectedBizSup['bizsupId'] ?? $this->requestString($request, 'bizsupId'),
-        'brand' => $this->requestString($request, 'brand'),
-        'matType' => $this->requestString($request, 'matType'),
+        'brand' => $selectedBrand,
+        'matType' => $selectedMatType,
         'subMatType' => $this->requestString($request, 'subMatType'),
         'componentId' => $selectedMaterial['componentId'] ?? $this->requestString($request, 'materialId'),
         'materialId' => $selectedMaterial['materialId'] ?? $selectedComponentMaterialId,
@@ -1033,6 +1063,28 @@ class BusinessSupplyController extends Controller
       'selectedBusinessSupply' => $selectedBizSup,
       'materialOptions' => $materialOptions,
       'selectedMaterial' => $selectedMaterial,
+    ]);
+  }
+
+  public function materialIdRelatedOptions(Request $request): JsonResponse
+  {
+    $brand = $this->requestString($request, 'brand');
+    $matType = $this->requestString($request, 'matType');
+    $mattypes = $brand !== ''
+      ? $this->loadBusinessSupplyMaterialIdDropdownOptions('LIST_MAT_TYPE', 'code', [
+        'LIST_BRAND' => $brand,
+      ])
+      : [];
+    $subMattypes = $brand !== '' && $matType !== ''
+      ? $this->loadBusinessSupplyMaterialIdDropdownOptions('LIST_SUB_TYPE', 'code', [
+        'LIST_BRAND' => $brand,
+        'LIST_MAT_TYPE' => $matType,
+      ])
+      : [];
+
+    return response()->json([
+      'mattypes' => $mattypes,
+      'subMattypes' => $subMattypes,
     ]);
   }
 

@@ -668,21 +668,20 @@ class RmController extends Controller
           ],
           default => [],
       };
-      $user_login  = $request->user()->user_login;
       $datas = match ($tab) {
-        'AVAILABILITY'  => SheetAvailability::where('user_create', $user_login)->get(),
-        'CUST_PART_NUM' => SheetCustPartNum::where('user_create', $user_login)->get(),
-        'FINANCIAL'     => SheetFinancial::where('user_create', $user_login)->get(),
-        'BOM_GENERAL'   => SheetBomGeneral::where('user_create', $user_login)->get(),
-        'GENERAL'       => SheetGeneral::where('user_create', $user_login)->get(),
-        'GTINS'         => SheetGtins::where('user_create', $user_login)->get(),
-        'INPUT_PRODUCTS'=> SheetInputProducts::where('user_create', $user_login)->get(),
-        'LOGISTICS'     => SheetLogistics::where('user_create', $user_login)->get(),
-        'PLANNING'      => SheetPlanning::where('user_create', $user_login)->get(),
-        'QTY_CONVERS'   => SheetQtyConvers::where('user_create', $user_login)->get(),
-        'SALES_DATA'    => SheetSalesData::where('user_create', $user_login)->get(),
-        'SUPP_PART_NUM' => SheetSuppPartNum::where('user_create', $user_login)->get(),
-        'UOM_CHAR'      => SheetUomChar::where('user_create', $user_login)->get(),
+        'AVAILABILITY'  => SheetAvailability::get(),
+        'CUST_PART_NUM' => SheetCustPartNum::get(),
+        'FINANCIAL'     => SheetFinancial::get(),
+        'BOM_GENERAL'   => SheetBomGeneral::get(),
+        'GENERAL'       => SheetGeneral::get(),
+        'GTINS'         => SheetGtins::get(),
+        'INPUT_PRODUCTS'=> SheetInputProducts::get(),
+        'LOGISTICS'     => SheetLogistics::get(),
+        'PLANNING'      => SheetPlanning::get(),
+        'QTY_CONVERS'   => SheetQtyConvers::get(),
+        'SALES_DATA'    => SheetSalesData::get(),
+        'SUPP_PART_NUM' => SheetSuppPartNum::get(),
+        'UOM_CHAR'      => SheetUomChar::get(),
         default => [],
       };
       $labels = match ($tab) {
@@ -837,9 +836,8 @@ class RmController extends Controller
             ->with('success', 'Data deleted successfully.');
     }
 
-    private function buildExportResponse(Request $request, bool $comOnly = false, bool $allUsers = false)
+    private function buildExportResponse(Request $request, bool $comOnly = false)
     {
-      $user_login = $request->user()->user_login;
       $tabs = ['AVAILABILITY', 'BOM_GENERAL', 'CUST_PART_NUM', 'FINANCIAL', 'GENERAL', 'GTINS', 'INPUT_PRODUCTS', 'LOGISTICS', 'PLANNING', 'QTY_CONVERS', 'SALES_DATA', 'SUPP_PART_NUM', 'UOM_CHAR'];
 
       $columnsConfig = [
@@ -863,10 +861,6 @@ class RmController extends Controller
           $model = "\\App\\Models\\Sheet" . Str::studly(Str::lower($tab));
           if (class_exists($model)) {
               $query = $model::query();
-
-              if (!$allUsers) {
-                $query->where('user_create', $user_login);
-              }
 
               if ($comOnly) {
                 $query->whereRaw('TRIM(status_row) = ?', ['COM']);
@@ -958,7 +952,7 @@ class RmController extends Controller
         'p_confirm' => ['required', 'string', 'max:4000'],
       ]);
 
-      $response = $this->buildExportResponse($request, true, true);
+      $response = $this->buildExportResponse($request, true);
 
       $this->callExportToSapProcedure($request, $validated['p_confirm']);
 

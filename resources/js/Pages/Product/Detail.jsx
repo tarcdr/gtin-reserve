@@ -482,28 +482,22 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                                 />
                               </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              <div>
-                                <InputLabel htmlFor="semiFgLv2Status" value="Status" />
-                                <TextInput
-                                  id="semiFgLv2Status"
-                                  className="mt-1 block w-full bg-gray-100"
-                                  value={semiFgLv2.statusRow || ''}
-                                  disabled
-                                />
-                              </div>
-                            </div>
                           </div>
-                          <PrimaryButton
-                            type="button"
-                            onClick={() => goToSemiFgLv2({
-                              mode: 'view',
-                              levelMaterialId: semiFgLv2.id,
-                            })}
-                            disabled={!isDisabled}
-                          >
-                            View Semi FG Level 2
-                          </PrimaryButton>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <PrimaryButton
+                              type="button"
+                              onClick={() => goToSemiFgLv2({
+                                mode: 'view',
+                                levelMaterialId: semiFgLv2.id,
+                              })}
+                              disabled={!isDisabled}
+                            >
+                              View Semi FG Level 2
+                            </PrimaryButton>
+                            <span className="text-sm font-medium text-gray-700">
+                              STATUS: {semiFgLv2.statusRow || '-'}
+                            </span>
+                          </div>
                         </div>
                       ) : (
                         <SuccessButton type="button" onClick={() => goToSemiFgLv2()} disabled={!isDisabled}>
@@ -537,28 +531,22 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                                 />
                               </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              <div>
-                                <InputLabel htmlFor="semiFgLv1Status" value="Status" />
-                                <TextInput
-                                  id="semiFgLv1Status"
-                                  className="mt-1 block w-full bg-gray-100"
-                                  value={semiFgLv1.statusRow || ''}
-                                  disabled
-                                />
-                              </div>
-                            </div>
                           </div>
-                          <PrimaryButton
-                            type="button"
-                            onClick={() => goToSemiFgLv1({
-                              mode: 'view',
-                              levelMaterialId: semiFgLv1.id,
-                            })}
-                            disabled={!isDisabled}
-                          >
-                            View Semi FG Level 1
-                          </PrimaryButton>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <PrimaryButton
+                              type="button"
+                              onClick={() => goToSemiFgLv1({
+                                mode: 'view',
+                                levelMaterialId: semiFgLv1.id,
+                              })}
+                              disabled={!isDisabled}
+                            >
+                              View Semi FG Level 1
+                            </PrimaryButton>
+                            <span className="text-sm font-medium text-gray-700">
+                              STATUS: {semiFgLv1.statusRow || '-'}
+                            </span>
+                          </div>
                         </div>
                       ) : (
                         <SuccessButton type="button" onClick={() => goToSemiFgLv1()} disabled={!isDisabled || !hasSemiFgLv2}>
