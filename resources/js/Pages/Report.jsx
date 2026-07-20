@@ -117,7 +117,7 @@ export default function Report({ auth, InputData, gtins = [] }) {
                     </thead>
                     <tbody>
                       {gtinList.map((o, index) => (
-                        <tr key={`report-gtin-${o.global_trade_item_number}`}>
+                        <tr key={`report-gtin-${o.global_trade_item_number}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                             <th scope="row" className="px-6 py-4">
                                 {index + 1}
                             </th>

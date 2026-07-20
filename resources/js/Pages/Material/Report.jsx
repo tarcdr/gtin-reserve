@@ -114,7 +114,7 @@ export default function Report({ auth, InputData, materials = [] }) {
                         </thead>
                         <tbody>
                           {materials.map((o, index) => (
-                            <tr key={`report-gtin-${o.material_id}`}>
+                            <tr key={`report-gtin-${o.material_id}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                                 <th scope="row" className="px-6 py-4">
                                     {index + 1}
                                 </th>
