@@ -460,12 +460,6 @@ export default function BusinessSupplyMaterialId({
   const renderStep3 = () => (
     <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
       <div className="space-y-6">
-        {saveError ? (
-          <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {saveError}
-          </div>
-        ) : null}
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <InputLabel htmlFor="brandStep3" value="Brand" />
@@ -570,6 +564,11 @@ export default function BusinessSupplyMaterialId({
             </PrimaryButton>
           )}
         </div>
+        {saveError ? (
+          <p className="text-center text-sm font-semibold text-red-600">
+            {saveError}
+          </p>
+        ) : null}
       </div>
     </div>
   );

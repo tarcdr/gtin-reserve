@@ -38,6 +38,8 @@ export default function BomMaterialForm({
   onFullDescThChange,
   onUomChange,
 }) {
+  const saveError = data?.actionMode !== 'delete' ? (errors?.save || errors?.componentId || '') : '';
+
   return (
     <AuthenticatedLayout
       user={auth.user}
@@ -75,12 +77,6 @@ export default function BomMaterialForm({
 
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <form onSubmit={onSubmit} className="space-y-6">
-              {errors?.save && (
-                <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {errors.save}
-                </div>
-              )}
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <InputLabel htmlFor="mattype" value="Mattype" />
@@ -156,7 +152,7 @@ export default function BomMaterialForm({
                     value={data?.componentId}
                   />
 
-                  <InputError className="mt-2" message={errors?.componentId} />
+                  <InputError className="mt-2" message={saveError === errors?.componentId ? '' : errors?.componentId} />
                 </div>
               </div>
 
@@ -232,7 +228,7 @@ export default function BomMaterialForm({
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex flex-col items-stretch justify-center gap-3 md:flex-row md:items-center">
                 <SecondaryButton type="button" onClick={onBack}>
                   {backLabel}
                 </SecondaryButton>
@@ -245,6 +241,11 @@ export default function BomMaterialForm({
                   </DangerButton>
                 )}
               </div>
+              {saveError ? (
+                <p className="text-center text-sm font-semibold text-red-600">
+                  {saveError}
+                </p>
+              ) : null}
             </form>
           </div>
         </div>

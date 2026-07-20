@@ -452,15 +452,11 @@ export default function BusinessSupplyNew({ auth, InputData, brands = [], fgMate
                 }}
                 onCancel={resetStepOne}
                 onSave={handleSave}
+                saveError={saveError}
               />
               {successMessage && (
                 <div className="mt-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                   {successMessage}
-                </div>
-              )}
-              {saveError && (
-                <div className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {saveError}
                 </div>
               )}
             </div>

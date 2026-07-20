@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -56,6 +56,7 @@ export default function MaterialLevelForm({
   const [confirmingComplete, setConfirmingComplete] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [completeError, setCompleteError] = useState('');
+  const pageErrors = usePage().props?.errors || {};
   const mode = InputData?.mode || (InputData?.materialId ? 'view' : 'create');
   const isViewMode = mode === 'view';
   const isEditMode = mode === 'edit';
@@ -87,12 +88,21 @@ export default function MaterialLevelForm({
     semi_fg_lv2_id: semiFgLv2?.semi_fg_lv2_id || '',
     fgMaterialDesc: fgDetail?.search_description || '',
   });
+  const mergedErrors = {
+    ...pageErrors,
+    ...errors,
+  };
   const effectiveSubMattypeOptions = subMattypeOptions || subMattypes;
   const subMattypeDisplayValue = effectiveSubMattypeOptions?.find((item) => String(item.code) === String(data.subMattype))?.label || data.subMattype || '';
 
   const submit = (e) => {
     e.preventDefault();
-    patch(route(submitRoute));
+    const { statusRow, ...payload } = data;
+
+    router.patch(route(submitRoute), payload, {
+      preserveScroll: true,
+      preserveState: false,
+    });
   };
 
   const handleSubMattypeChange = async (nextSubMattype) => {
@@ -151,6 +161,10 @@ export default function MaterialLevelForm({
   useEffect(() => {
     setData('components', componentRows);
   }, [componentRows]);
+
+  useEffect(() => {
+    setData('statusRow', InputData?.statusRow || '');
+  }, [InputData?.statusRow]);
 
   const buildNextFgDetail = () => {
     const nextFgDetail = {
@@ -395,6 +409,7 @@ export default function MaterialLevelForm({
   const normalizedStatusRow = String(data.statusRow || '').trim().toUpperCase();
   const isCompleteDisabled = isCompleting || normalizedStatusRow !== 'INS';
   const isSemiFgCompleted = ['semiFgLv1', 'semiFgLv2'].includes(levelKey) && normalizedStatusRow === 'COM';
+  const saveError = !isViewMode ? (mergedErrors.save || mergedErrors.materialId || mergedErrors.levelBomId || '') : '';
 
   return (
     <AuthenticatedLayout
@@ -553,7 +568,7 @@ export default function MaterialLevelForm({
                       value={data.levelBomId}
                       disabled
                     />
-                    <InputError className="mt-2" message={errors.levelBomId} />
+                    <InputError className="mt-2" message={saveError === mergedErrors.levelBomId ? '' : mergedErrors.levelBomId} />
                   </div>
                   <div>
                     <InputLabel htmlFor="levelBomDesc" value={levelBomDescLabel} />
@@ -590,7 +605,7 @@ export default function MaterialLevelForm({
                     onChange={(e) => setData('searchDesc', e.target.value)}
                     disabled={isViewMode}
                   />
-                  <InputError className="mt-2" message={errors.searchDesc} />
+                  <InputError className="mt-2" message={mergedErrors.searchDesc} />
                 </div>
               </div>
 
@@ -707,7 +722,7 @@ export default function MaterialLevelForm({
                 </fieldset>
               )}
 
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex flex-col items-stretch justify-center gap-3 md:flex-row md:items-center">
                 <SecondaryButton type="button" onClick={goBack}>
                   {backLabel}
                 </SecondaryButton>
@@ -724,6 +739,11 @@ export default function MaterialLevelForm({
                   <SuccessButton disabled={processing || isGeneratingLevelData}>Save</SuccessButton>
                 )}
               </div>
+              {saveError ? (
+                <p className="text-center text-sm font-semibold text-red-600">
+                  {saveError}
+                </p>
+              ) : null}
             </form>
           </div>
         </div>

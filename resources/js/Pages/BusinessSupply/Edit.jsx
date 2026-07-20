@@ -143,6 +143,11 @@ export default function BusinessSupplyEdit({
                   Save Edit
                 </PrimaryButton>
               </div>
+              {errors.save ? (
+                <p className="text-center text-sm font-semibold text-red-600">
+                  {errors.save}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>

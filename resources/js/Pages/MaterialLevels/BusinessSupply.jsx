@@ -672,11 +672,6 @@ export default function BusinessSupply({
                     {successMessage}
                   </div>
                 )}
-                {saveError && (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {saveError}
-                  </div>
-                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <InputLabel htmlFor="bomBsId" value="BOM ID for Business Supply" />
@@ -782,6 +777,11 @@ export default function BusinessSupply({
                     {isSaving ? 'Saving...' : 'SAVE BS'}
                   </PrimaryButton>
                 </div>
+                {saveError ? (
+                  <p className="text-center text-sm font-semibold text-red-600">
+                    {saveError}
+                  </p>
+                ) : null}
               </form>
             </div>
           )}

@@ -8,6 +8,41 @@ import PageIdentity from '@/Components/PageIdentity';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { Link, usePage } from '@inertiajs/react';
 
+function UserAvatar({ user }) {
+    return (
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm">
+            {user?.avatar_url ? (
+                <img
+                    src={user.avatar_url}
+                    alt={user?.employee_name || 'User avatar'}
+                    className="h-full w-full object-cover"
+                />
+            ) : (
+                <svg
+                    className="h-7 w-7"
+                    viewBox="0 0 48 48"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                >
+                    <circle cx="24" cy="24" r="24" fill="#F3F6FA" />
+                    <circle cx="24" cy="18" r="8" fill="#9AA7B8" />
+                    <path
+                        d="M10 40c2.7-8.2 7.5-12.3 14-12.3S35.3 31.8 38 40"
+                        fill="#9AA7B8"
+                    />
+                    <path
+                        d="M10 40c2.7-8.2 7.5-12.3 14-12.3S35.3 31.8 38 40"
+                        stroke="#9AA7B8"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                    />
+                </svg>
+            )}
+        </span>
+    );
+}
+
 export default function Authenticated({ user, header, pageIdentity = null, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [databaseError, setDatabaseError] = useState('');
@@ -176,19 +211,22 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                             </div>
                         </div>
 
-                        <div className="hidden sm:flex sm:items-center sm:ml-6">
-                            <div className="ml-3 relative">
+                        <div className="hidden sm:flex sm:items-center sm:ml-4">
+                            <div className="relative">
                                 <Dropdown>
                                     <Dropdown.Trigger>
                                         <span className="inline-flex rounded-md">
                                             <button
                                                 type="button"
-                                                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-extrabold rounded-md text-gray-500 bg-white hover:bg-green-50 hover:text-green-800 focus:outline-none transition ease-in-out duration-150 text-green-900 font-extrabold"
+                                                className="inline-flex min-h-[52px] items-center gap-3 rounded-md border border-transparent px-3 py-2 text-sm font-extrabold leading-4 text-green-900 transition duration-150 ease-in-out hover:bg-green-100 hover:text-green-800 focus:outline-none focus:bg-green-100 focus:text-green-800"
                                             >
-                                                {`${user?.employee_name || '-'} (${roleLabel})`}
+                                                <UserAvatar user={user} />
+                                                <span className="text-center leading-5">
+                                                    {`${user?.employee_name || '-'} (${roleLabel})`}
+                                                </span>
 
                                                 <svg
-                                                    className="ml-2 -mr-0.5 h-4 w-4"
+                                                    className="-mr-0.5 h-4 w-4"
                                                     xmlns="http://www.w3.org/2000/svg"
                                                     viewBox="0 0 20 20"
                                                     fill="currentColor"

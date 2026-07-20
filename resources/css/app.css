@@ -1,3 +1,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.dashboard-message-content {
+    line-height: 1.5 !important;
+}
+
+.dashboard-message-content :where(h1, h2, h3, h4, h5, h6) {
+    display: block;
+    line-height: 1.35 !important;
+    margin-top: 0.35rem;
+    margin-bottom: 0.35rem;
+}
+
+.dashboard-message-content :where(p, div, span, font, strong, b, em, i) {
+    line-height: 1.5 !important;
+}
+
+.dashboard-message-content :where(p, div) {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.dashboard-message-content :where(h1, h2, h3, h4, h5, h6, p, div):first-child {
+    margin-top: 0;
+}
+
+.dashboard-message-content :where(h1, h2, h3, h4, h5, h6, p, div):last-child {
+    margin-bottom: 0;
+}
+
+.dashboard-message-content br {
+    display: block;
+    content: "";
+    margin-top: 0.35rem;
+}

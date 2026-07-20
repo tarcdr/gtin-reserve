@@ -32,6 +32,7 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
     fullDescTh: '',
     uom: '',
   });
+  const saveError = step >= 3 ? errors.materialId : '';
 
   const getFinishGoodsValue = (mattype, subMattype) => {
     if (!mattype || subMattype === '') {
@@ -328,7 +329,7 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                     </select>
 
                     <InputError className="mt-2" message={errors.subMattype} />
-                    <InputError className="mt-2" message={errors.materialId} />
+                    <InputError className="mt-2" message={step < 3 ? errors.materialId : ''} />
                   </div>
                 </div>
               )}
@@ -487,7 +488,7 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                 </>
               )}
 
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex flex-col items-stretch justify-center gap-3 md:flex-row md:items-center">
                 {step >= 2 && (
                   <SecondaryButton type="button" onClick={resetBrandMattype}>
                     Change Brand / Mattype
@@ -505,6 +506,11 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                   {step === 1 ? 'Submit' : step === 2 ? 'Generate Suggest Material ID' : 'Save FG'}
                 </PrimaryButton>
               </div>
+              {saveError ? (
+                <p className="text-center text-sm font-semibold text-red-600">
+                  {saveError}
+                </p>
+              ) : null}
             </form>
           </div>
         </div>

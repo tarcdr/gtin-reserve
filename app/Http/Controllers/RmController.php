@@ -924,11 +924,11 @@ class RmController extends Controller
       return $this->buildExportResponse($request);
     }
 
-    private function callExportToSapProcedure(Request $request, string $confirm): void
+    private function callExportToSapProcedure(Request $request, string $confirm): string
     {
       $userLogin = (string) ($request->user()?->user_login ?? '');
       $roleLogin = (string) ($request->user()?->role ?? '');
-      $error = null;
+      $error = '';
 
       $pdo = DB::connection('oracle')->getPdo();
       $stmt = $pdo->prepare('BEGIN proj1_2_Export_to_SAP(:p_user_login, :p_role_login, :p_confirm, :P_ERROR); END;');
@@ -939,11 +939,8 @@ class RmController extends Controller
       $stmt->execute();
 
       $resolvedError = $this->resolveProcedureErrorMessage($error);
-      if (trim($resolvedError) !== '') {
-        throw ValidationException::withMessages([
-          'p_confirm' => $resolvedError,
-        ]);
-      }
+
+      return trim($resolvedError);
     }
 
     public function exportToSap(Request $request)
@@ -952,10 +949,33 @@ class RmController extends Controller
         'p_confirm' => ['required', 'string', 'max:4000'],
       ]);
 
-      $response = $this->buildExportResponse($request, true);
+      $connection = DB::connection('oracle');
 
-      $this->callExportToSapProcedure($request, $validated['p_confirm']);
+      $connection->beginTransaction();
 
-      return $response;
+      try {
+        $procedureError = $this->callExportToSapProcedure($request, $validated['p_confirm']);
+
+        if ($procedureError !== '') {
+          $connection->rollBack();
+
+          return response()->json([
+            'message' => $procedureError,
+            'errors' => [
+              'p_confirm' => [$procedureError],
+            ],
+          ], 422);
+        }
+
+        $connection->commit();
+      } catch (\Throwable $exception) {
+        if ($connection->transactionLevel() > 0) {
+          $connection->rollBack();
+        }
+
+        throw $exception;
+      }
+
+      return $this->buildExportResponse($request, true);
     }
 }

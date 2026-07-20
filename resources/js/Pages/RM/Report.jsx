@@ -427,7 +427,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
         p_confirm: exportSapConfirm,
       }, {
         responseType: 'blob',
-        headers: { Accept: 'application/xml, application/octet-stream, application/json' },
+        headers: { Accept: 'application/json, application/xml, application/octet-stream' },
       });
       const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -572,7 +572,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                       </thead>
                       <tbody>
                         {datas.map((o, index) => (
-                          <tr key={`${activeTab}-tr-${index}`} className="border-b">
+                          <tr key={`${activeTab}-tr-${index}`} className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                             <td scope="row" className="px-6 py-4">{index + 1}</td>
                             {columns.filter(column => !column?.hidden).map(column => (
                               <td scope="col" className="px-6 py-3" key={`${activeTab}-data-${column.name}`}>

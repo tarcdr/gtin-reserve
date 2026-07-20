@@ -156,9 +156,20 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     setData('fgStatus', 'COM');
   };
 
+  const normalizeStatus = (value) => String(value || '').trim().toUpperCase();
+  const hasBomId = (item) => String(item?.bomId || '').trim() !== '';
+  const isCompleteStatus = (value) => normalizeStatus(value) === 'COM';
   const lockedIdentityFields = isEditMode || isDisabled;
-  const normalizedFgStatus = String(data.fgStatus || '').trim().toUpperCase();
-  const isFgCompleteDisabled = normalizedFgStatus !== 'INS';
+  const normalizedFgStatus = normalizeStatus(data.fgStatus);
+  const hasSemiFgLv2BomId = hasBomId(semiFgLv2);
+  const hasSemiFgLv1BomId = hasBomId(semiFgLv1);
+  const isSemiFgLv2Complete = isCompleteStatus(semiFgLv2?.statusRow);
+  const isSemiFgLv1Complete = isCompleteStatus(semiFgLv1?.statusRow);
+  const canCompleteBySemiFgStatus =
+    (!hasSemiFgLv2BomId && !hasSemiFgLv1BomId) ||
+    (hasSemiFgLv2BomId && isSemiFgLv2Complete && !hasSemiFgLv1BomId) ||
+    (hasSemiFgLv2BomId && isSemiFgLv2Complete && hasSemiFgLv1BomId && isSemiFgLv1Complete);
+  const isFgCompleteDisabled = normalizedFgStatus !== 'INS' || !canCompleteBySemiFgStatus;
   
   useEffect(() => {
     let dispSite = false;

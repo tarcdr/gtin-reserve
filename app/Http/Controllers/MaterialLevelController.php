@@ -686,6 +686,69 @@ class MaterialLevelController extends Controller
     ];
   }
 
+  protected function fetchSemiFgLv1StatusRow(?string $levelMaterialId): string
+  {
+    $levelMaterialId = trim((string) $levelMaterialId);
+
+    if ($levelMaterialId === '') {
+      return '';
+    }
+
+    return trim((string) Proj12SemiFgLv1Id::query()
+      ->selectRaw('TRIM(STATUS_ROW) as status_row')
+      ->whereRaw('TRIM(SEMI_FG_LV1_ID) = ?', [$levelMaterialId])
+      ->value('status_row'));
+  }
+
+  protected function fetchSemiFgLv2StatusRow(?string $levelMaterialId): string
+  {
+    $levelMaterialId = trim((string) $levelMaterialId);
+
+    if ($levelMaterialId === '') {
+      return '';
+    }
+
+    return trim((string) Proj12SemiFgLv2Id::query()
+      ->selectRaw('TRIM(STATUS_ROW) as status_row')
+      ->whereRaw('TRIM(SEMI_FG_LV2_ID) = ?', [$levelMaterialId])
+      ->value('status_row'));
+  }
+
+  protected function resolveSemiFgSaveStatusRow(string $mode, ?string $levelMaterialId, callable $fetchStatusRow): string
+  {
+    if (strtolower(trim($mode)) === 'create') {
+      return 'INS';
+    }
+
+    return $fetchStatusRow($levelMaterialId);
+  }
+
+  protected function fetchSemiFgStatusRowAfterSave(?string $levelMaterialId, callable $fetchStatusRow, string $field, string $label): string
+  {
+    $levelMaterialId = trim((string) $levelMaterialId);
+
+    for ($attempt = 1; $attempt <= 3; $attempt++) {
+      $statusRow = trim((string) $fetchStatusRow($levelMaterialId));
+
+      if ($statusRow !== '') {
+        return $statusRow;
+      }
+
+      if ($attempt < 3) {
+        usleep(150000);
+      }
+    }
+
+    Log::warning('material-levels.semi-fg.status-row-after-save.missing', [
+      'label' => $label,
+      'levelMaterialId' => $levelMaterialId,
+    ]);
+
+    throw ValidationException::withMessages([
+      $field => "{$label}: ไม่พบ STATUS_ROW หลังบันทึก กรุณาลองใหม่อีกครั้งหรือติดต่อ IT",
+    ]);
+  }
+
   protected function callSaveSemiFgLevel1Procedure(Request $request, array $inputData, ?string $userLogin = null, ?string $userRole = null): void
   {
     $pdo = DB::connection('oracle')->getPdo();
@@ -693,7 +756,6 @@ class MaterialLevelController extends Controller
     $userLogin = $userLogin ?: 'system';
     $userRole = $userRole ?: 'GTIN';
     $mode = trim((string) ($inputData['mode'] ?? $request->get('mode', 'create')));
-    $statusRow = trim((string) ($request->get('statusRow') ?? ($mode === 'create' ? 'INS' : 'UPD')));
     $fgDetail = is_array($inputData['fgDetail'] ?? null) ? $inputData['fgDetail'] : [];
 
     $semiFgL1BomId = trim((string) ($inputData['levelBomId'] ?? $request->get('levelBomId') ?? $request->get('bomId') ?? $fgDetail['semiFgLv1']['bomId'] ?? ''));
@@ -708,6 +770,11 @@ class MaterialLevelController extends Controller
     $uom = trim((string) ($inputData['uom'] ?? $request->get('uom') ?? $fgDetail['semiFgLv1']['uom'] ?? ''));
     $semiFgL2BomId = trim((string) ($inputData['semiFgLv2BomId'] ?? $request->get('semiFgLv2BomId') ?? $request->get('semi_fg_lv2_bom_id') ?? data_get($fgDetail, 'semiFgLv2.bomId', '') ?? ''));
     $semiFgL2Id = trim((string) ($inputData['semi_fg_lv2_id'] ?? $request->get('semi_fg_lv2_id') ?? ''));
+    $statusRow = $this->resolveSemiFgSaveStatusRow(
+      $mode,
+      $semiFgL1Id,
+      fn ($levelMaterialId) => $this->fetchSemiFgLv1StatusRow($levelMaterialId)
+    );
 
     if ($semiFgL2Id === '' && $fgBomId !== '') {
       $semiFgLv2 = $this->loadSemiFgLv2ByFgBomId($fgBomId);
@@ -771,7 +838,6 @@ class MaterialLevelController extends Controller
     $userLogin = $userLogin ?: 'system';
     $userRole = $userRole ?: 'GTIN';
     $mode = trim((string) ($inputData['mode'] ?? $request->get('mode', 'create')));
-    $statusRow = trim((string) ($request->get('statusRow') ?? ($mode === 'create' ? 'INS' : 'UPD')));
     $fgDetail = is_array($inputData['fgDetail'] ?? null) ? $inputData['fgDetail'] : [];
 
     $semiFgL2BomId = trim((string) ($inputData['levelBomId'] ?? $request->get('levelBomId') ?? $request->get('bomId') ?? $fgDetail['semiFgLv2']['bomId'] ?? ''));
@@ -784,6 +850,11 @@ class MaterialLevelController extends Controller
     $materialIdFg1 = trim((string) ($inputData['fgMaterialId'] ?? $request->get('fgMaterialId') ?? $request->get('materialId') ?? $request->get('referentMaterialId') ?? $fgDetail['materialId'] ?? ''));
     $site = trim((string) ($inputData['site'] ?? $request->get('site') ?? $fgDetail['site'] ?? ''));
     $uom = trim((string) ($inputData['uom'] ?? $request->get('uom') ?? $fgDetail['semiFgLv2']['uom'] ?? ''));
+    $statusRow = $this->resolveSemiFgSaveStatusRow(
+      $mode,
+      $semiFgL2Id,
+      fn ($levelMaterialId) => $this->fetchSemiFgLv2StatusRow($levelMaterialId)
+    );
 
     Log::debug('material-levels.semi-fg-lv2.save.start', [
       'mode' => $mode,
@@ -887,6 +958,7 @@ class MaterialLevelController extends Controller
         $semiFgLv2['bomId'] = $semiFgLv2Bom['bomId'];
         $semiFgLv2['bomDesc'] = $semiFgLv2Bom['bomDesc'];
       }
+      $semiFgLv2['statusRow'] = $this->fetchSemiFgLv2StatusRow($semiFgLv2['id'] ?? $request->get('levelMaterialId'));
       $InputData['fgDetail'] = array_replace($InputData['fgDetail'] ?? [], [
         'semiFgLv2' => $semiFgLv2,
       ]);
@@ -902,7 +974,7 @@ class MaterialLevelController extends Controller
       $InputData['fullDescTh'] = $request->get('fullDescTh') ?? $semiFgLv2['fullDescTh'] ?? '';
       $InputData['uom'] = $request->get('uom') ?? $semiFgLv2['uom'] ?? '';
       $InputData['materialId'] = $request->get('levelMaterialId') ?? $semiFgLv2['id'] ?? '';
-      $InputData['statusRow'] = $request->get('statusRow') ?? $semiFgLv2['statusRow'] ?? '';
+      $InputData['statusRow'] = $semiFgLv2['statusRow'] ?? '';
       $InputData['mode'] = $request->get('mode', 'view');
     } else {
       $fgDetail = FgMaterialDml::query()
@@ -1030,6 +1102,7 @@ class MaterialLevelController extends Controller
         $semiFgLv1['bomId'] = $semiFgLv1Bom['bomId'];
         $semiFgLv1['bomDesc'] = $semiFgLv1Bom['bomDesc'];
       }
+      $semiFgLv1['statusRow'] = $this->fetchSemiFgLv1StatusRow($semiFgLv1['id'] ?? $request->get('levelMaterialId'));
       $InputData['fgDetail'] = array_replace($InputData['fgDetail'] ?? [], [
         'semiFgLv1' => $semiFgLv1,
       ]);
@@ -1045,7 +1118,7 @@ class MaterialLevelController extends Controller
       $InputData['fullDescTh'] = $request->get('fullDescTh') ?? $semiFgLv1['fullDescTh'] ?? '';
       $InputData['uom'] = $request->get('uom') ?? $semiFgLv1['uom'] ?? '';
       $InputData['materialId'] = $request->get('levelMaterialId') ?? $semiFgLv1['id'] ?? '';
-      $InputData['statusRow'] = $request->get('statusRow') ?? $semiFgLv1['statusRow'] ?? '';
+      $InputData['statusRow'] = $semiFgLv1['statusRow'] ?? '';
       $InputData['mode'] = $request->get('mode', 'view');
 
       if (($InputData['parentLevelBomId'] ?? '') === '') {
@@ -1113,7 +1186,7 @@ class MaterialLevelController extends Controller
   public function saveSemiFgLevel2(Request $request): RedirectResponse
   {
     $validated = $request->validate([
-      'subMattype' => ['required', 'in:0,1,2'],
+      'subMattype' => ['required'],
       'levelBomId' => ['required'],
       'levelBomDesc' => ['required'],
       'materialId' => ['required'],
@@ -1135,6 +1208,13 @@ class MaterialLevelController extends Controller
       'subMattype' => $validated['subMattype'],
     ]), $request->user()?->user_login, $request->user()?->role);
 
+    $statusRow = $this->fetchSemiFgStatusRowAfterSave(
+      $validated['materialId'],
+      fn ($levelMaterialId) => $this->fetchSemiFgLv2StatusRow($levelMaterialId),
+      'materialId',
+      'Semi FG Lv2'
+    );
+
     $fgDetail = $request->get('fgDetail', []);
     $referentMaterialId = trim((string) (
       $inputData['fgMaterialId']
@@ -1155,6 +1235,7 @@ class MaterialLevelController extends Controller
       'uom' => $validated['uom'],
       'components' => $request->get('components', []),
       'subMattype' => $validated['subMattype'],
+      'statusRow' => $statusRow,
     ];
     $fgDetail['semiFgLv2'] = $detail;
 
@@ -1246,7 +1327,7 @@ class MaterialLevelController extends Controller
       'fgMaterialId' => ['required'],
       'fgBomId' => ['required'],
       'mattype' => ['required'],
-      'subMattype' => ['required', 'in:0,1,2'],
+      'subMattype' => ['required'],
     ]);
 
     $fgMaterialId = $validated['fgMaterialId'];
@@ -1296,7 +1377,7 @@ class MaterialLevelController extends Controller
       'fgMaterialId' => ['required'],
       'fgBomId' => ['required'],
       'mattype' => ['required'],
-      'subMattype' => ['required', 'in:0,1,2'],
+      'subMattype' => ['required'],
     ]);
 
     $fgMaterialId = $validated['fgMaterialId'];
@@ -1336,7 +1417,7 @@ class MaterialLevelController extends Controller
   public function saveSemiFgLevel1(Request $request): RedirectResponse
   {
     $validated = $request->validate([
-      'subMattype' => ['required', 'in:0,1,2'],
+      'subMattype' => ['required'],
       'levelBomId' => ['required'],
       'levelBomDesc' => ['required'],
       'materialId' => ['required'],
@@ -1365,6 +1446,13 @@ class MaterialLevelController extends Controller
       'semiFgLv2BomId' => $semiFgLv2BomId,
     ]), $request->user()?->user_login, $request->user()?->role);
 
+    $statusRow = $this->fetchSemiFgStatusRowAfterSave(
+      $validated['materialId'],
+      fn ($levelMaterialId) => $this->fetchSemiFgLv1StatusRow($levelMaterialId),
+      'materialId',
+      'Semi FG Lv1'
+    );
+
     $fgDetail = $request->get('fgDetail', []);
     $referentMaterialId = trim((string) (
       $inputData['fgMaterialId']
@@ -1385,6 +1473,7 @@ class MaterialLevelController extends Controller
       'uom' => $validated['uom'],
       'components' => $request->get('components', []),
       'subMattype' => $validated['subMattype'],
+      'statusRow' => $statusRow,
     ];
     $fgDetail['semiFgLv1'] = $detail;
 

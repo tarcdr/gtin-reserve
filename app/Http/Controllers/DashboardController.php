@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Dash;
+use App\Models\Proj12Dash;
 use App\Models\Proj12SummaryDetail;
 use App\Models\Proj12SummaryHead;
 
@@ -126,6 +127,7 @@ class DashboardController extends Controller
     {
       return Inertia::render('Dashboard', [
         'message' => Dash::query()->value('message') ?: '',
+        'messageProj12' => Proj12Dash::query()->value('message') ?: '',
         'summaryHead' => $this->fetchSummaryHead(),
         'summaryRows' => $this->fetchSummaryDetail(),
       ]);

@@ -20,6 +20,7 @@ export default function BusinessSupplyDetail({
   onSave,
   onEdit,
   onDelete,
+  saveError = '',
 }) {
   const isExisting = mode === 'existing';
   const isReadOnly = isExisting && !isEditing;
@@ -150,30 +151,37 @@ export default function BusinessSupplyDetail({
       </div>
 
       {showActions ? (
-        <div className="flex flex-wrap justify-center gap-3">
-          {isExisting ? (
-            <>
-              <SecondaryButton type="button" onClick={onCancel}>
-                Cancel
-              </SecondaryButton>
-              <PrimaryButton type="button" onClick={onEdit} disabled={!onEdit}>
-                Edit
-              </PrimaryButton>
-              <DangerButton type="button" onClick={onDelete} disabled={!onDelete}>
-                Delete
-              </DangerButton>
-            </>
-          ) : (
-            <>
-              <SecondaryButton type="button" onClick={onCancel}>
-                Cancel
-              </SecondaryButton>
-              <PrimaryButton type="button" onClick={onSave}>
-                SAVE BS
-              </PrimaryButton>
-            </>
-          )}
-        </div>
+        <>
+          <div className="flex flex-wrap justify-center gap-3">
+            {isExisting ? (
+              <>
+                <SecondaryButton type="button" onClick={onCancel}>
+                  Cancel
+                </SecondaryButton>
+                <PrimaryButton type="button" onClick={onEdit} disabled={!onEdit}>
+                  Edit
+                </PrimaryButton>
+                <DangerButton type="button" onClick={onDelete} disabled={!onDelete}>
+                  Delete
+                </DangerButton>
+              </>
+            ) : (
+              <>
+                <SecondaryButton type="button" onClick={onCancel}>
+                  Cancel
+                </SecondaryButton>
+                <PrimaryButton type="button" onClick={onSave}>
+                  SAVE BS
+                </PrimaryButton>
+              </>
+            )}
+          </div>
+          {saveError ? (
+            <p className="text-center text-sm font-semibold text-red-600">
+              {saveError}
+            </p>
+          ) : null}
+        </>
       ) : null}
     </div>
   );

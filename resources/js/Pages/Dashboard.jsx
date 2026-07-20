@@ -18,17 +18,69 @@ function headLabel(summaryHeadMap, no) {
     return parse(summaryHeadMap?.[no] || '-');
 }
 
-export default function Dashboard({ auth, message = '', summaryHead = [], summaryRows = [] }) {
+function MessageIcon({ variant }) {
+    if (variant === 'warning') {
+        return (
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.5a.75.75 0 00-1.5 0v5a.75.75 0 001.5 0v-5zM10 14.75a1 1 0 100-2 1 1 0 000 2z"
+                    clipRule="evenodd"
+                />
+            </svg>
+        );
+    }
+
+    return (
+        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path
+                fillRule="evenodd"
+                d="M18 10A8 8 0 112 10a8 8 0 0116 0zM9.25 8.75a.75.75 0 011.5 0v5a.75.75 0 01-1.5 0v-5zM10 7a1 1 0 100-2 1 1 0 000 2z"
+                clipRule="evenodd"
+            />
+        </svg>
+    );
+}
+
+function MessageBlock({ children, label, variant = 'information' }) {
+    if (!children) {
+        return null;
+    }
+
+    const styles = {
+        warning: {
+            container: 'border-red-200 bg-red-50',
+            label: 'text-red-700',
+            content: 'text-red-950',
+        },
+        information: {
+            container: 'border-blue-200 bg-blue-50',
+            label: 'text-blue-700',
+            content: 'text-blue-950',
+        },
+    };
+    const variantStyles = styles[variant] || styles.information;
+
+    return (
+        <div className={`rounded-lg border px-4 py-4 shadow-sm ${variantStyles.container}`}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <div className={`flex min-w-[112px] shrink-0 items-center gap-2 text-sm font-black ${variantStyles.label}`}>
+                    <MessageIcon variant={variant} />
+                    <span>{label}</span>
+                </div>
+                <div className={`dashboard-message-content min-w-0 flex-1 text-sm font-extrabold ${variantStyles.content}`}>
+                    {parse(children)}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function Dashboard({ auth, message = '', messageProj12 = '', summaryHead = [], summaryRows = [] }) {
     const summaryHeadMap = summaryHead.reduce((acc, item) => {
         acc[item.no] = item.head_label;
         return acc;
     }, {});
-
-    const dashboardButtonBase =
-        'relative inline-flex flex-none w-[240px] sm:w-[320px] items-center justify-center overflow-hidden rounded-full px-7 py-5 text-xl sm:text-3xl font-black tracking-[0.08em] uppercase text-white transition-transform duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-offset-4 focus:ring-offset-white hover:-translate-y-1';
-
-    const buttonGloss =
-        'before:pointer-events-none before:absolute before:inset-x-4 before:top-3 before:h-1/2 before:rounded-full before:bg-white/35 before:blur-2xl before:content-[""] after:pointer-events-none after:absolute after:inset-0 after:rounded-full after:bg-gradient-to-b after:from-white/25 after:via-transparent after:to-transparent after:content-[""]';
 
     return (
         <AuthenticatedLayout
@@ -43,26 +95,36 @@ export default function Dashboard({ auth, message = '', summaryHead = [], summar
             <div className="py-12 space-y-8">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="my-12 flex flex-col items-center justify-center gap-5 px-4 sm:flex-row sm:gap-6">
-                            <Link
-                                href={route('product.new')}
-                                className={`${dashboardButtonBase} ${buttonGloss} border border-cyan-200/60 bg-[linear-gradient(180deg,_#9fe7f6_0%,_#55b6ee_45%,_#68d9e7_100%)] shadow-[0_0_0_8px_rgba(142,228,247,0.35),_0_18px_45px_rgba(59,130,246,0.35),_inset_0_2px_10px_rgba(255,255,255,0.55)] focus:ring-cyan-300`}
-                            >
-                                <span className="relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.15)]">
+                        <div className="px-4 pb-5 pt-8 sm:px-8 sm:pb-8 sm:pt-10">
+                            <div className="mx-auto flex w-full max-w-3xl rounded-full bg-[#cfe6f8] p-2 shadow-[inset_0_2px_10px_rgba(255,255,255,0.7),_0_18px_45px_rgba(30,64,175,0.18)]">
+                                <Link
+                                    href={route('product.new')}
+                                    className="inline-flex min-h-[54px] flex-1 items-center justify-center rounded-full bg-[linear-gradient(180deg,_#2f80d8_0%,_#0d3f94_100%)] px-5 text-lg font-black uppercase tracking-[0.08em] text-white shadow-[0_8px_20px_rgba(15,61,145,0.45),_inset_0_2px_8px_rgba(255,255,255,0.28)] transition hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-blue-300 sm:text-2xl"
+                                >
                                     NPD
-                                </span>
-                            </Link>
-                            <Link
-                                href={route('product.search')}
-                                className={`${dashboardButtonBase} ${buttonGloss} border border-blue-300/50 bg-[linear-gradient(180deg,_#1d4ed8_0%,_#0b2aa8_52%,_#0a1b87_100%)] shadow-[0_0_0_8px_rgba(59,130,246,0.28),_0_20px_50px_rgba(29,78,216,0.45),_inset_0_2px_12px_rgba(255,255,255,0.18)] focus:ring-blue-400`}
-                            >
-                                <span className="relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.2)]">
+                                </Link>
+                                <Link
+                                    href={route('product.search')}
+                                    className="inline-flex min-h-[54px] flex-1 items-center justify-center rounded-full px-5 text-lg font-black uppercase tracking-[0.08em] text-[#4d93cc] transition hover:bg-white/35 focus:outline-none focus:ring-4 focus:ring-blue-200 sm:text-2xl"
+                                >
                                     Existing
-                                </span>
-                            </Link>
+                                </Link>
+                            </div>
                         </div>
 
-                        <div className="p-6 text-gray-900">{parse(message)}</div>
+                        {(message || messageProj12) && (
+                            <div className="px-4 pb-6 sm:px-8">
+                                <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+                                    <h3 className="mb-4 text-lg font-black text-gray-900">
+                                        ประกาศสำคัญและการแจ้งเตือน
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <MessageBlock variant="warning" label="Warning">{message}</MessageBlock>
+                                        <MessageBlock variant="information" label="Information">{messageProj12}</MessageBlock>
+                                    </div>
+                                </section>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -108,7 +170,10 @@ export default function Dashboard({ auth, message = '', summaryHead = [], summar
                                 </thead>
                                 <tbody>
                                     {summaryRows.map((row, index) => (
-                                        <tr key={`dashboard-summary-${index}`}>
+                                        <tr
+                                            key={`dashboard-summary-${index}`}
+                                            className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                                        >
                                             {summaryFields.map((field) => (
                                                 <td key={field.key} className={`border border-gray-200 px-6 py-4 text-center ${field.className}`}>
                                                     {row?.[field.key] ?? '-'}
