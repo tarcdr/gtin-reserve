@@ -495,6 +495,9 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
+                            <DangerButton type="button" disabled={semiFgLv2.statusRow === 'ETS'}>
+                              DELETE SEMI FG LV2
+                            </DangerButton>
                             <PrimaryButton
                               type="button"
                               onClick={() => goToSemiFgLv2({
@@ -544,6 +547,9 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
+                            <DangerButton type="button" disabled={semiFgLv1.statusRow === 'ETS'}>
+                              DELETE SEMI FG LV1
+                            </DangerButton>
                             <PrimaryButton
                               type="button"
                               onClick={() => goToSemiFgLv1({

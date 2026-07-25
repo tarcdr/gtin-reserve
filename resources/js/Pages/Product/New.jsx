@@ -425,8 +425,9 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
 
                       <TextInput
                         id="searchDesc"
-                        className="mt-1 block w-full border-gray-300 rounded-md"
+                        className={`mt-1 block w-full ${isBomIdReady ? 'border-gray-300 rounded-md' : 'bg-gray-100'}`}
                         value={data.searchDesc}
+                        disabled={!isBomIdReady}
                         maxLength="40"
                         onChange={(e) => setData('searchDesc', e.target.value)}
                       />
@@ -440,8 +441,9 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
 
                       <TextInput
                         id="fullDescEn"
-                        className="mt-1 block w-full border-gray-300 rounded-md"
+                        className={`mt-1 block w-full ${isBomIdReady ? 'border-gray-300 rounded-md' : 'bg-gray-100'}`}
                         value={data.fullDescEn}
+                        disabled={!isBomIdReady}
                         maxLength="40"
                         onChange={(e) => setData('fullDescEn', e.target.value)}
                       />
@@ -453,8 +455,9 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
 
                       <TextInput
                         id="fullDescTh"
-                        className="mt-1 block w-full border-gray-300 rounded-md"
+                        className={`mt-1 block w-full ${isBomIdReady ? 'border-gray-300 rounded-md' : 'bg-gray-100'}`}
                         value={data.fullDescTh}
+                        disabled={!isBomIdReady}
                         maxLength="40"
                         onChange={(e) => setData('fullDescTh', e.target.value)}
                       />
@@ -468,9 +471,10 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                       <InputLabel htmlFor="uom" value="UOM" />
                       <select
                         id="uom"
-                        className="mt-1 block w-full border-gray-300 rounded-md"
+                        className={`mt-1 block w-full ${isBomIdReady ? 'border-gray-300 rounded-md' : 'bg-gray-100'}`}
                         onChange={(e) => setData('uom', e.target.value)}
                         value={data.uom}
+                        disabled={!isBomIdReady}
                         >
                           <option value="">---- Select UOM ----</option>
                         {masterUom?.map((o) => {
@@ -502,7 +506,7 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                 <SecondaryButton type="button" onClick={() => window.history.back()}>
                   Back
                 </SecondaryButton>
-                <PrimaryButton disabled={processing || isGeneratingMaterialId || isGeneratingBomId}>
+                <PrimaryButton disabled={processing || isGeneratingMaterialId || isGeneratingBomId || !isBomIdReady}>
                   {step === 1 ? 'Submit' : step === 2 ? 'Generate Suggest Material ID' : 'Save FG'}
                 </PrimaryButton>
               </div>
