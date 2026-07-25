@@ -169,7 +169,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     (!hasSemiFgLv2BomId && !hasSemiFgLv1BomId) ||
     (hasSemiFgLv2BomId && isSemiFgLv2Complete && !hasSemiFgLv1BomId) ||
     (hasSemiFgLv2BomId && isSemiFgLv2Complete && hasSemiFgLv1BomId && isSemiFgLv1Complete);
-  const isFgCompleteDisabled = normalizedFgStatus !== 'INS' || !canCompleteBySemiFgStatus;
+  const isFgCompleteDisabled = normalizedFgStatus === 'COM' || !canCompleteBySemiFgStatus;
   
   useEffect(() => {
     let dispSite = false;
