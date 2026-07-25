@@ -506,7 +506,7 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                 <SecondaryButton type="button" onClick={() => window.history.back()}>
                   Back
                 </SecondaryButton>
-                <PrimaryButton disabled={processing || isGeneratingMaterialId || isGeneratingBomId || !isBomIdReady}>
+                <PrimaryButton disabled={processing || ((isGeneratingMaterialId || isGeneratingBomId) || (step === 3 && !isBomIdReady))}>
                   {step === 1 ? 'Submit' : step === 2 ? 'Generate Suggest Material ID' : 'Save FG'}
                 </PrimaryButton>
               </div>
