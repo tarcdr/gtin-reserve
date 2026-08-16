@@ -471,7 +471,7 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                       <InputLabel htmlFor="uom" value="UOM" />
                       <select
                         id="uom"
-                        className={`mt-1 block w-full ${isBomIdReady ? 'border-gray-300 rounded-md' : 'bg-gray-100'}`}
+                        className={`mt-1 block w-full ${isBomIdReady ? 'border-gray-300 rounded-md' : 'border-gray-300 rounded-md bg-gray-100'}`}
                         onChange={(e) => setData('uom', e.target.value)}
                         value={data.uom}
                         disabled={!isBomIdReady}

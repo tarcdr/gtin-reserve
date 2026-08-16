@@ -14,6 +14,7 @@ export default function FgBom({ auth, InputData, subMattypes = [], uoms = [] }) 
     isSemiFgOwner,
     defaultBackRoute,
   });
+  const headerTitle = `FG BOM - ${InputData?.actionMode === 'edit' ? 'Edit' : (InputData?.actionMode === 'delete' ? 'Delete' : 'Create')}`;
 
   const handleBack = () => {
     router.get(route('product.view'), {
@@ -26,7 +27,7 @@ export default function FgBom({ auth, InputData, subMattypes = [], uoms = [] }) 
   return (
     <BomMaterialForm
       auth={auth}
-      headerTitle={`FG BOM - ${InputData?.actionMode === 'edit' ? 'Edit' : 'Create'}`}
+      headerTitle={headerTitle}
       pageIdentity={{ pageId }}
       InputData={{ ...(InputData || {}), ownerLevel }}
       subMattypes={subMattypes}

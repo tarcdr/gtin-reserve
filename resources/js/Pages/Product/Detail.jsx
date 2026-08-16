@@ -495,7 +495,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
-                            <DangerButton type="button" disabled={semiFgLv2.statusRow === 'ETS'}>
+                            <DangerButton type="button" disabled={semiFgLv2.statusRow === 'ETS' || hasSemiFgLv1}>
                               DELETE SEMI FG LV2
                             </DangerButton>
                             <PrimaryButton

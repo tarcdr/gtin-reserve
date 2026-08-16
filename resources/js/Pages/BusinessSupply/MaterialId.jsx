@@ -473,22 +473,8 @@ export default function BusinessSupplyMaterialId({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <InputLabel htmlFor="subMatTypeStep3" value="Sub Mattype" />
-            <select
-              id="subMatTypeStep3"
-              className="mt-1 block w-full border-gray-300 rounded-md"
-              value={subMatType}
-              onChange={(e) => handleSubMatTypeChange(e.target.value)}
-              disabled={isDeleteMode || !matType || isLoadingRelatedOptions}
-            >
-              <option value="">---- Select Sub Mattype ----</option>
-              {availableSubMattypes.map((item) => (
-                <option key={`subMatType3-${item.code}`} value={item.code}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-            <InputError className="mt-2" message={errors.subMatType} />
+            <InputLabel htmlFor="subMatTypeStep3" value="Sub Mattyp" />
+            <TextInput id="subMatTypeStep3" className="mt-1 block w-full bg-gray-100" value={subMatType} disabled />
           </div>
           <div />
         </div>

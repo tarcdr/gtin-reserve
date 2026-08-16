@@ -13,6 +13,7 @@ use App\Models\Material;
 use App\Models\Mattype;
 use App\Models\TradingUnit;
 use App\Models\Gtin;
+use App\Models\Proj1BrandGtingV;
 use PDO;
 use App\Exports\GtinExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -102,7 +103,7 @@ class RequestFormController extends Controller
           foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
             array_push($gtins, $m);
           }
-          $stmt = $pdo->prepare('BEGIN proj1_find_newgtin(:p_new_last_gtin_pcs, :p_suggest_gtin_pcs, :p_new_last_gtin_box, :p_suggest_gtin_box, :p_material_id); END;');
+          $stmt = $pdo->prepare('BEGIN PROJ1_FIND_NEWGTIN(:p_new_last_gtin_pcs, :p_suggest_gtin_pcs, :p_new_last_gtin_box, :p_suggest_gtin_box, :p_material_id); END;');
           $stmt->bindParam(':p_new_last_gtin_pcs', $p_new_last_gtin_pcs, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
           $stmt->bindParam(':p_suggest_gtin_pcs', $p_suggest_gtin_pcs, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
           $stmt->bindParam(':p_new_last_gtin_box', $p_new_last_gtin_box, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
@@ -112,7 +113,7 @@ class RequestFormController extends Controller
           $stmt->execute();
         }
 
-        foreach (Material::select('brand')->whereNotNull('brand')->groupBy('brand')->orderBy('brand')->get() as $b) {
+        foreach (Proj1BrandGtingV::get() as $b) {
           array_push($brand, [
             "code" => $b->brand
           ]);
