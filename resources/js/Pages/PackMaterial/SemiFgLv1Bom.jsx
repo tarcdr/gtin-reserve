@@ -4,10 +4,11 @@ import { router } from '@inertiajs/react';
 
 function buildSemiFgLv1BomConfig(actionMode = 'create') {
   const isEditMode = actionMode === 'edit';
+  const isDeleteMode = actionMode === 'delete';
 
   return {
-    pageId: isEditMode ? '2CSML1' : '1CSML1',
-    headerTitle: `SEMI FG LV1 BOM - ${isEditMode ? 'Edit' : 'Create'}`,
+    pageId: isEditMode || isDeleteMode ? '2CSML1' : '1CSML1',
+    headerTitle: `SEMI FG LV1 BOM - ${isEditMode ? 'Edit' : (isDeleteMode ? 'Delete' : 'Create')}`,
     submitRoute: 'packmaterial.semi-fg-lv1-bom.save',
     levelBomIdLabel: 'SEMI FG LV1 BOM ID',
     levelBomDescLabel: 'SEMI FG LV1 BOM Description',
@@ -33,7 +34,12 @@ export default function SemiFgLv1Bom({ auth, InputData, subMattypes = [], uoms =
     });
   };
 
-  const handleDelete = handleBack;
+  const handleDelete = () => {
+    router.delete(route('packmaterial.semi-fg-lv1-bom.delete'), {
+      data: form.data,
+      preserveScroll: true,
+    });
+  };
 
   return (
     <BomMaterialForm

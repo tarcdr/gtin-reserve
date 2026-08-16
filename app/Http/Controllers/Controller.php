@@ -41,6 +41,24 @@ class Controller extends BaseController
     }
 }
 
+    protected function buildDeleteDebugPayload(
+        ?string $program,
+        array $bindings = [],
+        int|string|null $countRow = null,
+        ?string $rawError = null,
+        ?string $resolvedError = null,
+        array $context = []
+    ): array {
+        return [
+            'program' => $program ?: 'not mapped',
+            'bindings' => $bindings,
+            'countRow' => $countRow,
+            'rawError' => trim((string) $rawError),
+            'resolvedError' => trim((string) $resolvedError),
+            'context' => $context,
+        ];
+    }
+
     protected function generateFgBomIdProcedure(string $suggestId, string $site, ?string $userLogin = null): array
     {
         $suggestId = trim($suggestId);

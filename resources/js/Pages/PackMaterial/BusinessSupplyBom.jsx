@@ -20,7 +20,7 @@ export default function BusinessSupplyBom({
     levelBomDescLabel: 'BUSINESS SUPPLY BOM Description',
   };
   const submitRoute = submitRouteName || (InputData?.actionMode === 'edit' ? 'packmaterial.update' : 'packmaterial.create');
-  const actionLabel = InputData?.actionMode === 'edit' ? 'Edit' : 'Create';
+  const actionLabel = InputData?.actionMode === 'edit' ? 'Edit' : (InputData?.actionMode === 'delete' ? 'Delete' : 'Create');
   const headerTitle = `${pageConfig.headerLabel} - ${actionLabel}`;
   const initialSubMattype = InputData?.subMattype || '0';
   const form = useBomMaterialFormController({
@@ -37,7 +37,11 @@ export default function BusinessSupplyBom({
     });
   };
 
-  const handleDelete = handleBack;
+  const handleDelete = () => {
+    router.patch(route(submitRoute), form.data, {
+      preserveScroll: true,
+    });
+  };
 
   return (
     <BomMaterialForm

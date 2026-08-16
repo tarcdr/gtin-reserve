@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\ProductCreateRequest;
+use App\Http\Requests\ProductDeleteRequest;
 use App\Http\Requests\ProductSearchRequest;
 use App\Http\Requests\ProductSearchBomRequest;
 use Illuminate\Support\Facades\Redirect;
@@ -193,6 +194,13 @@ class ProductController extends Controller
       ->whereRaw('TRIM(FG_BOM_ID) = ?', [$fgBomId])
       ->first();
 
+    if (!$row) {
+      Log::debug('product.load-semi-fg-lv1.not-found', [
+        'fgBomId' => $fgBomId,
+      ]);
+      return null;
+    }
+
     $semiFgLv1Bom = Proj12SemiFgLv1Bom::query()
       ->selectRaw('
         TRIM(SEMI_FG_LV1_BOM_ID) as semi_fg_lv1_bom_id,
@@ -201,9 +209,13 @@ class ProductController extends Controller
       ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$row->material_id_fg_1 ?? ''])
       ->first();
 
-    if (!$row) {
-      Log::debug('product.load-semi-fg-lv1.not-found', [
+    $semiFgLv1BomId = trim((string) ($semiFgLv1Bom->semi_fg_lv1_bom_id ?? ''));
+
+    if ($semiFgLv1BomId === '') {
+      Log::debug('product.load-semi-fg-lv1.bom-not-found', [
         'fgBomId' => $fgBomId,
+        'semiFgLv1Id' => trim((string) ($row->semi_fg_lv1_id ?? '')),
+        'materialIdFg1' => trim((string) ($row->material_id_fg_1 ?? '')),
       ]);
       return null;
     }
@@ -221,7 +233,7 @@ class ProductController extends Controller
       'site' => trim((string) ($row->site ?? '')),
       'components' => [],
       'statusRow' => trim((string) ($row->status_row ?? '')),
-      'bomId' => trim((string) ($semiFgLv1Bom->semi_fg_lv1_bom_id ?? '')),
+      'bomId' => $semiFgLv1BomId,
       'bomDesc' => trim((string) ($semiFgLv1Bom->desc_semi_fg_lv1_bom_id ?? '')),
     ];
 
@@ -258,6 +270,13 @@ class ProductController extends Controller
       ->whereRaw('TRIM(FG_BOM_ID) = ?', [$fgBomId])
       ->first();
 
+    if (!$row) {
+      Log::debug('product.load-semi-fg-lv2.not-found', [
+        'fgBomId' => $fgBomId,
+      ]);
+      return null;
+    }
+
     $semiFgLv2Bom = Proj12SemiFgLv2Bom::query()
       ->selectRaw('
         TRIM(SEMI_FG_LV2_BOM_ID) as semi_fg_lv2_bom_id,
@@ -266,9 +285,13 @@ class ProductController extends Controller
       ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$row->material_id_fg_1 ?? ''])
       ->first();
 
-    if (!$row) {
-      Log::debug('product.load-semi-fg-lv2.not-found', [
+    $semiFgLv2BomId = trim((string) ($semiFgLv2Bom->semi_fg_lv2_bom_id ?? ''));
+
+    if ($semiFgLv2BomId === '') {
+      Log::debug('product.load-semi-fg-lv2.bom-not-found', [
         'fgBomId' => $fgBomId,
+        'semiFgLv2Id' => trim((string) ($row->semi_fg_lv2_id ?? '')),
+        'materialIdFg1' => trim((string) ($row->material_id_fg_1 ?? '')),
       ]);
       return null;
     }
@@ -286,7 +309,7 @@ class ProductController extends Controller
       'site' => trim((string) ($row->site ?? '')),
       'components' => [],
       'statusRow' => trim((string) ($row->status_row ?? '')),
-      'bomId' => trim((string) ($semiFgLv2Bom->semi_fg_lv2_bom_id ?? '')),
+      'bomId' => $semiFgLv2BomId,
       'bomDesc' => trim((string) ($semiFgLv2Bom->desc_semi_fg_lv2_bom_id ?? '')),
     ];
 
@@ -496,18 +519,79 @@ class ProductController extends Controller
     }
   }
 
-  protected function deleteFgMaterial(string $materialId): void
+  protected function deleteFgMaterial(string $materialId, ?string $fgBomId = null, ?string $userLogin = null, ?string $userRole = null): array
   {
     $materialId = trim($materialId);
+    $fgBomId = trim((string) $fgBomId);
 
     if ($materialId === '') {
-      return;
+      throw ValidationException::withMessages([
+        'materialId' => 'Material ID FG is required.',
+      ]);
+    }
+
+    if ($fgBomId === '') {
+      $fgInput = $this->loadFgMaterialInputByMaterialId($materialId);
+      $fgBomId = trim((string) ($fgInput['bomId'] ?? ''));
+    }
+
+    if ($fgBomId === '') {
+      throw ValidationException::withMessages([
+        'bomId' => 'FG BOM ID is required.',
+      ]);
     }
 
     $pdo = DB::connection('oracle')->getPdo();
-    $stmt = $pdo->prepare('BEGIN proj1_2_delete_fg(:p_mat_id); END;');
-    $stmt->bindValue(':p_mat_id', $materialId, PDO::PARAM_STR);
+    $countRow = 0;
+    $error = null;
+    $bindings = [
+      'P_FG_BOM_ID' => $fgBomId,
+      'P_FG_MAT_ID' => $materialId,
+      'P_USER_ROLE' => (string) ($userRole ?: 'GTIN'),
+      'P_USER' => (string) ($userLogin ?: 'system'),
+    ];
+    $stmt = $pdo->prepare('BEGIN PROJ1_2_DEL_MATID(:P_FG_BOM_ID, :P_FG_MAT_ID, :P_USER_ROLE, :P_USER, :P_CNT_ROW, :P_ERROR); END;');
+    foreach ($bindings as $key => $value) {
+      $stmt->bindValue(':' . $key, trim((string) $value), PDO::PARAM_STR);
+    }
+    $stmt->bindParam(':P_CNT_ROW', $countRow, PDO::PARAM_INT | PDO::PARAM_INPUT_OUTPUT, 20);
+    $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
     $stmt->execute();
+
+    $resolvedError = trim((string) $this->resolveProcedureErrorMessage($error));
+    $debug = $this->buildDeleteDebugPayload('PROJ1_2_DEL_MATID', $bindings, (int) $countRow, $error, $resolvedError, [
+      'ownerLevel' => 'fgMaterial',
+      'materialId' => $materialId,
+      'fgBomId' => $fgBomId,
+    ]);
+
+    if ($resolvedError !== '') {
+      Log::warning('product.delete-matid.failed', [
+        'materialId' => $materialId,
+        'fgBomId' => $fgBomId,
+        'bindings' => $bindings,
+        'countRow' => $countRow,
+        'error' => $error,
+        'resolvedError' => $resolvedError,
+      ]);
+
+      session()->flash('deleteDebug', $debug);
+
+      throw ValidationException::withMessages([
+        'delete' => $resolvedError,
+      ]);
+    }
+
+    Log::info('product.delete-matid.executed', [
+      'materialId' => $materialId,
+      'fgBomId' => $fgBomId,
+      'bindings' => $bindings,
+      'rawError' => $error,
+      'resolvedError' => $resolvedError,
+      'countRow' => $countRow,
+    ]);
+
+    return $debug;
   }
 
   protected function buildProductInput(Request $request): array
@@ -825,10 +909,17 @@ class ProductController extends Controller
     ]);
   }
 
-  public function delete(Request $request): RedirectResponse
+  public function delete(ProductDeleteRequest $request): RedirectResponse
   {
-    $this->deleteFgMaterial($this->requestString($request, 'materialId'));
+    $debug = $this->deleteFgMaterial(
+      $this->requestString($request, 'materialId'),
+      $this->requestString($request, 'fgBomId') ?: $this->requestString($request, 'bomId'),
+      $request->user()?->user_login,
+      $request->user()?->role
+    );
 
-    return Redirect::route('product.search');
+    return Redirect::route('product.search')
+      ->with('message', 'Delete procedure executed.')
+      ->with('deleteDebug', $debug);
   }
 }

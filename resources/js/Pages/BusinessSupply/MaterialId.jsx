@@ -6,6 +6,8 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 import TextInput from '@/Components/TextInput';
+import Modal from '@/Components/Modal';
+import DeleteDebugPanel from '@/Components/DeleteDebugPanel';
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { getAxiosErrorMessage, getFirstErrorMessage } from '@/Utils/apiError';
@@ -45,6 +47,8 @@ export default function BusinessSupplyMaterialId({
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [isLoadingRelatedOptions, setIsLoadingRelatedOptions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteDebug, setDeleteDebug] = useState(null);
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const hasLoadedOptionsRef = useRef(false);
@@ -323,7 +327,7 @@ export default function BusinessSupplyMaterialId({
     setIsSaving(true);
 
     try {
-      await axios.patch(route('business-supply.create-material-id.save'), {
+      const response = await axios.patch(route('business-supply.create-material-id.save'), {
         bomBsId: bizsupId,
         matType,
         subMatType,
@@ -339,6 +343,13 @@ export default function BusinessSupplyMaterialId({
       }, {
         headers: { Accept: 'application/json' },
       });
+
+      if (isDeleteMode && response?.data?.program === null) {
+        setSaveError(response?.data?.message || 'Business Supply Material ID delete prepared; procedure not mapped yet.');
+        setDeleteDebug(response?.data?.deleteDebug || null);
+        setConfirmingDelete(false);
+        return;
+      }
 
       router.get(route('business-supply.existing', {
         bizsupId,
@@ -541,7 +552,7 @@ export default function BusinessSupplyMaterialId({
             RESET
           </SecondaryButton>
           {isDeleteMode ? (
-            <DangerButton type="button" onClick={handleSave} disabled={isSaving || !componentId || !materialDetail}>
+            <DangerButton type="button" onClick={() => setConfirmingDelete(true)} disabled={isSaving || !componentId || !materialDetail}>
               DELETE
             </DangerButton>
           ) : (
@@ -569,6 +580,7 @@ export default function BusinessSupplyMaterialId({
 
       <div className="py-12">
         <div className="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
+          <DeleteDebugPanel debug={deleteDebug} />
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div className="grid grid-cols-1 gap-8">
               <div>
@@ -583,6 +595,23 @@ export default function BusinessSupplyMaterialId({
           {step === 3 && renderStep3()}
         </div>
       </div>
+
+      <Modal show={confirmingDelete} maxWidth="lg" onClose={() => setConfirmingDelete(false)}>
+        <div className="p-6 space-y-6">
+          <h2 className="text-lg font-medium text-gray-900">Delete Business Supply Material ID</h2>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete {componentId || 'this material ID'}?
+          </p>
+          <div className="flex justify-end gap-3">
+            <SecondaryButton type="button" onClick={() => setConfirmingDelete(false)} disabled={isSaving}>
+              Cancel
+            </SecondaryButton>
+            <DangerButton type="button" onClick={handleSave} disabled={isSaving}>
+              Delete
+            </DangerButton>
+          </div>
+        </div>
+      </Modal>
     </AuthenticatedLayout>
   );
 }

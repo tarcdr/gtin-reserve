@@ -29,10 +29,11 @@ export default function useBomMaterialFormController({
   const isFgCreateMode = data.ownerLevel === 'fg' && data.actionMode === 'create';
   const isSemiFgCreateMode = Boolean(isSemiFgOwner) && data.actionMode === 'create';
   const isEditMode = data.actionMode === 'edit';
-  const shouldSkipProductCategoryLookup = isEditMode && Boolean(data.productSubCat);
   const isDeleteMode = data.actionMode === 'delete';
-  const isSubMattypeLocked = isEditMode;
-  const isProductSubCatLocked = isEditMode;
+  const isExistingReadOnlyMode = isEditMode || isDeleteMode;
+  const shouldSkipProductCategoryLookup = isExistingReadOnlyMode && Boolean(data.productSubCat);
+  const isSubMattypeLocked = isExistingReadOnlyMode;
+  const isProductSubCatLocked = isExistingReadOnlyMode;
 
   const submit = (e) => {
     e.preventDefault();
@@ -98,7 +99,7 @@ export default function useBomMaterialFormController({
         const normalizedSubOptions = normalizeProductSubCategoryOptions(
           subOptions,
           nextProductSubCat,
-          isEditMode
+          isExistingReadOnlyMode
         );
         setProductSubCategoryOptions(normalizedSubOptions);
 
@@ -107,7 +108,7 @@ export default function useBomMaterialFormController({
           setData('productCat', nextProductCat);
         }
 
-        if (!isEditMode && data.productSubCat) {
+        if (!isExistingReadOnlyMode && data.productSubCat) {
           setData('productSubCat', '');
         }
       })
@@ -232,7 +233,7 @@ export default function useBomMaterialFormController({
 
   useEffect(() => {
     if (!currentSubMattype || !data.productCat) {
-      if (isEditMode) {
+      if (isExistingReadOnlyMode) {
         return;
       }
 

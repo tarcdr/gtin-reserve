@@ -5,6 +5,7 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { useForm } from '@inertiajs/react';
 import SecondaryButton from '@/Components/SecondaryButton';
+import DeleteDebugPanel from '@/Components/DeleteDebugPanel';
 import { useState } from 'react';
 
 export default function ProductSearch({ auth, InputData, brands = [], mattypes = [] }) {
@@ -106,6 +107,7 @@ export default function ProductSearch({ auth, InputData, brands = [], mattypes =
 
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+          <DeleteDebugPanel />
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <form onSubmit={submit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

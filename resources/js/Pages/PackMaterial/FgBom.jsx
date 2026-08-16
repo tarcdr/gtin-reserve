@@ -22,7 +22,12 @@ export default function FgBom({ auth, InputData, subMattypes = [], uoms = [] }) 
     });
   };
 
-  const handleDelete = handleBack;
+  const handleDelete = () => {
+    router.delete(route('packmaterial.fg-bom.delete'), {
+      data: form.data,
+      preserveScroll: true,
+    });
+  };
 
   return (
     <BomMaterialForm

@@ -6,7 +6,10 @@ import ReactSelect from 'react-select';
 import SecondaryButton from '@/Components/SecondaryButton';
 import PrimaryButton from '@/Components/PrimaryButton';
 import DangerButton from '@/Components/DangerButton';
-import { useMemo } from 'react';
+import Modal from '@/Components/Modal';
+import InputError from '@/Components/InputError';
+import DeleteDebugPanel from '@/Components/DeleteDebugPanel';
+import { useMemo, useState } from 'react';
 import BusinessSupplyDetail from '@/Components/BusinessSupply/BusinessSupplyDetail';
 import BusinessSupplyComponents from '@/Components/BusinessSupply/BusinessSupplyComponents';
 import SuccessButton from '@/Components/SuccessButton';
@@ -23,6 +26,8 @@ export default function BusinessSupplyExisting({
   const selectedBizsupId = InputData?.bizsupId || selectedBusinessSupply?.bizsupId || '';
   const selectedBizsupDesc = InputData?.bizsupDesc || selectedBusinessSupply?.bizsupDesc || '';
   const isLocked = Boolean(selectedBizsupId);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState('');
   const pageId = `${isLocked ? 2 : 1}EBS`;
   const readOnlyClass = 'mt-1 block w-full border-gray-300 rounded-md bg-gray-100';
 
@@ -64,6 +69,21 @@ export default function BusinessSupplyExisting({
 
   const handleCancel = () => {
     router.get(route('business-supply.existing'));
+  };
+
+  const handleDelete = () => {
+    setDeleteMessage('');
+    router.delete(route('business-supply.existing.delete'), {
+      data: {
+        bizsupId: detailValues.bomBsId || selectedBizsupId,
+        bomBsId: detailValues.bomBsId,
+      },
+      preserveScroll: true,
+      onError: (nextErrors) => {
+        setDeleteMessage(nextErrors.delete || 'Business Supply delete prepared; procedure not mapped yet.');
+      },
+      onFinish: () => setConfirmingDelete(false),
+    });
   };
 
   const renderSourceDisplay = () => {
@@ -113,6 +133,7 @@ export default function BusinessSupplyExisting({
 
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+          <DeleteDebugPanel />
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div className="space-y-6">
               <div className="text-sm text-gray-500">
@@ -267,17 +288,35 @@ export default function BusinessSupplyExisting({
                 >
                   Edit
                 </PrimaryButton>
-                <DangerButton type="button" onClick={() => {}}>
+                <DangerButton type="button" onClick={() => setConfirmingDelete(true)}>
                   Delete
                 </DangerButton>
                 <SuccessButton type="button" onClick={() => {}}>
                   COMPLETE
                 </SuccessButton>
               </div>
+              <InputError className="text-center" message={deleteMessage} />
             </div>
           ) : null}
         </div>
       </div>
+
+      <Modal show={confirmingDelete} maxWidth="lg" onClose={() => setConfirmingDelete(false)}>
+        <div className="p-6 space-y-6">
+          <h2 className="text-lg font-medium text-gray-900">Delete Business Supply</h2>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete {detailValues.bomBsId || selectedBizsupId || 'this Business Supply'}?
+          </p>
+          <div className="flex justify-end gap-3">
+            <SecondaryButton type="button" onClick={() => setConfirmingDelete(false)}>
+              Cancel
+            </SecondaryButton>
+            <DangerButton type="button" onClick={handleDelete}>
+              Delete
+            </DangerButton>
+          </div>
+        </div>
+      </Modal>
     </AuthenticatedLayout>
   );
 }

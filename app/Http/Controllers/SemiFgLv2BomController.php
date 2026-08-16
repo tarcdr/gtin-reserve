@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PackMaterialCreateRequest;
+use App\Http\Requests\PackMaterialDeleteRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -45,6 +46,14 @@ class SemiFgLv2BomController extends PackMaterialController
     $backRoute = $request->get('backRoute', 'material-levels.semi-fg-lv2.new');
     $backMaterialId = $request->get('backMaterialId') ?: $request->get('levelMaterialId') ?: $request->get('materialId');
 
+    if ($backRoute === 'product.view') {
+      return Redirect::route($backRoute, [
+        'materialId' => $request->get('backMaterialId')
+          ?: $request->get('referentMaterialId')
+          ?: $request->get('fgMaterialId'),
+      ]);
+    }
+
     if ($backRoute === 'material-levels.semi-fg-lv2.new') {
       return Redirect::route($backRoute, [
         'mode' => 'view',
@@ -59,5 +68,41 @@ class SemiFgLv2BomController extends PackMaterialController
       'ownerDetail' => $request->get('ownerDetail', []),
       'components' => $components,
     ]);
+  }
+
+  public function delete(PackMaterialDeleteRequest $request): RedirectResponse
+  {
+    $debug = $this->deleteSemiFgLv2ComponentBom(array_merge($request->validated(), [
+      'ownerLevel' => 'semiFgLv2',
+    ]), $request->user()?->user_login, $request->user()?->role);
+
+    $backRoute = $request->get('backRoute', 'material-levels.semi-fg-lv2.new');
+    $backMaterialId = $request->get('backMaterialId') ?: $request->get('levelMaterialId') ?: $request->get('materialId');
+
+    if ($backRoute === 'product.view') {
+      return Redirect::route($backRoute, [
+        'materialId' => $request->get('backMaterialId')
+          ?: $request->get('referentMaterialId')
+          ?: $request->get('fgMaterialId'),
+      ])->with('message', 'Delete procedure executed.')
+        ->with('deleteDebug', $debug);
+    }
+
+    if ($backRoute === 'material-levels.semi-fg-lv2.new') {
+      return Redirect::route($backRoute, [
+        'mode' => 'view',
+        'levelMaterialId' => $backMaterialId,
+      ])->with('message', 'Delete procedure executed.')
+        ->with('deleteDebug', $debug);
+    }
+
+    return Redirect::route($backRoute, [
+      'mode' => 'view',
+      'levelMaterialId' => $backMaterialId,
+      'fgDetail' => $request->get('fgDetail', []),
+      'ownerDetail' => $request->get('ownerDetail', []),
+      'components' => $request->get('components', []),
+    ])->with('message', 'Delete procedure executed.')
+      ->with('deleteDebug', $debug);
   }
 }

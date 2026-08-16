@@ -417,6 +417,244 @@ class PackMaterialController extends Controller
     }
   }
 
+  protected function firstFilledString(array $data, array $keys): string
+  {
+    foreach ($keys as $key) {
+      $value = trim((string) data_get($data, $key, ''));
+
+      if ($value !== '') {
+        return $value;
+      }
+    }
+
+    return '';
+  }
+
+  protected function callDeleteProcedure(string $program, array $bindings, array $context = []): array
+  {
+    $pdo = DB::connection('oracle')->getPdo();
+    $countRow = 0;
+    $error = null;
+    $placeholderList = collect(array_keys($bindings))
+      ->map(fn ($key) => ':' . $key)
+      ->push(':P_CNT_ROW', ':P_ERROR')
+      ->implode(', ');
+    $stmt = $pdo->prepare("BEGIN {$program}({$placeholderList}); END;");
+
+    foreach ($bindings as $key => $value) {
+      $stmt->bindValue(':' . $key, trim((string) $value), PDO::PARAM_STR);
+    }
+
+    $stmt->bindParam(':P_CNT_ROW', $countRow, PDO::PARAM_INT | PDO::PARAM_INPUT_OUTPUT, 20);
+    $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
+    $stmt->execute();
+
+    $resolvedError = trim((string) $this->resolveProcedureErrorMessage($error));
+    $debug = $this->buildDeleteDebugPayload(
+      $program,
+      $bindings,
+      (int) $countRow,
+      $error,
+      $resolvedError,
+      $context
+    );
+
+    if ($resolvedError !== '') {
+      Log::warning('packmaterial.delete-procedure.failed', array_merge($context, [
+        'program' => $program,
+        'bindings' => $bindings,
+        'countRow' => $countRow,
+        'error' => $error,
+        'resolvedError' => $resolvedError,
+      ]));
+
+      session()->flash('deleteDebug', $debug);
+
+      throw ValidationException::withMessages([
+        'delete' => $resolvedError,
+      ]);
+    }
+
+    Log::info('packmaterial.delete-procedure.executed', array_merge($context, [
+      'program' => $program,
+      'bindings' => $bindings,
+      'rawError' => $error,
+      'resolvedError' => $resolvedError,
+      'countRow' => $countRow,
+    ]));
+
+    return $debug;
+  }
+
+  protected function requireDeleteValue(string $value, string $field, string $message): string
+  {
+    $value = trim($value);
+
+    if ($value === '') {
+      throw ValidationException::withMessages([
+        $field => $message,
+        'delete' => $message,
+      ]);
+    }
+
+    return $value;
+  }
+
+  protected function resolveSemiFgLv2BomIdForDelete(array $data): string
+  {
+    $semiFgLv2BomId = $this->firstFilledString($data, [
+      'semiFgLv2BomId',
+      'fgDetail.semiFgLv2.bomId',
+      'fgDetail.semiFgLv2.semiFgLvBomId',
+      'ownerDetail.semiFgLv2BomId',
+    ]);
+
+    if ($semiFgLv2BomId !== '') {
+      return $semiFgLv2BomId;
+    }
+
+    $fgBomId = $this->firstFilledString($data, ['fgBomId', 'bomId']);
+    if ($fgBomId === '') {
+      return '';
+    }
+
+    $semiFgLv2 = $this->loadSemiFgLv2ByFgBomId($fgBomId);
+    $semiFgLv2Bom = $this->loadSemiFgLv2BomByMaterialId($semiFgLv2['id'] ?? '');
+
+    return trim((string) ($semiFgLv2Bom['semiFgLvBomId'] ?? ''));
+  }
+
+  protected function deleteFgComponentBom(array $data, ?string $userLogin = null, ?string $userRole = null): array
+  {
+    $componentId = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['componentId']),
+      'componentId',
+      'Component ID is required.'
+    );
+    $fgBomId = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['fgBomId', 'bomId']),
+      'bomId',
+      'FG BOM ID is required.'
+    );
+
+    return $this->callDeleteProcedure('PROJ1_2_DEL_COMP_BOMFG', [
+      'P_FG_COMP_ID' => $componentId,
+      'P_FG_BOM_ID' => $fgBomId,
+      'P_USER_ROLE' => (string) ($userRole ?: 'GTIN'),
+      'P_USER' => (string) ($userLogin ?: 'system'),
+    ], [
+      'ownerLevel' => 'fg',
+      'componentId' => $componentId,
+      'fgBomId' => $fgBomId,
+    ]);
+  }
+
+  protected function deleteSemiFgLv2ComponentBom(array $data, ?string $userLogin = null, ?string $userRole = null): array
+  {
+    $isLevelDelete = $this->firstFilledString($data, ['deleteScope']) === 'level';
+    $fgBomId = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['fgBomId']),
+      'fgBomId',
+      'FG BOM ID is required.'
+    );
+    $semiFgLv2BomId = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['semiFgLvBomId', 'bomId', 'semiFgLv2BomId']),
+      'semiFgLvBomId',
+      'Semi FG LV2 BOM ID is required.'
+    );
+
+    if ($isLevelDelete) {
+      return $this->callDeleteProcedure('PROJ1_2_DEL_BOM_SEMI_L2', [
+        'P_FG_BOM_ID' => $fgBomId,
+        'P_SEMI_FG_LV2_BOM_ID' => $semiFgLv2BomId,
+        'P_USER_ROLE' => (string) ($userRole ?: 'GTIN'),
+        'P_USER' => (string) ($userLogin ?: 'system'),
+      ], [
+        'ownerLevel' => 'semiFgLv2',
+        'deleteScope' => 'level',
+        'fgBomId' => $fgBomId,
+        'semiFgLv2BomId' => $semiFgLv2BomId,
+      ]);
+    }
+
+    $materialIdM5 = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['materialIdM5', 'componentId', 'levelMaterialId']),
+      'componentId',
+      'Material ID M5 is required.'
+    );
+
+    return $this->callDeleteProcedure('PROJ1_2_DEL_COMP_BOM_SEMI_L2', [
+      'P_MATERIAL_ID_M5' => $materialIdM5,
+      'P_FG_BOM_ID' => $fgBomId,
+      'P_SEMI_FG_LV2_BOM_ID' => $semiFgLv2BomId,
+      'P_USER_ROLE' => (string) ($userRole ?: 'GTIN'),
+      'P_USER' => (string) ($userLogin ?: 'system'),
+    ], [
+      'ownerLevel' => 'semiFgLv2',
+      'materialIdM5' => $materialIdM5,
+      'fgBomId' => $fgBomId,
+      'semiFgLv2BomId' => $semiFgLv2BomId,
+    ]);
+  }
+
+  protected function deleteSemiFgLv1ComponentBom(array $data, ?string $userLogin = null, ?string $userRole = null): array
+  {
+    $isLevelDelete = $this->firstFilledString($data, ['deleteScope']) === 'level';
+    $fgBomId = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['fgBomId']),
+      'fgBomId',
+      'FG BOM ID is required.'
+    );
+    $semiFgLv2BomId = $this->requireDeleteValue(
+      $this->resolveSemiFgLv2BomIdForDelete($data),
+      'semiFgLv2BomId',
+      'Semi FG LV2 BOM ID is required.'
+    );
+    $semiFgLv1BomId = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['semiFgLvBomId', 'bomId', 'semiFgLv1BomId']),
+      'semiFgLvBomId',
+      'Semi FG LV1 BOM ID is required.'
+    );
+
+    if ($isLevelDelete) {
+      return $this->callDeleteProcedure('PROJ1_2_DEL_BOM_SEMI_L1', [
+        'P_FG_BOM_ID' => $fgBomId,
+        'P_SEMI_FG_LV2_BOM_ID' => $semiFgLv2BomId,
+        'P_SEMI_FG_LV1_BOM_ID' => $semiFgLv1BomId,
+        'P_USER_ROLE' => (string) ($userRole ?: 'GTIN'),
+        'P_USER' => (string) ($userLogin ?: 'system'),
+      ], [
+        'ownerLevel' => 'semiFgLv1',
+        'deleteScope' => 'level',
+        'fgBomId' => $fgBomId,
+        'semiFgLv2BomId' => $semiFgLv2BomId,
+        'semiFgLv1BomId' => $semiFgLv1BomId,
+      ]);
+    }
+
+    $materialIdM4 = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['materialIdM4', 'componentId']),
+      'componentId',
+      'Material ID M4 is required.'
+    );
+
+    return $this->callDeleteProcedure('PROJ1_2_DEL_COMP_BOM_SEMI_L1', [
+      'P_MATERIAL_ID_M4' => $materialIdM4,
+      'P_FG_BOM_ID' => $fgBomId,
+      'P_SEMI_FG_LV2_BOM_ID' => $semiFgLv2BomId,
+      'P_SEMI_FG_LV1_BOM_ID' => $semiFgLv1BomId,
+      'P_USER_ROLE' => (string) ($userRole ?: 'GTIN'),
+      'P_USER' => (string) ($userLogin ?: 'system'),
+    ], [
+      'ownerLevel' => 'semiFgLv1',
+      'deleteScope' => $isLevelDelete ? 'level' : 'component',
+      'materialIdM4' => $materialIdM4,
+      'fgBomId' => $fgBomId,
+      'semiFgLv2BomId' => $semiFgLv2BomId,
+      'semiFgLv1BomId' => $semiFgLv1BomId,
+    ]);
+  }
+
   protected function loadSemiFgLv1ComponentByBomAndComponentId(?string $levelMaterialId, ?string $componentId): ?array
   {
     $levelMaterialId = trim((string) $levelMaterialId);

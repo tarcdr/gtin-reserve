@@ -78,6 +78,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/business-supply/generate', [BusinessSupplyController::class, 'generate'])->name('business-supply.generate');
     Route::patch('/business-supply/save', [BusinessSupplyController::class, 'save'])->name('business-supply.save');
     Route::patch('/business-supply/existing', [BusinessSupplyController::class, 'updateExisting'])->name('business-supply.existing.update');
+    Route::delete('/business-supply/existing', [BusinessSupplyController::class, 'deletePrepared'])->name('business-supply.existing.delete');
     Route::get('/business-supply/create-material-id', [BusinessSupplyController::class, 'createMaterialId'])->name('business-supply.create-material-id');
     Route::get('/business-supply/create-material-id/related-options', [BusinessSupplyController::class, 'materialIdRelatedOptions'])->name('business-supply.create-material-id.related-options');
     Route::get('/business-supply/create-material-id/options', [BusinessSupplyController::class, 'materialIdOptions'])->name('business-supply.create-material-id.options');
@@ -102,6 +103,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/packmaterial/fg-bom', [FgBomController::class, 'save'])->name('packmaterial.fg-bom.save');
     Route::patch('/packmaterial/semi-fg-lv1-bom', [SemiFgLv1BomController::class, 'save'])->name('packmaterial.semi-fg-lv1-bom.save');
     Route::patch('/packmaterial/semi-fg-lv2-bom', [SemiFgLv2BomController::class, 'save'])->name('packmaterial.semi-fg-lv2-bom.save');
+    Route::delete('/packmaterial/fg-bom', [FgBomController::class, 'delete'])->name('packmaterial.fg-bom.delete');
+    Route::delete('/packmaterial/semi-fg-lv1-bom', [SemiFgLv1BomController::class, 'delete'])->name('packmaterial.semi-fg-lv1-bom.delete');
+    Route::delete('/packmaterial/semi-fg-lv2-bom', [SemiFgLv2BomController::class, 'delete'])->name('packmaterial.semi-fg-lv2-bom.delete');
     Route::get('/packmaterial/new', [BusinessSupplyBomController::class, 'new'])->name('packmaterial.new');
     Route::post('/packmaterial/new', [BusinessSupplyBomController::class, 'callNew'])->name('packmaterial.new');
     Route::get('/packmaterial/product-categories', [PackMaterialController::class, 'productCategories'])->name('packmaterial.product-categories');

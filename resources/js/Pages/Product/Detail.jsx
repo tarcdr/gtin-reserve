@@ -8,12 +8,25 @@ import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
 import SuccessButton from '@/Components/SuccessButton';
 import DangerButton from '@/Components/DangerButton';
+import Modal from '@/Components/Modal';
+import DeleteDebugPanel from '@/Components/DeleteDebugPanel';
 import { useState } from 'react';
 import { useEffect } from 'react';
+
+const normalizeSemiFgForBomDisplay = (item) => {
+  if (!item || String(item?.bomId || '').trim() === '') {
+    return null;
+  }
+
+  return item;
+};
 
 export default function ProductDetail({ auth, InputData, isDisabled = true, isEditMode = false, brands = [], mattypes = [], sites = [], masterUom = [] }) {
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const subMattypeOptions = ['0', '1', '2', '3'];
   const { data, setData, patch, errors, processing } = useForm({
     brand: InputData?.brand || '',
@@ -30,29 +43,15 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     searchDesc: InputData?.searchDesc || '',
     site: InputData?.site || '',
     fgComponents: InputData?.fgComponents || [],
-    semiFgLv2: InputData?.semiFgLv2 || null,
-    semiFgLv1: InputData?.semiFgLv1 || null,
+    semiFgLv2: normalizeSemiFgForBomDisplay(InputData?.semiFgLv2),
+    semiFgLv1: normalizeSemiFgForBomDisplay(InputData?.semiFgLv1),
     businessSupply: InputData?.businessSupply || null,
   });
   const fgComponents = data.fgComponents || [];
   const semiFgLv2 = data.semiFgLv2 || null;
   const semiFgLv1 = data.semiFgLv1 || null;
-  const hasSemiFgLv2 = !!(
-    semiFgLv2?.id ||
-    semiFgLv2?.searchDesc ||
-    semiFgLv2?.fullDescEn ||
-    semiFgLv2?.fullDescTh ||
-    semiFgLv2?.uom ||
-    semiFgLv2?.components?.length
-  );
-  const hasSemiFgLv1 = !!(
-    semiFgLv1?.id ||
-    semiFgLv1?.searchDesc ||
-    semiFgLv1?.fullDescEn ||
-    semiFgLv1?.fullDescTh ||
-    semiFgLv1?.uom ||
-    semiFgLv1?.components?.length
-  );
+  const hasSemiFgLv2 = String(semiFgLv2?.bomId || '').trim() !== '';
+  const hasSemiFgLv1 = String(semiFgLv1?.bomId || '').trim() !== '';
 
   const getFinishGoodsValue = (mattype, subMattype) => {
     if (!mattype || subMattype === '') {
@@ -138,17 +137,97 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     });
   };
 
-  const handleDelete = () => {
-    if (!window.confirm('Delete this FG material?')) {
+  const openDeleteModal = (target) => {
+    setDeleteError('');
+    setDeleteTarget(target);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteTarget(null);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) {
       return;
     }
+
+    setDeleteError('');
+    setIsDeleting(true);
+
+    if (deleteTarget.type === 'semiFgLv2') {
+      router.delete(route('packmaterial.semi-fg-lv2-bom.delete'), {
+        data: {
+          ownerLevel: 'semiFgLv2',
+          actionMode: 'delete',
+          deleteScope: 'level',
+          backRoute: 'product.view',
+          backMaterialId: data.materialId,
+          referentMaterialId: data.materialId,
+          fgMaterialId: data.materialId,
+          fgBomId: data.bomId,
+          bomId: deleteTarget.item?.bomId || '',
+          semiFgLvBomId: deleteTarget.item?.bomId || '',
+          levelMaterialId: deleteTarget.item?.id || '',
+          componentId: '',
+          materialIdM5: '',
+        },
+        preserveScroll: true,
+        preserveState: false,
+        onError: (nextErrors) => setDeleteError(nextErrors.delete || nextErrors.componentId || nextErrors.semiFgLvBomId || 'Unable to delete Semi FG Level 2.'),
+        onSuccess: closeDeleteModal,
+        onFinish: () => {
+          setIsDeleting(false);
+        },
+      });
+      return;
+    }
+
+    if (deleteTarget.type === 'semiFgLv1') {
+      router.delete(route('packmaterial.semi-fg-lv1-bom.delete'), {
+        data: {
+          ownerLevel: 'semiFgLv1',
+          actionMode: 'delete',
+          deleteScope: 'level',
+          backRoute: 'product.view',
+          backMaterialId: data.materialId,
+          referentMaterialId: data.materialId,
+          fgMaterialId: data.materialId,
+          fgBomId: data.bomId,
+          bomId: deleteTarget.item?.bomId || '',
+          semiFgLvBomId: deleteTarget.item?.bomId || '',
+          semiFgLv2BomId: semiFgLv2?.bomId || '',
+          levelMaterialId: deleteTarget.item?.id || '',
+          componentId: '',
+          materialIdM4: '',
+        },
+        preserveScroll: true,
+        preserveState: false,
+        onError: (nextErrors) => setDeleteError(nextErrors.delete || nextErrors.componentId || nextErrors.semiFgLvBomId || 'Unable to delete Semi FG Level 1.'),
+        onSuccess: closeDeleteModal,
+        onFinish: () => {
+          setIsDeleting(false);
+        },
+      });
+      return;
+    }
+
     router.delete(route('product.delete'), {
       data: {
         materialId: data.materialId,
+        fgMaterialId: data.materialId,
+        bomId: data.bomId,
+        fgBomId: data.bomId,
         brand: data.brand,
         mattype: data.mattype,
-        subMattype: data.subMattype
-      }
+        subMattype: data.subMattype,
+      },
+      preserveScroll: true,
+      preserveState: false,
+      onError: (nextErrors) => setDeleteError(nextErrors.delete || nextErrors.materialId || nextErrors.bomId || 'Unable to delete FG Material.'),
+      onSuccess: closeDeleteModal,
+      onFinish: () => {
+        setIsDeleting(false);
+      },
     });
   };
 
@@ -170,6 +249,33 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     (hasSemiFgLv2BomId && isSemiFgLv2Complete && !hasSemiFgLv1BomId) ||
     (hasSemiFgLv2BomId && isSemiFgLv2Complete && hasSemiFgLv1BomId && isSemiFgLv1Complete);
   const isFgCompleteDisabled = normalizedFgStatus === 'COM' || !canCompleteBySemiFgStatus;
+
+  useEffect(() => {
+    if (!isDisabled || isEditMode) {
+      return;
+    }
+
+    setData((currentData) => ({
+      ...currentData,
+      brand: InputData?.brand || '',
+      mattype: InputData?.mattype || '',
+      subMattype: InputData?.subMattype || '',
+      materialId: InputData?.materialId || '',
+      fgStatus: InputData?.fgStatus || 'INS',
+      bomId: InputData?.bomId || '',
+      bomDesc: InputData?.bomDesc || '',
+      uom: InputData?.uom || '',
+      finishGoods: InputData?.finishGoods || '',
+      fullDescEn: InputData?.fullDescEn || '',
+      fullDescTh: InputData?.fullDescTh || '',
+      searchDesc: InputData?.searchDesc || '',
+      site: InputData?.site || '',
+      fgComponents: InputData?.fgComponents || [],
+      semiFgLv2: normalizeSemiFgForBomDisplay(InputData?.semiFgLv2),
+      semiFgLv1: normalizeSemiFgForBomDisplay(InputData?.semiFgLv1),
+      businessSupply: InputData?.businessSupply || null,
+    }));
+  }, [InputData, isDisabled, isEditMode]);
   
   useEffect(() => {
     let dispSite = false;
@@ -205,6 +311,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
 
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+          <DeleteDebugPanel />
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <form onSubmit={submit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -495,7 +602,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
-                            <DangerButton type="button" disabled={semiFgLv2.statusRow === 'ETS' || hasSemiFgLv1}>
+                            <DangerButton
+                              type="button"
+                              onClick={() => openDeleteModal({ type: 'semiFgLv2', item: semiFgLv2, label: 'Semi FG Level 2' })}
+                              disabled={semiFgLv2.statusRow === 'ETS' || hasSemiFgLv1}
+                            >
                               DELETE SEMI FG LV2
                             </DangerButton>
                             <PrimaryButton
@@ -547,7 +658,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
-                            <DangerButton type="button" disabled={semiFgLv1.statusRow === 'ETS'}>
+                            <DangerButton
+                              type="button"
+                              onClick={() => openDeleteModal({ type: 'semiFgLv1', item: semiFgLv1, label: 'Semi FG Level 1' })}
+                              disabled={semiFgLv1.statusRow === 'ETS'}
+                            >
                               DELETE SEMI FG LV1
                             </DangerButton>
                             <PrimaryButton
@@ -584,17 +699,36 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                 {isDisabled ? (
                   <>
                     <PrimaryButton type="button" onClick={goToEdit}>Edit FG</PrimaryButton>
-                    <DangerButton type="button" onClick={handleDelete}>DELETE FG</DangerButton>
+                    <DangerButton type="button" onClick={() => openDeleteModal({ type: 'fg', item: data, label: 'FG Material' })}>DELETE FG</DangerButton>
                     <SuccessButton type="button" onClick={handleComplete} disabled={isFgCompleteDisabled}>Complete</SuccessButton>
                   </>
                 ) : (
                   <SuccessButton disabled={processing}>Save FG</SuccessButton>
                 )}
               </div>
+              <InputError className="text-center" message={deleteError || errors.delete} />
             </form>
           </div>
         </div>
       </div>
+
+      <Modal show={Boolean(deleteTarget)} maxWidth="lg" onClose={closeDeleteModal}>
+        <div className="p-6 space-y-6">
+          <h2 className="text-lg font-medium text-gray-900">Delete {deleteTarget?.label}</h2>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete {deleteTarget?.item?.bomId || deleteTarget?.item?.id || deleteTarget?.item?.materialId || data.materialId || 'this item'}?
+          </p>
+          <InputError className="mt-2" message={deleteError} />
+          <div className="flex justify-end gap-3">
+            <SecondaryButton type="button" onClick={closeDeleteModal} disabled={processing || isDeleting}>
+              Cancel
+            </SecondaryButton>
+            <DangerButton type="button" onClick={confirmDelete} disabled={processing || isDeleting}>
+              Delete
+            </DangerButton>
+          </div>
+        </div>
+      </Modal>
     </AuthenticatedLayout>
   );
 }

@@ -26,12 +26,17 @@ export default function SemiFgLv2Bom({ auth, InputData, subMattypes = [], uoms =
     });
   };
 
-  const handleDelete = handleBack;
+  const handleDelete = () => {
+    router.delete(route('packmaterial.semi-fg-lv2-bom.delete'), {
+      data: form.data,
+      preserveScroll: true,
+    });
+  };
 
   return (
     <BomMaterialForm
       auth={auth}
-      headerTitle={`SEMI FG LV2 BOM - ${InputData?.actionMode === 'edit' ? 'Edit' : 'Create'}`}
+      headerTitle={`SEMI FG LV2 BOM - ${InputData?.actionMode === 'edit' ? 'Edit' : (InputData?.actionMode === 'delete' ? 'Delete' : 'Create')}`}
       pageIdentity={{ pageId }}
       InputData={{ ...(InputData || {}), ownerLevel }}
       subMattypes={subMattypes}

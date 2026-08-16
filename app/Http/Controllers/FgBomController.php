@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PackMaterialCreateRequest;
+use App\Http\Requests\PackMaterialDeleteRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -36,5 +37,20 @@ class FgBomController extends PackMaterialController
         ?: $request->get('materialId')
         ?: $request->get('fgMaterialId'),
     ]);
+  }
+
+  public function delete(PackMaterialDeleteRequest $request): RedirectResponse
+  {
+    $debug = $this->deleteFgComponentBom(array_merge($request->validated(), [
+      'ownerLevel' => 'fg',
+    ]), $request->user()?->user_login, $request->user()?->role);
+
+    return Redirect::route($request->get('backRoute', 'product.view'), [
+      'materialId' => $request->get('backMaterialId')
+        ?: $request->get('referentMaterialId')
+        ?: $request->get('materialId')
+        ?: $request->get('fgMaterialId'),
+    ])->with('message', 'Delete procedure executed.')
+      ->with('deleteDebug', $debug);
   }
 }

@@ -1,10 +1,13 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
+import { useState } from 'react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import SuccessButton from '@/Components/SuccessButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
+import Modal from '@/Components/Modal';
+import DeleteDebugPanel from '@/Components/DeleteDebugPanel';
 import DangerButton from './DangerButton';
 
 export default function BomMaterialForm({
@@ -38,7 +41,15 @@ export default function BomMaterialForm({
   onFullDescThChange,
   onUomChange,
 }) {
-  const saveError = data?.actionMode !== 'delete' ? (errors?.save || errors?.componentId || '') : '';
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const saveError = data?.actionMode !== 'delete'
+    ? (errors?.save || errors?.componentId || '')
+    : (errors?.delete || errors?.componentId || errors?.bomId || errors?.semiFgLvBomId || '');
+  const closeDeleteModal = () => setConfirmingDelete(false);
+  const confirmDelete = () => {
+    setConfirmingDelete(false);
+    onDelete?.();
+  };
 
   return (
     <AuthenticatedLayout
@@ -50,6 +61,7 @@ export default function BomMaterialForm({
 
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-2">
+          <DeleteDebugPanel />
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -236,7 +248,7 @@ export default function BomMaterialForm({
                   <SuccessButton disabled={processing || isGeneratingComponentId}>{primaryActionLabel}</SuccessButton>
                 )}
                 {data?.actionMode === 'delete' && (
-                  <DangerButton type="button" onClick={onDelete}>
+                  <DangerButton type="button" onClick={() => setConfirmingDelete(true)} disabled={processing}>
                     Delete
                   </DangerButton>
                 )}
@@ -250,6 +262,23 @@ export default function BomMaterialForm({
           </div>
         </div>
       </div>
+
+      <Modal show={confirmingDelete} maxWidth="lg" onClose={closeDeleteModal}>
+        <div className="p-6 space-y-6">
+          <h2 className="text-lg font-medium text-gray-900">Delete Component</h2>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete {data?.componentId || 'this component'}?
+          </p>
+          <div className="flex justify-end gap-3">
+            <SecondaryButton type="button" onClick={closeDeleteModal} disabled={processing}>
+              Cancel
+            </SecondaryButton>
+            <DangerButton type="button" onClick={confirmDelete} disabled={processing}>
+              Delete
+            </DangerButton>
+          </div>
+        </div>
+      </Modal>
     </AuthenticatedLayout>
   );
 }
