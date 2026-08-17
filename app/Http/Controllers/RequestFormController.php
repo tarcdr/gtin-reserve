@@ -44,6 +44,7 @@ class RequestFormController extends Controller
         $p_message_pcs       = NULL;
         $p_message_box       = NULL;
         $p_message           = NULL;
+        $p_error             = NULL;
         $p_new_last_gtin_pcs = $request->p_new_last_gtin_pcs;
         $p_suggest_gtin_pcs  = $request->p_suggest_gtin_pcs;
         $p_new_last_gtin_box = $request->p_new_last_gtin_box;
@@ -103,14 +104,19 @@ class RequestFormController extends Controller
           foreach (Gtin::where('material_id', $request->material_id)->orderBy('global_trade_item_number')->get() as $m) {
             array_push($gtins, $m);
           }
-          $stmt = $pdo->prepare('BEGIN PROJ1_FIND_NEWGTIN(:p_new_last_gtin_pcs, :p_suggest_gtin_pcs, :p_new_last_gtin_box, :p_suggest_gtin_box, :p_material_id); END;');
+          $stmt = $pdo->prepare('BEGIN PROJ1_FIND_NEWGTIN(:p_new_last_gtin_pcs, :p_suggest_gtin_pcs, :p_new_last_gtin_box, :p_suggest_gtin_box, :p_material_id, :p_error); END;');
           $stmt->bindParam(':p_new_last_gtin_pcs', $p_new_last_gtin_pcs, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
           $stmt->bindParam(':p_suggest_gtin_pcs', $p_suggest_gtin_pcs, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
           $stmt->bindParam(':p_new_last_gtin_box', $p_new_last_gtin_box, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
           $stmt->bindParam(':p_suggest_gtin_box', $p_suggest_gtin_box, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 100);
           $stmt->bindValue(':p_material_id', $p_material_id, PDO::PARAM_STR);
+          $stmt->bindParam(':p_error', $p_error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
 
           $stmt->execute();
+          $resolvedError = trim((string) $this->resolveProcedureErrorMessage($p_error));
+          if ($resolvedError !== '') {
+            $p_message = $resolvedError;
+          }
         }
 
         foreach (Proj1BrandGtingV::get() as $b) {
