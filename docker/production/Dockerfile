@@ -1,9 +1,12 @@
+# syntax=docker/dockerfile:1.7
+
 FROM node:20-bookworm-slim AS frontend
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 COPY resources ./resources
 COPY public ./public
@@ -20,6 +23,8 @@ ENV TZ=UTC
 ENV LD_LIBRARY_PATH=/opt/oracle/instantclient_21_7
 ENV PATH=/opt/oracle/instantclient_21_7:$PATH
 ENV ORACLE_HOME=/opt/oracle/instantclient_21_7
+ENV COMPOSER_CACHE_DIR=/tmp/composer-cache
+ENV COMPOSER_MAX_PARALLEL_HTTP=1
 
 WORKDIR /var/www/html
 
@@ -63,7 +68,12 @@ RUN groupadd --force -g ${WWWGROUP} www \
     && mkdir -p /run/php
 
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+RUN --mount=type=cache,target=/tmp/composer-cache \
+    --mount=type=secret,id=composer_auth,required=false \
+    if [ -f /run/secrets/composer_auth ]; then export COMPOSER_AUTH="$(cat /run/secrets/composer_auth)"; fi \
+    && git config --global advice.detachedHead false \
+    && composer install --no-dev --no-interaction --prefer-source --optimize-autoloader --no-scripts --no-progress \
+    && find vendor -type d -name .git -prune -exec rm -rf {} +
 
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
