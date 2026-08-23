@@ -4,7 +4,7 @@ export default function DeleteDebugPanel({ debug: explicitDebug = null, classNam
   const { flash } = usePage().props;
   const debug = explicitDebug || flash?.deleteDebug || null;
 
-  if (!debug) {
+  if (!import.meta.env.DEV || !debug) {
     return null;
   }
 
