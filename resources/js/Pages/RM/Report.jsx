@@ -603,7 +603,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                 </div>
 
                 {/* Body */}
-                <form onSubmit={setActive} className="p-6 max-h-[600px] overflow-x-auto">
+                <form onSubmit={setActive} className="p-6 max-h-[800px] overflow-x-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {columns.map(column => (
                         <div key={`form-input-${column.name}`} className={column?.hidden && 'hidden'}>

@@ -345,7 +345,7 @@ export default function BusinessSupplyMaterialId({
       });
 
       if (isDeleteMode && response?.data?.program === null) {
-        setSaveError(response?.data?.message || 'Business Supply Material ID delete prepared; procedure not mapped yet.');
+        setSaveError(response?.data?.message || 'Unable to delete Business Supply Material ID.');
         setDeleteDebug(response?.data?.deleteDebug || null);
         setConfirmingDelete(false);
         return;
@@ -409,9 +409,11 @@ export default function BusinessSupplyMaterialId({
         <SecondaryButton type="button" onClick={handleBack}>
           BACK
         </SecondaryButton>
-        <SecondaryButton type="button" onClick={handleReset} disabled={isDeleteMode}>
-          RESET
-        </SecondaryButton>
+        {actionMode === 'create' && (
+          <SecondaryButton type="button" onClick={handleReset}>
+            RESET
+          </SecondaryButton>
+        )}
         <PrimaryButton type="button" onClick={handleNextStep} disabled={!brand || !matType || isLoadingRelatedOptions}>
           NEXT
         </PrimaryButton>
@@ -458,9 +460,11 @@ export default function BusinessSupplyMaterialId({
         <SecondaryButton type="button" onClick={handleBack}>
           BACK
         </SecondaryButton>
-        <SecondaryButton type="button" onClick={handleReset} disabled={isDeleteMode}>
-          RESET
-        </SecondaryButton>
+        {actionMode === 'create' && (
+          <SecondaryButton type="button" onClick={handleReset}>
+            RESET
+          </SecondaryButton>
+        )}
         <PrimaryButton type="button" onClick={handleNextStep} disabled={!subMatType || isLoadingRelatedOptions}>
           SEARCH FG
         </PrimaryButton>
@@ -548,9 +552,11 @@ export default function BusinessSupplyMaterialId({
           <SecondaryButton type="button" onClick={handleBack} disabled={isSaving}>
             BACK
           </SecondaryButton>
-          <SecondaryButton type="button" onClick={handleReset} disabled={isSaving || isDeleteMode}>
-            RESET
-          </SecondaryButton>
+          {actionMode === 'create' && (
+            <SecondaryButton type="button" onClick={handleReset} disabled={isSaving}>
+              RESET
+            </SecondaryButton>
+          )}
           {isDeleteMode ? (
             <DangerButton type="button" onClick={() => setConfirmingDelete(true)} disabled={isSaving || !componentId || !materialDetail}>
               DELETE

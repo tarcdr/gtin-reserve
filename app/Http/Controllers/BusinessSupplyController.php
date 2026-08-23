@@ -1149,50 +1149,45 @@ class BusinessSupplyController extends Controller
     ]);
 
     if ($actionMode === 'delete') {
-      // TODO: call material-id delete procedure here when Oracle provides the procedure name/signature.
-      $message = 'Business Supply Material ID delete prepared; procedure not mapped yet.';
-      $debug = $this->buildDeleteDebugPayload(null, [
+      $program = 'PROJ1_2_DEL_COMP_BOM_BS_MATID';
+      $result = $this->callBusinessSupplyDeleteProcedure($program, [
         'P_COMP_BS_MATERIAL_ID' => $componentBsMaterialId,
         'P_BIZSUP_ID' => $bomBsId,
-        'P_BRAND' => $brand,
-        'P_MATTYPE' => $matType,
-        'P_SUB_MATTYPE' => $subMatType,
-        'P_SITE' => $site,
         'P_USER_LOGIN' => $userLogin,
         'P_USER_ROLE' => $userRole,
-      ], null, null, $message, [
+      ], [
         'ownerLevel' => 'businessSupplyMaterialId',
         'actionMode' => 'delete',
         'componentId' => $componentId,
         'materialId' => $materialId,
       ]);
-      Log::info('business supply material-id delete prepared', [
-        'bomBsId' => $bomBsId,
-        'componentId' => $componentId,
-        'materialId' => $materialId,
-        'componentBsMaterialId' => $componentBsMaterialId,
-        'brand' => $brand,
-        'matType' => $matType,
-        'subMatType' => $subMatType,
-        'site' => $site,
-        'userRole' => $userRole,
-        'userLogin' => $userLogin,
-      ]);
+      $resolvedError = $result['resolvedError'];
+
+      if ($resolvedError !== '') {
+        if ($request->expectsJson()) {
+          return response()->json([
+            'error' => $resolvedError,
+            'deleteDebug' => $result['debug'],
+          ], 422);
+        }
+
+        return Redirect::back()->withErrors(['delete' => $resolvedError])->with('deleteDebug', $result['debug']);
+      }
 
       if ($request->expectsJson()) {
         return response()->json([
-          'message' => $message,
-          'program' => null,
+          'message' => 'Business Supply Material ID deleted.',
+          'program' => $program,
           'bizsupId' => $bomBsId,
           'componentId' => $componentId,
           'materialId' => $materialId,
-          'deleteDebug' => $debug,
+          'deleteDebug' => $result['debug'],
         ]);
       }
 
-      return Redirect::back()->withErrors([
-        'delete' => $message,
-      ])->with('deleteDebug', $debug);
+      return Redirect::route('business-supply.existing', ['bizsupId' => $bomBsId])
+        ->with('message', 'Business Supply Material ID deleted.')
+        ->with('deleteDebug', $result['debug']);
     }
 
     $pdo = DB::connection('oracle')->getPdo();
@@ -1268,33 +1263,106 @@ class BusinessSupplyController extends Controller
     $validated = $request->validate([
       'bizsupId' => ['nullable'],
       'bomBsId' => ['nullable'],
+      'bsId' => ['nullable'],
     ]);
-    $bizsupId = trim((string) ($validated['bizsupId'] ?? $validated['bomBsId'] ?? ''));
-    $message = 'Business Supply delete prepared; procedure not mapped yet.';
-    $debug = $this->buildDeleteDebugPayload(null, [], null, null, $message, [
-      'bizsupId' => $bizsupId,
-      'userRole' => (string) ($request->user()?->role ?? ''),
-      'userLogin' => (string) ($request->user()?->user_login ?? ''),
-    ]);
+    $bizsupBomId = trim((string) ($validated['bomBsId'] ?? $validated['bizsupId'] ?? ''));
+    $selectedBusinessSupply = $this->resolveSelectedBusinessSupply($request);
+    $bizsupId = trim((string) ($validated['bsId'] ?? data_get($selectedBusinessSupply, 'record.bsId', '')));
+    $userRole = (string) ($request->user()?->role ?? '');
+    $userLogin = (string) ($request->user()?->user_login ?? '');
 
-    Log::info('business supply delete prepared', [
+    if ($bizsupBomId === '' || $bizsupId === '') {
+      $message = 'Business Supply ID and Business Supply BOM ID are required.';
+      return Redirect::back()->withErrors(['delete' => $message]);
+    }
+
+    $program = 'PROJ1_2_DEL_BS_ID';
+    $result = $this->callBusinessSupplyDeleteProcedure($program, [
+      'P_BIZSUP_ID' => $bizsupId,
+      'P_BIZSUP_BOM_ID' => $bizsupBomId,
+      'P_USER_ROLE' => $userRole,
+      'P_USER_LOGIN' => $userLogin,
+    ], [
+      'ownerLevel' => 'businessSupply',
       'bizsupId' => $bizsupId,
-      'userRole' => (string) ($request->user()?->role ?? ''),
-      'userLogin' => (string) ($request->user()?->user_login ?? ''),
+      'bizsupBomId' => $bizsupBomId,
     ]);
+    $resolvedError = $result['resolvedError'];
+
+    if ($resolvedError !== '') {
+      if ($request->expectsJson()) {
+        return response()->json(['error' => $resolvedError, 'deleteDebug' => $result['debug']], 422);
+      }
+
+      return Redirect::back()->withErrors(['delete' => $resolvedError])->with('deleteDebug', $result['debug']);
+    }
 
     if ($request->expectsJson()) {
       return response()->json([
-        'message' => $message,
-        'program' => null,
+        'message' => 'Business Supply deleted.',
+        'program' => $program,
         'bizsupId' => $bizsupId,
-        'deleteDebug' => $debug,
+        'bizsupBomId' => $bizsupBomId,
+        'deleteDebug' => $result['debug'],
       ]);
     }
 
-    return Redirect::back()->withErrors([
-      'delete' => $message,
-    ])->with('deleteDebug', $debug);
+    return Redirect::route('business-supply.existing')
+      ->with('message', 'Business Supply deleted.')
+      ->with('deleteDebug', $result['debug']);
+  }
+
+  /**
+   * Execute a Business Supply delete procedure with its common OUT parameters.
+   */
+  protected function callBusinessSupplyDeleteProcedure(string $program, array $bindings, array $context = []): array
+  {
+    $countRow = 0;
+    $error = null;
+    $placeholders = collect(array_keys($bindings))
+      ->map(fn (string $key) => ':' . $key)
+      ->push(':P_CNT_ROW', ':P_ERROR')
+      ->implode(', ');
+    $pdo = DB::connection('oracle')->getPdo();
+    $stmt = $pdo->prepare("BEGIN {$program}({$placeholders}); END;");
+
+    foreach ($bindings as $key => $value) {
+      $stmt->bindValue(':' . $key, trim((string) $value), PDO::PARAM_STR);
+    }
+
+    $stmt->bindParam(':P_CNT_ROW', $countRow, PDO::PARAM_INT | PDO::PARAM_INPUT_OUTPUT, 20);
+    $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
+    $stmt->execute();
+
+    $resolvedError = trim((string) $this->resolveProcedureErrorMessage($error));
+    $debug = $this->buildDeleteDebugPayload(
+      $program,
+      $bindings,
+      (int) $countRow,
+      $error,
+      $resolvedError,
+      $context
+    );
+
+    $logContext = array_merge($context, [
+      'program' => $program,
+      'bindings' => $bindings,
+      'countRow' => $countRow,
+      'error' => $error,
+      'resolvedError' => $resolvedError,
+    ]);
+    if ($resolvedError === '') {
+      Log::info('business-supply.delete-procedure.executed', $logContext);
+    } else {
+      Log::warning('business-supply.delete-procedure.failed', $logContext);
+    }
+
+    return [
+      'countRow' => (int) $countRow,
+      'rawError' => $error,
+      'resolvedError' => $resolvedError,
+      'debug' => $debug,
+    ];
   }
 
   protected function loadBusinessSupplyComponentForEdit(string $bizsupId, string $componentId): ?array
@@ -1411,43 +1479,39 @@ class BusinessSupplyController extends Controller
     ]);
 
     if ($actionMode === 'delete') {
-      $message = 'Business Supply Component delete prepared; procedure not mapped yet.';
-      $debug = $this->buildDeleteDebugPayload(null, [
-        'P_BOM_BS_ID' => $bomBsId,
-        'P_COMPONENT_ID' => $componentId,
-        'P_MATTYPE' => $matType,
-        'P_SUBMATTYPE' => $subMatType,
+      $program = 'PROJ1_2_DEL_COMP_BOM_BS_M6';
+      $result = $this->callBusinessSupplyDeleteProcedure($program, [
+        'P_MATERIAL_ID_BIZSUP_COMP_M6' => $componentId,
+        'P_BIZSUP_ID' => $bomBsId,
+        'P_USER_LOGIN' => $userLogin,
         'P_USER_ROLE' => $userRole,
-        'P_USER' => $userLogin,
-      ], null, null, $message, [
+      ], [
         'ownerLevel' => 'businessSupply',
         'actionMode' => 'delete',
       ]);
-      Log::info('business supply component delete prepared', [
-        'bomBsId' => $bomBsId,
-        'componentId' => $componentId,
-        'matType' => $matType,
-        'subMatType' => $subMatType,
-        'productCat' => $productCat,
-        'productSubCat' => $productSubCat,
-        'site' => $site,
-        'userRole' => $userRole,
-        'userLogin' => $userLogin,
-      ]);
+      $resolvedError = $result['resolvedError'];
+
+      if ($resolvedError !== '') {
+        if ($request->expectsJson()) {
+          return response()->json(['error' => $resolvedError, 'deleteDebug' => $result['debug']], 422);
+        }
+
+        return Redirect::back()->withErrors(['delete' => $resolvedError])->with('deleteDebug', $result['debug']);
+      }
 
       if ($request->expectsJson()) {
         return response()->json([
-          'message' => $message,
-          'program' => null,
+          'message' => 'Business Supply Component deleted.',
+          'program' => $program,
           'bizsupId' => $bomBsId,
           'componentId' => $componentId,
-          'deleteDebug' => $debug,
+          'deleteDebug' => $result['debug'],
         ]);
       }
 
-      return Redirect::back()->withErrors([
-        'delete' => $message,
-      ])->with('deleteDebug', $debug);
+      return Redirect::route('business-supply.existing', ['bizsupId' => $bomBsId])
+        ->with('message', 'Business Supply Component deleted.')
+        ->with('deleteDebug', $result['debug']);
     }
 
     $pdo = DB::connection('oracle')->getPdo();

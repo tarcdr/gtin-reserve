@@ -563,25 +563,14 @@ class PackMaterialController extends Controller
       'Semi FG LV2 BOM ID is required.'
     );
 
-    if ($isLevelDelete) {
-      return $this->callDeleteProcedure('PROJ1_2_DEL_BOM_SEMI_L2', [
-        'P_FG_BOM_ID' => $fgBomId,
-        'P_SEMI_FG_LV2_BOM_ID' => $semiFgLv2BomId,
-        'P_USER_ROLE' => (string) ($userRole ?: 'GTIN'),
-        'P_USER' => (string) ($userLogin ?: 'system'),
-      ], [
-        'ownerLevel' => 'semiFgLv2',
-        'deleteScope' => 'level',
-        'fgBomId' => $fgBomId,
-        'semiFgLv2BomId' => $semiFgLv2BomId,
-      ]);
+    $materialIdM5 = $this->firstFilledString($data, ['materialIdM5', 'componentId', 'levelMaterialId']);
+    if (!$isLevelDelete) {
+      $materialIdM5 = $this->requireDeleteValue(
+        $materialIdM5,
+        'componentId',
+        'Material ID M5 is required.'
+      );
     }
-
-    $materialIdM5 = $this->requireDeleteValue(
-      $this->firstFilledString($data, ['materialIdM5', 'componentId', 'levelMaterialId']),
-      'componentId',
-      'Material ID M5 is required.'
-    );
 
     return $this->callDeleteProcedure('PROJ1_2_DEL_COMP_BOM_SEMI_L2', [
       'P_MATERIAL_ID_M5' => $materialIdM5,
@@ -616,27 +605,14 @@ class PackMaterialController extends Controller
       'Semi FG LV1 BOM ID is required.'
     );
 
-    if ($isLevelDelete) {
-      return $this->callDeleteProcedure('PROJ1_2_DEL_BOM_SEMI_L1', [
-        'P_FG_BOM_ID' => $fgBomId,
-        'P_SEMI_FG_LV2_BOM_ID' => $semiFgLv2BomId,
-        'P_SEMI_FG_LV1_BOM_ID' => $semiFgLv1BomId,
-        'P_USER_ROLE' => (string) ($userRole ?: 'GTIN'),
-        'P_USER' => (string) ($userLogin ?: 'system'),
-      ], [
-        'ownerLevel' => 'semiFgLv1',
-        'deleteScope' => 'level',
-        'fgBomId' => $fgBomId,
-        'semiFgLv2BomId' => $semiFgLv2BomId,
-        'semiFgLv1BomId' => $semiFgLv1BomId,
-      ]);
+    $materialIdM4 = $this->firstFilledString($data, ['materialIdM4', 'componentId']);
+    if (!$isLevelDelete) {
+      $materialIdM4 = $this->requireDeleteValue(
+        $materialIdM4,
+        'componentId',
+        'Material ID M4 is required.'
+      );
     }
-
-    $materialIdM4 = $this->requireDeleteValue(
-      $this->firstFilledString($data, ['materialIdM4', 'componentId']),
-      'componentId',
-      'Material ID M4 is required.'
-    );
 
     return $this->callDeleteProcedure('PROJ1_2_DEL_COMP_BOM_SEMI_L1', [
       'P_MATERIAL_ID_M4' => $materialIdM4,

@@ -80,7 +80,7 @@ export default function BusinessSupplyExisting({
       },
       preserveScroll: true,
       onError: (nextErrors) => {
-        setDeleteMessage(nextErrors.delete || 'Business Supply delete prepared; procedure not mapped yet.');
+        setDeleteMessage(nextErrors.delete || 'Unable to delete Business Supply.');
       },
       onFinish: () => setConfirmingDelete(false),
     });
@@ -289,7 +289,7 @@ export default function BusinessSupplyExisting({
                   Edit
                 </PrimaryButton>
                 <DangerButton type="button" onClick={() => setConfirmingDelete(true)}>
-                  Delete
+                  Delete BS
                 </DangerButton>
                 <SuccessButton type="button" onClick={() => {}}>
                   COMPLETE
