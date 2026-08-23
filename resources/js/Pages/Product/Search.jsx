@@ -94,7 +94,7 @@ export default function ProductSearch({ auth, InputData, brands = [], mattypes =
       return;
     }
 
-    patch(route('product.search'));
+    patch(route('product.search.find'));
   };
 
   return (

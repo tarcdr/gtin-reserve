@@ -22,7 +22,7 @@ export default function Request({ auth, InputData }) {
     const submit = (e) => {
         e.preventDefault();
 
-        patch(route('bom.create'));
+        patch(route('bom.create.process'));
     };
 
     return (

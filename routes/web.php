@@ -45,9 +45,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/product/new', [ProductController::class, 'new'])->name('product.new');
     Route::patch('/product/create', [ProductController::class, 'create'])->name('product.create');
     Route::get('/product/search', [ProductController::class, 'search'])->name('product.search');
-    Route::patch('/product/search', [ProductController::class, 'find'])->name('product.search');
+    Route::patch('/product/search', [ProductController::class, 'find'])->name('product.search.find');
     Route::get('/product/search/bom', [ProductController::class, 'searchBom'])->name('product.search.bom');
-    Route::patch('/product/search/bom', [ProductController::class, 'findBom'])->name('product.search.bom');
+    Route::patch('/product/search/bom', [ProductController::class, 'findBom'])->name('product.search.bom.find');
     Route::get('/product/view', [ProductController::class, 'view'])->name('product.view');
     Route::get('/product/edit', [ProductController::class, 'edit'])->name('product.edit');
     Route::get('/product/sub-mattypes', [ProductController::class, 'subMattypes'])->name('product.sub-mattypes');
@@ -107,14 +107,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/packmaterial/semi-fg-lv1-bom', [SemiFgLv1BomController::class, 'delete'])->name('packmaterial.semi-fg-lv1-bom.delete');
     Route::delete('/packmaterial/semi-fg-lv2-bom', [SemiFgLv2BomController::class, 'delete'])->name('packmaterial.semi-fg-lv2-bom.delete');
     Route::get('/packmaterial/new', [BusinessSupplyBomController::class, 'new'])->name('packmaterial.new');
-    Route::post('/packmaterial/new', [BusinessSupplyBomController::class, 'callNew'])->name('packmaterial.new');
+    Route::post('/packmaterial/new', [BusinessSupplyBomController::class, 'callNew'])->name('packmaterial.new.submit');
     Route::get('/packmaterial/product-categories', [PackMaterialController::class, 'productCategories'])->name('packmaterial.product-categories');
     Route::get('/packmaterial/generate-component-id', [PackMaterialController::class, 'generateComponentId'])->name('packmaterial.generate-component-id');
     Route::patch('/packmaterial/create', [BusinessSupplyBomController::class, 'save'])->name('packmaterial.create');
     Route::patch('/packmaterial/update', [BusinessSupplyBomController::class, 'save'])->name('packmaterial.update');
 
     Route::get('/bom/create', [BomController::class, 'create'])->name('bom.create');
-    Route::patch('/bom/create', [BomController::class, 'process'])->name('bom.create');
+    Route::patch('/bom/create', [BomController::class, 'process'])->name('bom.create.process');
     Route::get('/bom/new', [BomController::class, 'view'])->name('bom.new');
     Route::get('/bom/{id}', [BomController::class, 'exists'])->name('bom.exists');
 
