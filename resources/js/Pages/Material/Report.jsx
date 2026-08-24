@@ -83,8 +83,8 @@ export default function Report({ auth, InputData, materials = [] }) {
                         <PrimaryButton onClick={() => window.open(route('material.export'))}>Download</PrimaryButton>
                     </div>
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                      <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
-                        <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+                      <table className="w-full text-sm text-left rtl:text-right text-gray-800">
+                        <thead className="text-xs bg-gray-50">
                             <tr>
                                 <th scope="col" className="px-6 py-3">
                                     #
@@ -138,7 +138,7 @@ export default function Report({ auth, InputData, materials = [] }) {
                                 </td>
                                 <td className="px-6 py-4 hidden">
                                     {o.status?.toLowerCase() === 'reserve' && o.last_user === auth.user.user_login ? (
-                                      <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline" onClick={() => confirmActiveGtin(o.material_id)}>{o.status}</a>
+                                      <a href="#" className="font-medium text-blue-600 hover:underline" onClick={() => confirmActiveGtin(o.material_id)}>{o.status}</a>
                                     ) : (
                                       o.status
                                     )}

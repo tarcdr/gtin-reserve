@@ -554,20 +554,20 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
                 {/* Scrollable Table */}
                 <div className="bg-white shadow-sm sm:rounded-lg w-full">
                   <div className="max-h-[calc(100vh-240px)] overflow-auto">
-                    <table className="min-w-[640px] w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
-                      <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+                    <table className="min-w-[640px] w-full text-sm text-left rtl:text-right text-gray-800">
+                      <thead className="text-xs bg-[#f0f0f0]">
                         <tr>
-                          <th scope="col" className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-700 px-6 py-3">#</th>
+                          <th scope="col" className="sticky top-0 z-10 bg-[#f0f0f0] px-6 py-3">#</th>
                           {columns.filter(column => !column?.hidden).map(column => (
                             <th
                               scope="col"
-                              className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-700 px-6 py-3"
+                              className="sticky top-0 z-10 bg-[#f0f0f0] px-6 py-3"
                               key={`${activeTab}-column-${column.name}`}
                             >
                               {dataLabels[column.label] || column.label}
                             </th>
                           ))}
-                          <th className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-700 text-center px-6 py-3 w-[160px]">Action</th>
+                          <th className="sticky top-0 z-10 bg-[#f0f0f0] text-center px-6 py-3 w-[160px]">Action</th>
                         </tr>
                       </thead>
                       <tbody>

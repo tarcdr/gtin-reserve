@@ -131,8 +131,8 @@ export default function Dashboard({ auth, message = '', messageProj12 = '', summ
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
-                                <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+                            <table className="w-full text-sm text-left rtl:text-right text-gray-800">
+                                <thead className="text-xs bg-gray-50">
                                     <tr>
                                         <th rowSpan={4} className="border border-gray-200 px-6 py-3 text-center text-xs font-semibold uppercase align-middle">
                                             {headLabel(summaryHeadMap, 1)}

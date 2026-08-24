@@ -21,8 +21,8 @@ export default function BusinessSupplyComponents({
         </SuccessButton>
       </div>
       <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
-          <thead className="text-xs bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+        <table className="w-full text-sm text-left rtl:text-right text-gray-800">
+          <thead className="text-xs bg-gray-50">
               <tr>
                   <th scope="col" className="px-6 py-3" width="50">
                       #
