@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import ReactSelect from 'react-select';
@@ -28,6 +28,10 @@ export default function BusinessSupplyExisting({
   const isLocked = Boolean(selectedBizsupId);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState('');
+  const [confirmingComplete, setConfirmingComplete] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState('');
+  const completeResponse = usePage().props?.flash?.completeResponse;
   const pageId = `${isLocked ? 2 : 1}EBS`;
   const readOnlyClass = 'mt-1 block w-full border-gray-300 rounded-md bg-gray-100';
 
@@ -42,6 +46,7 @@ export default function BusinessSupplyExisting({
     sourceLabel: selectedBusinessSupply?.record?.sourceLabel || selectedBizsupDesc || InputData?.sourceLabel || '',
     fgMaterialId: selectedBusinessSupply?.record?.fgMaterialId || InputData?.fgMaterialId || '',
     site: selectedBusinessSupply?.record?.site || InputData?.site || '',
+    statusRow: selectedBusinessSupply?.record?.statusRow || InputData?.statusRow || 'INS',
     components: selectedBusinessSupply?.record?.components || InputData?.components || [],
   }), [InputData, selectedBusinessSupply, selectedBizsupDesc, selectedBizsupId]);
 
@@ -85,6 +90,24 @@ export default function BusinessSupplyExisting({
       onFinish: () => setConfirmingDelete(false),
     });
   };
+
+  const handleComplete = () => {
+    setIsCompleting(true);
+    setCompleteError('');
+    router.patch(route('business-supply.existing.complete'), {
+      bomBsId: detailValues.bomBsId,
+      bsId: detailValues.bsId,
+    }, {
+      preserveScroll: true,
+      onSuccess: () => setConfirmingComplete(false),
+      onError: (nextErrors) => {
+        setCompleteError(nextErrors?.complete || nextErrors?.bomBsId || nextErrors?.bsId || 'Unable to complete Business Supply.');
+      },
+      onFinish: () => setIsCompleting(false),
+    });
+  };
+
+  const isCompleted = String(detailValues.statusRow || '').trim().toUpperCase() === 'COM';
 
   const renderSourceDisplay = () => {
     if (underType === 'FG') {
@@ -133,6 +156,15 @@ export default function BusinessSupplyExisting({
 
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+          {completeResponse ? (
+            <div className="rounded-lg border border-green-300 bg-green-50 p-4 text-sm text-green-900">
+              <div className="font-semibold">Complete procedure response</div>
+              <div>Procedure: {completeResponse.procedure || '-'}</div>
+              <div>P_CNT_ROW: {completeResponse.countRow ?? '-'}</div>
+              <div>P_ERROR: {completeResponse.error || '-'}</div>
+              <div>Resolved error: {completeResponse.resolvedError || '-'}</div>
+            </div>
+          ) : null}
           <DeleteDebugPanel />
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div className="space-y-6">
@@ -208,6 +240,18 @@ export default function BusinessSupplyExisting({
                     <div>
                       <InputLabel htmlFor="detailSubMatType" value="Sub Mattype" />
                       <TextInput id="detailSubMatType" className={readOnlyClass} value={InputData?.subMatType || ''} disabled />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <InputLabel htmlFor="detailStatusRow" value="Status" />
+                      <TextInput
+                        id="detailStatusRow"
+                        className={readOnlyClass}
+                        value={detailValues.statusRow || '-'}
+                        disabled
+                      />
                     </div>
                   </div>
                 </>
@@ -291,11 +335,12 @@ export default function BusinessSupplyExisting({
                 <DangerButton type="button" onClick={() => setConfirmingDelete(true)}>
                   Delete BS
                 </DangerButton>
-                <SuccessButton type="button" onClick={() => {}}>
+                <SuccessButton type="button" onClick={() => { setCompleteError(''); setConfirmingComplete(true); }} disabled={isCompleted || isCompleting}>
                   COMPLETE
                 </SuccessButton>
               </div>
               <InputError className="text-center" message={deleteMessage} />
+              <InputError className="text-center" message={completeError} />
             </div>
           ) : null}
         </div>
@@ -314,6 +359,17 @@ export default function BusinessSupplyExisting({
             <DangerButton type="button" onClick={handleDelete}>
               Delete
             </DangerButton>
+          </div>
+        </div>
+      </Modal>
+      <Modal show={confirmingComplete} maxWidth="lg" onClose={() => !isCompleting && setConfirmingComplete(false)}>
+        <div className="p-6 space-y-6">
+          <h2 className="text-lg font-medium text-gray-900">Complete Business Supply</h2>
+          <p className="text-sm text-gray-600">ข้อมูลของคุณพร้อมขึ้นระบบ SAP แล้วใช่ไหม</p>
+          <InputError className="mt-2" message={completeError} />
+          <div className="flex justify-end gap-3">
+            <SecondaryButton type="button" onClick={() => setConfirmingComplete(false)} disabled={isCompleting}>Cancel</SecondaryButton>
+            <SuccessButton type="button" onClick={handleComplete} disabled={isCompleting}>Confirm</SuccessButton>
           </div>
         </div>
       </Modal>

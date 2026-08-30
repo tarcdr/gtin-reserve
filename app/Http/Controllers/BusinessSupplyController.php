@@ -23,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use PDO;
@@ -266,6 +267,7 @@ class BusinessSupplyController extends Controller
       'compDescEn' => $this->pick($record, ['full_desc_bizsup_id_en', 'full_description_en', 'comp_desc_en']),
       'compDescTh' => $this->pick($record, ['full_desc_bizsup_id_th', 'full_description_th', 'comp_desc_th']),
       'uom' => $this->pick($record, ['uom']),
+      'statusRow' => $this->pick($record, ['status_row', 'status'], 'INS'),
       'prodSubCat' => '',
       'componentId' => $this->pick($record, ['bizsup_id', 'bs_id']),
       'components' => [],
@@ -712,6 +714,38 @@ class BusinessSupplyController extends Controller
     }
 
     return Redirect::back()->with('success', 'Business Supply updated.');
+  }
+
+  public function complete(Request $request): RedirectResponse
+  {
+    $validated = $request->validate([
+      'bomBsId' => ['required'],
+      'bsId' => ['required'],
+    ]);
+
+    $countRow = 0;
+    $error = null;
+    $pdo = DB::connection('oracle')->getPdo();
+    $stmt = $pdo->prepare('BEGIN proj1_2_complete_bs(:P_BIZSUP_BOM_ID, :P_BIZSUP_ID, :P_USER_LOGIN, :P_USER_ROLE, :P_CNT_ROW, :P_ERROR); END;');
+    $stmt->bindValue(':P_BIZSUP_BOM_ID', trim((string) $validated['bomBsId']), PDO::PARAM_STR);
+    $stmt->bindValue(':P_BIZSUP_ID', trim((string) $validated['bsId']), PDO::PARAM_STR);
+    $stmt->bindValue(':P_USER_LOGIN', trim((string) ($request->user()?->user_login ?? '')), PDO::PARAM_STR);
+    $stmt->bindValue(':P_USER_ROLE', trim((string) ($request->user()?->role ?? '')), PDO::PARAM_STR);
+    $stmt->bindParam(':P_CNT_ROW', $countRow, PDO::PARAM_INT | PDO::PARAM_INPUT_OUTPUT, 20);
+    $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
+    $stmt->execute();
+
+    $resolvedError = trim((string) $this->resolveProcedureErrorMessage($error));
+    if ($resolvedError !== '') {
+      throw ValidationException::withMessages(['complete' => $resolvedError]);
+    }
+
+    return Redirect::route('business-supply.existing', ['bizsupId' => $validated['bomBsId']])->with('completeResponse', [
+      'procedure' => 'proj1_2_complete_bs',
+      'countRow' => (int) $countRow,
+      'error' => trim((string) $error),
+      'resolvedError' => $resolvedError,
+    ]);
   }
 
   public function generate(BusinessSupplyGenerateRequest $request): JsonResponse

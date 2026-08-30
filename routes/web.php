@@ -54,6 +54,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/product/generate-material-id', [ProductController::class, 'generateMaterialId'])->name('product.generate-material-id');
     Route::get('/product/generate-bom-id', [ProductController::class, 'generateBomId'])->name('product.generate-bom-id');
     Route::patch('/product/update', [ProductController::class, 'update'])->name('product.update');
+    Route::patch('/product/complete', [ProductController::class, 'complete'])->name('product.complete');
     Route::delete('/product/delete', [ProductController::class, 'delete'])->name('product.delete');
 
     Route::get('/material-levels/raw', [MaterialLevelController::class, 'rawMaterial'])->name('material-levels.raw.new');
@@ -79,6 +80,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/business-supply/save', [BusinessSupplyController::class, 'save'])->name('business-supply.save');
     Route::patch('/business-supply/existing', [BusinessSupplyController::class, 'updateExisting'])->name('business-supply.existing.update');
     Route::delete('/business-supply/existing', [BusinessSupplyController::class, 'deletePrepared'])->name('business-supply.existing.delete');
+    Route::patch('/business-supply/existing/complete', [BusinessSupplyController::class, 'complete'])->name('business-supply.existing.complete');
     Route::get('/business-supply/create-material-id', [BusinessSupplyController::class, 'createMaterialId'])->name('business-supply.create-material-id');
     Route::get('/business-supply/create-material-id/related-options', [BusinessSupplyController::class, 'materialIdRelatedOptions'])->name('business-supply.create-material-id.related-options');
     Route::get('/business-supply/create-material-id/options', [BusinessSupplyController::class, 'materialIdOptions'])->name('business-supply.create-material-id.options');

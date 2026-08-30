@@ -1264,22 +1264,22 @@ class MaterialLevelController extends Controller
     return $this->saveSemiFgLevel2($request);
   }
 
-  protected function callCompleteSemiFgProcedure(Request $request, string $procedureName): void
+  protected function callCompleteSemiFgProcedure(Request $request, string $procedureName, array $bindings): array
   {
-    $fgBomId = trim((string) $request->input('fgBomId'));
     $userLogin = (string) ($request->user()?->user_login ?? '');
     $userRole = (string) ($request->user()?->role ?? '');
-    $emptyParam2 = '';
-    $emptyParam3 = '';
+    $countRow = 0;
     $error = null;
 
-    $pdo = DB::getPdo();
-    $stmt = $pdo->prepare("BEGIN {$procedureName}(:P_FG_BOM_ID, :p_2, :p3, :P_USER_LOGIN, :P_USER_ROLE, :P_ERROR); END;");
-    $stmt->bindValue(':P_FG_BOM_ID', $fgBomId, PDO::PARAM_STR);
-    $stmt->bindValue(':p_2', $emptyParam2, PDO::PARAM_STR);
-    $stmt->bindValue(':p3', $emptyParam3, PDO::PARAM_STR);
+    $pdo = DB::connection('oracle')->getPdo();
+    $placeholders = implode(', ', array_map(fn (string $key) => ':' . $key, array_keys($bindings)));
+    $stmt = $pdo->prepare("BEGIN {$procedureName}({$placeholders}, :P_USER_LOGIN, :P_USER_ROLE, :P_CNT_ROW, :P_ERROR); END;");
+    foreach ($bindings as $key => $value) {
+      $stmt->bindValue(':' . $key, trim((string) $value), PDO::PARAM_STR);
+    }
     $stmt->bindValue(':P_USER_LOGIN', $userLogin, PDO::PARAM_STR);
     $stmt->bindValue(':P_USER_ROLE', $userRole, PDO::PARAM_STR);
+    $stmt->bindParam(':P_CNT_ROW', $countRow, PDO::PARAM_INT | PDO::PARAM_INPUT_OUTPUT, 20);
     $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
     $stmt->execute();
 
@@ -1289,6 +1289,13 @@ class MaterialLevelController extends Controller
         'complete' => $resolvedError,
       ]);
     }
+
+    return [
+      'procedure' => $procedureName,
+      'countRow' => (int) $countRow,
+      'error' => trim((string) $error),
+      'resolvedError' => $resolvedError,
+    ];
   }
 
   public function completeSemiFgLevel1(Request $request): RedirectResponse
@@ -1296,14 +1303,20 @@ class MaterialLevelController extends Controller
     $validated = $request->validate([
       'fgBomId' => ['required'],
       'levelMaterialId' => ['required'],
+      'levelBomId' => ['required'],
+      'parentLevelBomId' => ['required'],
     ]);
 
-    $this->callCompleteSemiFgProcedure($request, 'PROJ1_2_COMPLETE_SEMI_FG_LV1');
+    $response = $this->callCompleteSemiFgProcedure($request, 'PROJ1_2_COMPLETE_SEMI_FG_LV1', [
+      'P_SEMI_FG_LV1_BOM_ID' => $validated['levelBomId'],
+      'P_SEMI_FG_LV2_BOM_ID' => $validated['parentLevelBomId'],
+      'P_FG_BOM_ID' => $validated['fgBomId'],
+    ]);
 
     return Redirect::route('material-levels.semi-fg-lv1.new', [
       'mode' => 'view',
       'levelMaterialId' => $validated['levelMaterialId'],
-    ]);
+    ])->with('completeResponse', $response);
   }
 
   public function completeSemiFgLevel2(Request $request): RedirectResponse
@@ -1311,14 +1324,18 @@ class MaterialLevelController extends Controller
     $validated = $request->validate([
       'fgBomId' => ['required'],
       'levelMaterialId' => ['required'],
+      'levelBomId' => ['required'],
     ]);
 
-    $this->callCompleteSemiFgProcedure($request, 'PROJ1_2_COMPLETE_SEMI_FG_LV2');
+    $response = $this->callCompleteSemiFgProcedure($request, 'PROJ1_2_COMPLETE_SEMI_FG_LV2', [
+      'P_SEMI_FG_LV2_BOM_ID' => $validated['levelBomId'],
+      'P_FG_BOM_ID' => $validated['fgBomId'],
+    ]);
 
     return Redirect::route('material-levels.semi-fg-lv2.new', [
       'mode' => 'view',
       'levelMaterialId' => $validated['levelMaterialId'],
-    ]);
+    ])->with('completeResponse', $response);
   }
 
   public function generateSemiFgLevel1(Request $request): JsonResponse

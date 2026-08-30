@@ -56,7 +56,9 @@ export default function MaterialLevelForm({
   const [confirmingComplete, setConfirmingComplete] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [completeError, setCompleteError] = useState('');
-  const pageErrors = usePage().props?.errors || {};
+  const pageProps = usePage().props;
+  const pageErrors = pageProps?.errors || {};
+  const completeResponse = pageProps?.flash?.completeResponse;
   const mode = InputData?.mode || (InputData?.materialId ? 'view' : 'create');
   const isViewMode = mode === 'view';
   const isEditMode = mode === 'edit';
@@ -374,25 +376,16 @@ export default function MaterialLevelForm({
     router.patch(route(completeRoute), {
       fgBomId: data.fgBomId,
       levelMaterialId: data.materialId,
+      levelBomId: data.levelBomId,
+      parentLevelBomId: data.parentLevelBomId,
     }, {
       preserveScroll: true,
       onSuccess: () => {
         setConfirmingComplete(false);
         setCompleteError('');
-
-        router.visit(route(levelRoute), {
-          method: 'get',
-          data: {
-            mode: 'view',
-            levelMaterialId: data.materialId,
-          },
-          preserveState: false,
-          preserveScroll: false,
-          replace: true,
-        });
       },
       onError: (nextErrors) => {
-        setCompleteError(nextErrors?.complete || nextErrors?.fgBomId || nextErrors?.levelMaterialId || 'Unable to complete Semi FG.');
+        setCompleteError(nextErrors?.complete || nextErrors?.fgBomId || nextErrors?.levelMaterialId || nextErrors?.levelBomId || nextErrors?.parentLevelBomId || 'Unable to complete Semi FG.');
       },
       onFinish: () => {
         setIsCompleting(false);
@@ -421,6 +414,15 @@ export default function MaterialLevelForm({
 
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-2">
+          {completeResponse ? (
+            <div className="rounded-lg border border-green-300 bg-green-50 p-4 text-sm text-green-900">
+              <div className="font-semibold">Complete procedure response</div>
+              <div>Procedure: {completeResponse.procedure || '-'}</div>
+              <div>P_CNT_ROW: {completeResponse.countRow ?? '-'}</div>
+              <div>P_ERROR: {completeResponse.error || '-'}</div>
+              <div>Resolved error: {completeResponse.resolvedError || '-'}</div>
+            </div>
+          ) : null}
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

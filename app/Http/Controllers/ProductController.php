@@ -153,7 +153,7 @@ class ProductController extends Controller
       'mattype' => trim((string) ($material['mattype'] ?? '')),
       'subMattype' => trim((string) ($material['sub_mattype'] ?? '')),
       'materialId' => trim((string) ($material['material_id_fg_1'] ?? '')),
-      'fgStatus' => trim((string) ($material['status'] ?? 'INS')) ?: 'INS',
+      'fgStatus' => trim((string) ($material['status_row'] ?? 'INS')) ?: 'INS',
       'bomId' => trim((string) ($material['fg_bom_id'] ?? $bom['fg_bom_id'] ?? '')),
       'bomDesc' => trim((string) ($material['desc_fg_bom_id'] ?? $bom['desc_fg_bom_id'] ?? '')),
       'finishGoods' => trim((string) ($material['finish_goods'] ?? '')),
@@ -906,6 +906,38 @@ class ProductController extends Controller
     ]);
     return Redirect::route('product.view', [
       'materialId' => $savedInputData['materialId'],
+    ]);
+  }
+
+  public function complete(Request $request): RedirectResponse
+  {
+    $validated = $request->validate([
+      'bomId' => ['required'],
+      'materialId' => ['required'],
+    ]);
+
+    $countRow = 0;
+    $error = null;
+    $pdo = DB::connection('oracle')->getPdo();
+    $stmt = $pdo->prepare('BEGIN proj1_2_complete_fg(:P_FG_BOM_ID, :P_MATERIAL_ID_FG_1, :P_USER_LOGIN, :P_USER_ROLE, :P_CNT_ROW, :P_ERROR); END;');
+    $stmt->bindValue(':P_FG_BOM_ID', trim((string) $validated['bomId']), PDO::PARAM_STR);
+    $stmt->bindValue(':P_MATERIAL_ID_FG_1', trim((string) $validated['materialId']), PDO::PARAM_STR);
+    $stmt->bindValue(':P_USER_LOGIN', trim((string) ($request->user()?->user_login ?? '')), PDO::PARAM_STR);
+    $stmt->bindValue(':P_USER_ROLE', trim((string) ($request->user()?->role ?? '')), PDO::PARAM_STR);
+    $stmt->bindParam(':P_CNT_ROW', $countRow, PDO::PARAM_INT | PDO::PARAM_INPUT_OUTPUT, 20);
+    $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
+    $stmt->execute();
+
+    $resolvedError = trim((string) $this->resolveProcedureErrorMessage($error));
+    if ($resolvedError !== '') {
+      throw ValidationException::withMessages(['complete' => $resolvedError]);
+    }
+
+    return Redirect::route('product.view', ['materialId' => $validated['materialId']])->with('completeResponse', [
+      'procedure' => 'proj1_2_complete_fg',
+      'countRow' => (int) $countRow,
+      'error' => trim((string) $error),
+      'resolvedError' => $resolvedError,
     ]);
   }
 

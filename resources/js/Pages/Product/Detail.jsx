@@ -1,9 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
-import { useForm } from '@inertiajs/react';
 import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
 import SuccessButton from '@/Components/SuccessButton';
@@ -27,6 +26,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmingComplete, setConfirmingComplete] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState('');
+  const completeResponse = usePage().props?.flash?.completeResponse;
   const subMattypeOptions = ['0', '1', '2', '3'];
   const { data, setData, patch, errors, processing } = useForm({
     brand: InputData?.brand || '',
@@ -232,7 +235,24 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   };
 
   const handleComplete = () => {
-    setData('fgStatus', 'COM');
+    setIsCompleting(true);
+    setCompleteError('');
+
+    router.patch(route('product.complete'), {
+      bomId: data.bomId,
+      materialId: data.materialId,
+    }, {
+      preserveScroll: true,
+      onSuccess: () => {
+        setConfirmingComplete(false);
+      },
+      onError: (nextErrors) => {
+        setCompleteError(nextErrors?.complete || nextErrors?.bomId || nextErrors?.materialId || 'Unable to complete FG.');
+      },
+      onFinish: () => {
+        setIsCompleting(false);
+      },
+    });
   };
 
   const normalizeStatus = (value) => String(value || '').trim().toUpperCase();
@@ -311,6 +331,15 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
 
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+          {completeResponse ? (
+            <div className="rounded-lg border border-green-300 bg-green-50 p-4 text-sm text-green-900">
+              <div className="font-semibold">Complete procedure response</div>
+              <div>Procedure: {completeResponse.procedure || '-'}</div>
+              <div>P_CNT_ROW: {completeResponse.countRow ?? '-'}</div>
+              <div>P_ERROR: {completeResponse.error || '-'}</div>
+              <div>Resolved error: {completeResponse.resolvedError || '-'}</div>
+            </div>
+          ) : null}
           <DeleteDebugPanel />
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <form onSubmit={submit} className="space-y-6">
@@ -700,7 +729,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                   <>
                     <PrimaryButton type="button" onClick={goToEdit}>Edit FG</PrimaryButton>
                     <DangerButton type="button" onClick={() => openDeleteModal({ type: 'fg', item: data, label: 'FG Material' })}>DELETE FG</DangerButton>
-                    <SuccessButton type="button" onClick={handleComplete} disabled={isFgCompleteDisabled}>Complete</SuccessButton>
+                    <SuccessButton type="button" onClick={() => { setCompleteError(''); setConfirmingComplete(true); }} disabled={isFgCompleteDisabled || isCompleting}>Complete</SuccessButton>
                   </>
                 ) : (
                   <SuccessButton disabled={processing}>Save FG</SuccessButton>
@@ -726,6 +755,17 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
             <DangerButton type="button" onClick={confirmDelete} disabled={processing || isDeleting}>
               Delete
             </DangerButton>
+          </div>
+        </div>
+      </Modal>
+      <Modal show={confirmingComplete} maxWidth="lg" onClose={() => !isCompleting && setConfirmingComplete(false)}>
+        <div className="p-6 space-y-6">
+          <h2 className="text-lg font-medium text-gray-900">Complete FG</h2>
+          <p className="text-sm text-gray-600">ข้อมูลของคุณพร้อมขึ้นระบบ SAP แล้วใช่ไหม</p>
+          <InputError className="mt-2" message={completeError} />
+          <div className="flex justify-end gap-3">
+            <SecondaryButton type="button" onClick={() => setConfirmingComplete(false)} disabled={isCompleting}>Cancel</SecondaryButton>
+            <SuccessButton type="button" onClick={handleComplete} disabled={isCompleting}>Confirm</SuccessButton>
           </div>
         </div>
       </Modal>
