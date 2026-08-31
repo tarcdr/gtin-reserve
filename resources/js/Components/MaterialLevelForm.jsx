@@ -55,15 +55,36 @@ export default function MaterialLevelForm({
   const [isGeneratingLevelData, setIsGeneratingLevelData] = useState(false);
   const [confirmingComplete, setConfirmingComplete] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isCompleteLoading, setIsCompleteLoading] = useState(false);
   const [completeError, setCompleteError] = useState('');
+  const [completeResult, setCompleteResult] = useState(null);
   const pageProps = usePage().props;
   const pageErrors = pageProps?.errors || {};
   const completeResponse = pageProps?.flash?.completeResponse;
+  const completeLabel = levelKey === 'semiFgLv1'
+    ? 'Complete Semi FG LV1'
+    : levelKey === 'semiFgLv2'
+      ? 'Complete Semi FG LV2'
+      : 'Complete Semi FG';
   const mode = InputData?.mode || (InputData?.materialId ? 'view' : 'create');
   const isViewMode = mode === 'view';
   const isEditMode = mode === 'edit';
   const isCreateMode = mode === 'create';
   const isSubMattypeReadOnly = isViewMode || (disableSubMattypeOnEdit && isEditMode);
+
+  useEffect(() => {
+    if (!completeResponse) {
+      return;
+    }
+
+    setIsCompleteLoading(false);
+    const resultTimer = window.setTimeout(() => {
+      setCompleteResult({ type: 'success', message: `${completeLabel} successfully.` });
+    }, 200);
+
+    return () => window.clearTimeout(resultTimer);
+  }, [completeLabel, completeResponse]);
+
   const { data, setData, patch, processing, errors, setError, clearErrors } = useForm({
     mode,
     fgDetail: InputData?.fgDetail || {},
@@ -365,6 +386,13 @@ export default function MaterialLevelForm({
     setCompleteError('');
   };
 
+  const showCompleteResult = (type, message) => {
+    setIsCompleteLoading(false);
+    window.setTimeout(() => {
+      setCompleteResult({ type, message });
+    }, 200);
+  };
+
   const handleComplete = () => {
     if (!completeRoute) {
       return;
@@ -372,6 +400,8 @@ export default function MaterialLevelForm({
 
     setIsCompleting(true);
     setCompleteError('');
+    setConfirmingComplete(false);
+    setIsCompleteLoading(true);
 
     router.patch(route(completeRoute), {
       fgBomId: data.fgBomId,
@@ -381,11 +411,12 @@ export default function MaterialLevelForm({
     }, {
       preserveScroll: true,
       onSuccess: () => {
-        setConfirmingComplete(false);
         setCompleteError('');
       },
       onError: (nextErrors) => {
-        setCompleteError(nextErrors?.complete || nextErrors?.fgBomId || nextErrors?.levelMaterialId || nextErrors?.levelBomId || nextErrors?.parentLevelBomId || 'Unable to complete Semi FG.');
+        const message = nextErrors?.complete || nextErrors?.fgBomId || nextErrors?.levelMaterialId || nextErrors?.levelBomId || nextErrors?.parentLevelBomId || `Unable to ${completeLabel}.`;
+        setCompleteError(message);
+        showCompleteResult('error', message);
       },
       onFinish: () => {
         setIsCompleting(false);
@@ -414,15 +445,6 @@ export default function MaterialLevelForm({
 
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-2">
-          {completeResponse ? (
-            <div className="rounded-lg border border-green-300 bg-green-50 p-4 text-sm text-green-900">
-              <div className="font-semibold">Complete procedure response</div>
-              <div>Procedure: {completeResponse.procedure || '-'}</div>
-              <div>P_CNT_ROW: {completeResponse.countRow ?? '-'}</div>
-              <div>P_ERROR: {completeResponse.error || '-'}</div>
-              <div>Resolved error: {completeResponse.resolvedError || '-'}</div>
-            </div>
-          ) : null}
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -733,7 +755,7 @@ export default function MaterialLevelForm({
                     <PrimaryButton type="button" onClick={goToEdit} disabled={isSemiFgCompleted}>Edit</PrimaryButton>
                     {showCompleteButton ? (
                       <SuccessButton type="button" onClick={openCompleteModal} disabled={isCompleteDisabled}>
-                        COMPLETE
+                        {completeLabel}
                       </SuccessButton>
                     ) : null}
                   </>
@@ -752,7 +774,7 @@ export default function MaterialLevelForm({
       </div>
       <Modal show={confirmingComplete} maxWidth="xl" onClose={closeCompleteModal}>
         <div className="bg-blue-100 border-b border-blue-300 px-6 py-4">
-          <h2 className="text-xl font-semibold text-blue-800">Complete Semi FG</h2>
+          <h2 className="text-xl font-semibold text-blue-800">{completeLabel}</h2>
         </div>
         <div className="p-6 space-y-4">
           <p className="text-gray-700">ข้อมูลของคุณพร้อมขึ้นระบบ SAP แล้วใช่ไหม</p>
@@ -764,6 +786,24 @@ export default function MaterialLevelForm({
             <SuccessButton type="button" onClick={handleComplete} disabled={isCompleting}>
               CONFIRM
             </SuccessButton>
+          </div>
+        </div>
+      </Modal>
+      <Modal show={isCompleteLoading} maxWidth="sm" closeable={false}>
+        <div className="p-6 text-center space-y-4">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-700" />
+          <h2 className="text-xl font-semibold text-gray-900">Processing...</h2>
+          <p className="text-gray-600">Please wait while {completeLabel} is being processed.</p>
+        </div>
+      </Modal>
+      <Modal show={Boolean(completeResult)} maxWidth="md" onClose={() => setCompleteResult(null)}>
+        <div className="p-6 space-y-4">
+          <h2 className={`text-xl font-semibold ${completeResult?.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+            {completeResult?.type === 'success' ? 'Success' : 'Error'}
+          </h2>
+          <p className="text-gray-700">{completeResult?.message}</p>
+          <div className="flex justify-end border-t pt-4">
+            <PrimaryButton type="button" onClick={() => setCompleteResult(null)}>OK</PrimaryButton>
           </div>
         </div>
       </Modal>

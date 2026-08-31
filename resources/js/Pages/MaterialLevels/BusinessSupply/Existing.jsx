@@ -9,7 +9,7 @@ import DangerButton from '@/Components/DangerButton';
 import Modal from '@/Components/Modal';
 import InputError from '@/Components/InputError';
 import DeleteDebugPanel from '@/Components/DeleteDebugPanel';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import BusinessSupplyDetail from '@/Components/BusinessSupply/BusinessSupplyDetail';
 import BusinessSupplyComponents from '@/Components/BusinessSupply/BusinessSupplyComponents';
 import SuccessButton from '@/Components/SuccessButton';
@@ -30,10 +30,25 @@ export default function BusinessSupplyExisting({
   const [deleteMessage, setDeleteMessage] = useState('');
   const [confirmingComplete, setConfirmingComplete] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isCompleteLoading, setIsCompleteLoading] = useState(false);
   const [completeError, setCompleteError] = useState('');
+  const [completeResult, setCompleteResult] = useState(null);
   const completeResponse = usePage().props?.flash?.completeResponse;
   const pageId = `${isLocked ? 2 : 1}EBS`;
   const readOnlyClass = 'mt-1 block w-full border-gray-300 rounded-md bg-gray-100';
+
+  useEffect(() => {
+    if (!completeResponse) {
+      return;
+    }
+
+    setIsCompleteLoading(false);
+    const resultTimer = window.setTimeout(() => {
+      setCompleteResult({ type: 'success', message: 'Complete Business Supply successfully.' });
+    }, 200);
+
+    return () => window.clearTimeout(resultTimer);
+  }, [completeResponse]);
 
   const detailValues = useMemo(() => ({
     bomBsId: selectedBusinessSupply?.record?.bomBsId || InputData?.bomBsId || '',
@@ -94,14 +109,23 @@ export default function BusinessSupplyExisting({
   const handleComplete = () => {
     setIsCompleting(true);
     setCompleteError('');
+    setConfirmingComplete(false);
+    setIsCompleteLoading(true);
     router.patch(route('business-supply.existing.complete'), {
       bomBsId: detailValues.bomBsId,
       bsId: detailValues.bsId,
     }, {
       preserveScroll: true,
-      onSuccess: () => setConfirmingComplete(false),
+      onSuccess: () => {
+        setCompleteError('');
+      },
       onError: (nextErrors) => {
-        setCompleteError(nextErrors?.complete || nextErrors?.bomBsId || nextErrors?.bsId || 'Unable to complete Business Supply.');
+        const message = nextErrors?.complete || nextErrors?.bomBsId || nextErrors?.bsId || 'Unable to complete Business Supply.';
+        setCompleteError(message);
+        setIsCompleteLoading(false);
+        window.setTimeout(() => {
+          setCompleteResult({ type: 'error', message });
+        }, 200);
       },
       onFinish: () => setIsCompleting(false),
     });
@@ -156,15 +180,6 @@ export default function BusinessSupplyExisting({
 
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-          {completeResponse ? (
-            <div className="rounded-lg border border-green-300 bg-green-50 p-4 text-sm text-green-900">
-              <div className="font-semibold">Complete procedure response</div>
-              <div>Procedure: {completeResponse.procedure || '-'}</div>
-              <div>P_CNT_ROW: {completeResponse.countRow ?? '-'}</div>
-              <div>P_ERROR: {completeResponse.error || '-'}</div>
-              <div>Resolved error: {completeResponse.resolvedError || '-'}</div>
-            </div>
-          ) : null}
           <DeleteDebugPanel />
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div className="space-y-6">
@@ -336,11 +351,11 @@ export default function BusinessSupplyExisting({
                   Delete BS
                 </DangerButton>
                 <SuccessButton type="button" onClick={() => { setCompleteError(''); setConfirmingComplete(true); }} disabled={isCompleted || isCompleting}>
-                  COMPLETE
+                  Complete Business Supply
                 </SuccessButton>
               </div>
-              <InputError className="text-center" message={deleteMessage} />
-              <InputError className="text-center" message={completeError} />
+              <InputError className="mt-2 text-center" message={deleteMessage} />
+              <InputError className="mt-2 text-center" message={completeError} />
             </div>
           ) : null}
         </div>
@@ -370,6 +385,24 @@ export default function BusinessSupplyExisting({
           <div className="flex justify-end gap-3">
             <SecondaryButton type="button" onClick={() => setConfirmingComplete(false)} disabled={isCompleting}>Cancel</SecondaryButton>
             <SuccessButton type="button" onClick={handleComplete} disabled={isCompleting}>Confirm</SuccessButton>
+          </div>
+        </div>
+      </Modal>
+      <Modal show={isCompleteLoading} maxWidth="sm" closeable={false}>
+        <div className="p-6 text-center space-y-4">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-700" />
+          <h2 className="text-xl font-semibold text-gray-900">Processing...</h2>
+          <p className="text-gray-600">Please wait while Complete Business Supply is being processed.</p>
+        </div>
+      </Modal>
+      <Modal show={Boolean(completeResult)} maxWidth="md" onClose={() => setCompleteResult(null)}>
+        <div className="p-6 space-y-4">
+          <h2 className={`text-xl font-semibold ${completeResult?.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+            {completeResult?.type === 'success' ? 'Success' : 'Error'}
+          </h2>
+          <p className="text-gray-700">{completeResult?.message}</p>
+          <div className="flex justify-end border-t pt-4">
+            <PrimaryButton type="button" onClick={() => setCompleteResult(null)}>OK</PrimaryButton>
           </div>
         </div>
       </Modal>

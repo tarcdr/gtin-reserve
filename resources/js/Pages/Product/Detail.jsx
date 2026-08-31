@@ -28,7 +28,9 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmingComplete, setConfirmingComplete] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isCompleteLoading, setIsCompleteLoading] = useState(false);
   const [completeError, setCompleteError] = useState('');
+  const [completeResult, setCompleteResult] = useState(null);
   const completeResponse = usePage().props?.flash?.completeResponse;
   const subMattypeOptions = ['0', '1', '2', '3'];
   const { data, setData, patch, errors, processing } = useForm({
@@ -53,6 +55,19 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   const fgComponents = data.fgComponents || [];
   const semiFgLv2 = data.semiFgLv2 || null;
   const semiFgLv1 = data.semiFgLv1 || null;
+
+  useEffect(() => {
+    if (!completeResponse) {
+      return;
+    }
+
+    setIsCompleteLoading(false);
+    const resultTimer = window.setTimeout(() => {
+      setCompleteResult({ type: 'success', message: 'Complete FG successfully.' });
+    }, 200);
+
+    return () => window.clearTimeout(resultTimer);
+  }, [completeResponse]);
   const hasSemiFgLv2 = String(semiFgLv2?.bomId || '').trim() !== '';
   const hasSemiFgLv1 = String(semiFgLv1?.bomId || '').trim() !== '';
 
@@ -237,6 +252,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   const handleComplete = () => {
     setIsCompleting(true);
     setCompleteError('');
+    setConfirmingComplete(false);
+    setIsCompleteLoading(true);
 
     router.patch(route('product.complete'), {
       bomId: data.bomId,
@@ -244,10 +261,15 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     }, {
       preserveScroll: true,
       onSuccess: () => {
-        setConfirmingComplete(false);
+        setCompleteError('');
       },
       onError: (nextErrors) => {
-        setCompleteError(nextErrors?.complete || nextErrors?.bomId || nextErrors?.materialId || 'Unable to complete FG.');
+        const message = nextErrors?.complete || nextErrors?.bomId || nextErrors?.materialId || 'Unable to complete FG.';
+        setCompleteError(message);
+        setIsCompleteLoading(false);
+        window.setTimeout(() => {
+          setCompleteResult({ type: 'error', message });
+        }, 200);
       },
       onFinish: () => {
         setIsCompleting(false);
@@ -331,15 +353,6 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
 
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-          {completeResponse ? (
-            <div className="rounded-lg border border-green-300 bg-green-50 p-4 text-sm text-green-900">
-              <div className="font-semibold">Complete procedure response</div>
-              <div>Procedure: {completeResponse.procedure || '-'}</div>
-              <div>P_CNT_ROW: {completeResponse.countRow ?? '-'}</div>
-              <div>P_ERROR: {completeResponse.error || '-'}</div>
-              <div>Resolved error: {completeResponse.resolvedError || '-'}</div>
-            </div>
-          ) : null}
           <DeleteDebugPanel />
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <form onSubmit={submit} className="space-y-6">
@@ -766,6 +779,24 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
           <div className="flex justify-end gap-3">
             <SecondaryButton type="button" onClick={() => setConfirmingComplete(false)} disabled={isCompleting}>Cancel</SecondaryButton>
             <SuccessButton type="button" onClick={handleComplete} disabled={isCompleting}>Confirm</SuccessButton>
+          </div>
+        </div>
+      </Modal>
+      <Modal show={isCompleteLoading} maxWidth="sm" closeable={false}>
+        <div className="p-6 text-center space-y-4">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-700" />
+          <h2 className="text-xl font-semibold text-gray-900">Processing...</h2>
+          <p className="text-gray-600">Please wait while Complete FG is being processed.</p>
+        </div>
+      </Modal>
+      <Modal show={Boolean(completeResult)} maxWidth="md" onClose={() => setCompleteResult(null)}>
+        <div className="p-6 space-y-4">
+          <h2 className={`text-xl font-semibold ${completeResult?.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+            {completeResult?.type === 'success' ? 'Success' : 'Error'}
+          </h2>
+          <p className="text-gray-700">{completeResult?.message}</p>
+          <div className="flex justify-end border-t pt-4">
+            <PrimaryButton type="button" onClick={() => setCompleteResult(null)}>OK</PrimaryButton>
           </div>
         </div>
       </Modal>
