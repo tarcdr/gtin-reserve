@@ -4,11 +4,20 @@ import { router } from '@inertiajs/react';
 
 function buildSemiFgLv1BomConfig(actionMode = 'create') {
   const isEditMode = actionMode === 'edit';
+  const isViewMode = actionMode === 'view';
   const isDeleteMode = actionMode === 'delete';
+  let headerTitle = 'SEMI FG LV1 BOM - Create';
+  if (isEditMode) {
+    headerTitle = 'SEMI FG LV1 BOM - Edit';
+  } else if (isDeleteMode) {
+    headerTitle = 'SEMI FG LV1 BOM - Delete';
+  } else if (isViewMode) {
+    headerTitle = 'SEMI FG LV1 BOM - View';
+  }
 
   return {
     pageId: isEditMode || isDeleteMode ? '2CSML1' : '1CSML1',
-    headerTitle: `SEMI FG LV1 BOM - ${isEditMode ? 'Edit' : (isDeleteMode ? 'Delete' : 'Create')}`,
+    headerTitle: headerTitle,
     submitRoute: 'packmaterial.semi-fg-lv1-bom.save',
     levelBomIdLabel: 'SEMI FG LV1 BOM ID',
     levelBomDescLabel: 'SEMI FG LV1 BOM Description',
@@ -60,6 +69,7 @@ export default function SemiFgLv1Bom({ auth, InputData, subMattypes = [], uoms =
       isSubMattypeLocked={form.isSubMattypeLocked}
       isProductSubCatLocked={form.isProductSubCatLocked}
       isDeleteMode={form.isDeleteMode}
+      isViewMode={form.isViewMode}
       levelBomIdLabel={config.levelBomIdLabel}
       levelBomDescLabel={config.levelBomDescLabel}
       primaryActionLabel={form.primaryActionLabel}

@@ -1,6 +1,7 @@
 import DangerButton from '@/Components/DangerButton';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SuccessButton from '@/Components/SuccessButton';
+import SecondaryButton from '@/Components/SecondaryButton';
 
 export default function BusinessSupplyComponents({
   components = [],
@@ -8,11 +9,13 @@ export default function BusinessSupplyComponents({
   onAddComponent,
   onEditComponent,
   onDeleteComponent,
+  onViewComponent,
+  isCompleted = false,
 }) {
   const componentItems = components.filter((item) => item.sourceType === 'component');
   const materialIdItems = components.filter((item) => item.sourceType === 'matid');
 
-  const renderTable = ({ items, emptyMessage, allowEdit }) => (
+  const renderTable = ({ items, emptyMessage, allowEdit, allowView }) => (
     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
       <table className="w-full text-sm text-left rtl:text-right text-gray-800">
         <thead className="text-xs bg-gray-50">
@@ -47,13 +50,22 @@ export default function BusinessSupplyComponents({
                           onClick={() => onEditComponent?.(item)}
                           disabled={!onEditComponent}
                         >
-                          Edit
+                          {isCompleted ? 'View' : 'Edit'}
                         </PrimaryButton>
+                      ) : null}
+                      {allowView ? (
+                        <SecondaryButton
+                          type="button"
+                          onClick={() => onViewComponent?.(item)}
+                          disabled={!onViewComponent}
+                        >
+                          View
+                        </SecondaryButton>
                       ) : null}
                       <DangerButton
                         type="button"
                         onClick={() => onDeleteComponent?.(item)}
-                        disabled={!onDeleteComponent}
+                        disabled={!onDeleteComponent || isCompleted}
                       >
                         Delete
                       </DangerButton>
@@ -73,21 +85,22 @@ export default function BusinessSupplyComponents({
       <fieldset className="rounded-md border border-gray-300 p-4">
         <legend className="px-2 text-gray-700">Business Supply Components</legend>
         <div className="mb-3 flex items-center justify-end">
-          <SuccessButton type="button" onClick={onAddComponent} disabled={!onAddComponent}>
+          <SuccessButton type="button" onClick={onAddComponent} disabled={!onAddComponent || isCompleted}>
             ADD COMPONENT
           </SuccessButton>
         </div>
         {renderTable({
           items: componentItems,
           emptyMessage: 'No components yet. Select a business supply to view details.',
-          allowEdit: true,
+          allowEdit: !isCompleted,
+          allowView: true,
         })}
       </fieldset>
 
       <fieldset className="rounded-md border border-gray-300 p-4">
         <legend className="px-2 text-gray-700">Business Supply Components From Material ID</legend>
         <div className="mb-3 flex items-center justify-end">
-          <SuccessButton type="button" onClick={onAddMaterialId} disabled={!onAddMaterialId}>
+          <SuccessButton type="button" onClick={onAddMaterialId} disabled={!onAddMaterialId || isCompleted}>
             ADD MATERIAL ID
           </SuccessButton>
         </div>
@@ -95,6 +108,7 @@ export default function BusinessSupplyComponents({
           items: materialIdItems,
           emptyMessage: 'No Material ID components yet. Select a business supply to view details.',
           allowEdit: false,
+          allowView: true,
         })}
       </fieldset>
     </div>

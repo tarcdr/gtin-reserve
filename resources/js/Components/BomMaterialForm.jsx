@@ -27,6 +27,7 @@ export default function BomMaterialForm({
   isSubMattypeLocked = false,
   isProductSubCatLocked = false,
   isDeleteMode = false,
+  isViewMode = false,
   levelBomIdLabel = 'New BOM ID',
   levelBomDescLabel = 'New BOM Description',
   primaryActionLabel = 'Save',
@@ -108,7 +109,7 @@ export default function BomMaterialForm({
                     className={`mt-1 block w-full border-gray-300 rounded-md ${isSubMattypeLocked ? 'bg-gray-100 text-gray-500' : ''}`}
                     onChange={(e) => onSubMattypeChange?.(e.target.value)}
                     value={data?.subMattype}
-                    disabled={isSubMattypeLocked || isDeleteMode}
+                    disabled={isSubMattypeLocked || isDeleteMode || isViewMode}
                   >
                     <option value="">---- Select Sub Mattype ----</option>
                     {subMattypes?.map((o) => (
@@ -139,7 +140,7 @@ export default function BomMaterialForm({
                     className={`mt-1 block w-full border-gray-300 rounded-md ${!data?.productCat || isProductSubCatLocked ? 'bg-gray-100 text-gray-500' : ''}`}
                     onChange={(e) => onProductSubCategoryChange?.(e.target.value)}
                     value={data?.productSubCat}
-                    disabled={!data?.productCat || isProductSubCatLocked || isDeleteMode}
+                    disabled={!data?.productCat || isProductSubCatLocked || isDeleteMode || isViewMode}
                   >
                     <option value="">---- Select Product SUB Category ----</option>
                     {productSubCategoryOptions?.map((option) => (
@@ -174,11 +175,11 @@ export default function BomMaterialForm({
 
                   <TextInput
                     id="searchDesc"
-                    className={`mt-1 block w-full ${isDeleteMode ? 'bg-gray-100 text-gray-500' : ''}`}
+                    className={`mt-1 block w-full ${isDeleteMode || isViewMode ? 'bg-gray-100 text-gray-500' : ''}`}
                     value={data?.searchDesc}
                     maxLength="40"
                     onChange={(e) => onSearchDescChange?.(e.target.value)}
-                    disabled={isDeleteMode}
+                    disabled={isDeleteMode || isViewMode}
                   />
 
                   <InputError className="mt-2" message={errors?.searchDesc} />
@@ -191,11 +192,11 @@ export default function BomMaterialForm({
 
                   <TextInput
                     id="fullDescEn"
-                    className={`mt-1 block w-full ${isDeleteMode ? 'bg-gray-100 text-gray-500' : ''}`}
+                    className={`mt-1 block w-full ${isDeleteMode || isViewMode ? 'bg-gray-100 text-gray-500' : ''}`}
                     value={data?.fullDescEn}
                     maxLength="40"
                     onChange={(e) => onFullDescEnChange?.(e.target.value)}
-                    disabled={isDeleteMode}
+                    disabled={isDeleteMode || isViewMode}
                   />
 
                   <InputError className="mt-2" message={errors?.fullDescEn} />
@@ -205,11 +206,11 @@ export default function BomMaterialForm({
 
                   <TextInput
                     id="fullDescTh"
-                    className={`mt-1 block w-full ${isDeleteMode ? 'bg-gray-100 text-gray-500' : ''}`}
+                    className={`mt-1 block w-full ${isDeleteMode || isViewMode ? 'bg-gray-100 text-gray-500' : ''}`}
                     value={data?.fullDescTh}
                     maxLength="40"
                     onChange={(e) => onFullDescThChange?.(e.target.value)}
-                    disabled={isDeleteMode}
+                    disabled={isDeleteMode || isViewMode}
                   />
 
                   <InputError className="mt-2" message={errors?.fullDescTh} />
@@ -221,10 +222,10 @@ export default function BomMaterialForm({
                   <InputLabel htmlFor="uom" value="UOM" />
                   <select
                     id="uom"
-                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDeleteMode ? 'bg-gray-100 text-gray-500' : ''}`}
+                    className={`mt-1 block w-full border-gray-300 rounded-md ${isDeleteMode || isViewMode ? 'bg-gray-100 text-gray-500' : ''}`}
                     onChange={(e) => onUomChange?.(e.target.value)}
                     value={data?.uom}
-                    disabled={isDeleteMode}
+                    disabled={isDeleteMode || isViewMode}
                   >
                     <option value="">---- Select UOM ----</option>
                     {uoms?.map((o) => {
@@ -244,7 +245,7 @@ export default function BomMaterialForm({
                 <SecondaryButton type="button" onClick={onBack}>
                   {backLabel}
                 </SecondaryButton>
-                {data?.actionMode !== 'delete' && (
+                {!['delete', 'view'].includes(data?.actionMode) && (
                   <SuccessButton disabled={processing || isGeneratingComponentId}>{primaryActionLabel}</SuccessButton>
                 )}
                 {data?.actionMode === 'delete' && (

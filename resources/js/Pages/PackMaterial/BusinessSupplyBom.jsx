@@ -20,7 +20,14 @@ export default function BusinessSupplyBom({
     levelBomDescLabel: 'BUSINESS SUPPLY BOM Description',
   };
   const submitRoute = submitRouteName || (InputData?.actionMode === 'edit' ? 'packmaterial.update' : 'packmaterial.create');
-  const actionLabel = InputData?.actionMode === 'edit' ? 'Edit' : (InputData?.actionMode === 'delete' ? 'Delete' : 'Create');
+  let actionLabel = 'Create';
+  if (InputData?.actionMode === 'delete') {
+    actionLabel = 'Delete';
+  } else if (InputData?.actionMode === 'edit') {
+    actionLabel = 'Edit';
+  } else if (InputData?.actionMode === 'view') {
+    actionLabel = 'View';
+  }
   const headerTitle = `${pageConfig.headerLabel} - ${actionLabel}`;
   const initialSubMattype = InputData?.subMattype || '0';
   const form = useBomMaterialFormController({
@@ -62,6 +69,7 @@ export default function BusinessSupplyBom({
       isSubMattypeLocked={form.isSubMattypeLocked}
       isProductSubCatLocked={form.isProductSubCatLocked}
       isDeleteMode={form.isDeleteMode}
+      isViewMode={form.isViewMode}
       levelBomIdLabel={pageConfig.levelBomIdLabel}
       levelBomDescLabel={pageConfig.levelBomDescLabel}
       primaryActionLabel={form.primaryActionLabel}

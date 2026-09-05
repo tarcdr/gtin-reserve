@@ -286,6 +286,7 @@ export default function BusinessSupplyExisting({
               />
 
               <BusinessSupplyComponents
+                isCompleted={isCompleted}
                 components={detailValues.components}
                 onAddMaterialId={() => router.get(route('business-supply.create-material-id', {
                   bizsupId: detailValues.bomBsId,
@@ -293,11 +294,11 @@ export default function BusinessSupplyExisting({
                 onAddComponent={() => router.get(route('business-supply.create-component', {
                   bizsupId: detailValues.bomBsId,
                 }))}
-                onEditComponent={(item) => {
+                onViewComponent={(item) => {
                   if (item?.sourceType === 'matid') {
                     router.get(route('business-supply.create-material-id', {
                       bizsupId: detailValues.bomBsId,
-                      actionMode: 'edit',
+                      actionMode: 'view',
                       materialId: item.listMatId || item.componentId || '',
                       componentMaterialId: item.materialId || item.code || '',
                       brand: item.brand || '',
@@ -309,7 +310,27 @@ export default function BusinessSupplyExisting({
 
                   router.get(route('business-supply.edit-component', {
                     bizsupId: detailValues.bomBsId,
-                    actionMode: 'edit',
+                    actionMode: 'view',
+                    componentId: item.code || item.componentId || '',
+                  }));
+                }}
+                onEditComponent={(item) => {
+                  if (item?.sourceType === 'matid') {
+                    router.get(route('business-supply.create-material-id', {
+                      bizsupId: detailValues.bomBsId,
+                      actionMode: isCompleted ? 'view' : 'edit',
+                      materialId: item.listMatId || item.componentId || '',
+                      componentMaterialId: item.materialId || item.code || '',
+                      brand: item.brand || '',
+                      matType: item.matType || '',
+                      subMatType: item.subMatType || '',
+                    }));
+                    return;
+                  }
+
+                  router.get(route('business-supply.edit-component', {
+                    bizsupId: detailValues.bomBsId,
+                    actionMode: isCompleted ? 'view' : 'edit',
                     componentId: item.code || item.componentId || '',
                   }));
                 }}
@@ -344,10 +365,11 @@ export default function BusinessSupplyExisting({
                   onClick={() => router.get(route('business-supply.edit', {
                     bizsupId: detailValues.bomBsId,
                   }))}
+                  disabled={isCompleted}
                 >
                   Edit
                 </PrimaryButton>
-                <DangerButton type="button" onClick={() => setConfirmingDelete(true)}>
+                <DangerButton type="button" onClick={() => setConfirmingDelete(true)} disabled={isCompleted}>
                   Delete BS
                 </DangerButton>
                 <SuccessButton type="button" onClick={() => { setCompleteError(''); setConfirmingComplete(true); }} disabled={isCompleted || isCompleting}>

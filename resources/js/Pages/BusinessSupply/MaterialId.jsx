@@ -26,11 +26,13 @@ export default function BusinessSupplyMaterialId({
   const actionMode = InputData?.actionMode || InputData?.mode || 'create';
   const isDeleteMode = actionMode === 'delete';
   const isEditMode = actionMode === 'edit';
-  const pageTitle = isDeleteMode
-    ? 'BUSINESS SUPPLY BOM - DELETE MATERIAL ID'
-    : isEditMode
-      ? 'BUSINESS SUPPLY BOM - EDIT MATERIAL ID'
-      : 'BUSINESS SUPPLY BOM - ADD MATERIAL ID';
+  const isViewMode = actionMode === 'view';
+  let pageTitle = 'BUSINESS SUPPLY BOM - ADD MATERIAL ID';
+  if (isViewMode) {
+    pageTitle = 'BUSINESS SUPPLY BOM - VIEW MATERIAL ID';
+  } else if (isEditMode) {
+    pageTitle = 'BUSINESS SUPPLY BOM - EDIT MATERIAL ID';
+  }
   const bizsupId = InputData?.bizsupId || selectedBusinessSupply?.bizsupId || '';
   const defaultBrand = InputData?.brand || '';
   const defaultMatType = InputData?.matType || '';
@@ -374,7 +376,7 @@ export default function BusinessSupplyMaterialId({
             className="mt-1 block w-full border-gray-300 rounded-md"
             value={brand}
             onChange={(e) => handleBrandChange(e.target.value)}
-            disabled={isDeleteMode}
+            disabled={isDeleteMode || isViewMode}
           >
             <option value="">---- Select Brand ----</option>
             {brands.map((item) => (
@@ -392,7 +394,7 @@ export default function BusinessSupplyMaterialId({
             className="mt-1 block w-full border-gray-300 rounded-md"
             value={matType}
             onChange={(e) => handleMatTypeChange(e.target.value)}
-            disabled={isDeleteMode || !brand || isLoadingRelatedOptions}
+            disabled={isDeleteMode || isViewMode || !brand || isLoadingRelatedOptions}
           >
             <option value="">---- Select Mattype ----</option>
             {availableMattypes.map((item) => (
@@ -442,7 +444,7 @@ export default function BusinessSupplyMaterialId({
             className="mt-1 block w-full border-gray-300 rounded-md"
             value={subMatType}
             onChange={(e) => handleSubMatTypeChange(e.target.value)}
-            disabled={isDeleteMode || !matType || isLoadingRelatedOptions}
+            disabled={isDeleteMode || isViewMode || !matType || isLoadingRelatedOptions}
           >
             <option value="">---- Select Sub Mattype ----</option>
             {availableSubMattypes.map((item) => (
@@ -499,10 +501,10 @@ export default function BusinessSupplyMaterialId({
             <InputLabel htmlFor="componentId" value="Component BD Material ID" />
             <select
               id="componentId"
-              className="mt-1 block w-full border-gray-300 rounded-md"
+              className={`mt-1 block w-full border-gray-300 rounded-md ${isDeleteMode || isViewMode ? 'bg-gray-100 text-gray-500' : ''}`}
               value={componentId}
               onChange={(e) => setComponentId(e.target.value)}
-              disabled={isLoadingOptions || isDeleteMode}
+              disabled={isLoadingOptions || isDeleteMode || isViewMode}
             >
               <option value="">---- Select Material ID ----</option>
               {options.map((item) => (
@@ -557,11 +559,12 @@ export default function BusinessSupplyMaterialId({
               RESET
             </SecondaryButton>
           )}
-          {isDeleteMode ? (
+          {isDeleteMode && (
             <DangerButton type="button" onClick={() => setConfirmingDelete(true)} disabled={isSaving || !componentId || !materialDetail}>
               DELETE
             </DangerButton>
-          ) : (
+          )}
+          {!isViewMode && !isDeleteMode && (
             <PrimaryButton type="button" onClick={handleSave} disabled={isSaving || !componentId || !materialDetail}>
               SAVE
             </PrimaryButton>

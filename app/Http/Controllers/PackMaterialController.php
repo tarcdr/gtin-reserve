@@ -1387,18 +1387,18 @@ class PackMaterialController extends Controller
       }
     }
 
-    if ($ownerLevel === 'fg' && in_array($actionMode, ['edit', 'delete'], true) && $referentMaterialId !== '' && $componentId !== '') {
+    if ($ownerLevel === 'fg' && in_array($actionMode, ['edit', 'view', 'delete'], true) && $referentMaterialId !== '' && $componentId !== '') {
       $loadedComponent = $this->loadFgComponentByMaterialAndComponentId($referentMaterialId, $componentId);
     }
 
-    if ($ownerLevel === 'semiFgLv2' && in_array($actionMode, ['edit', 'delete'], true) && $componentId !== '') {
+    if ($ownerLevel === 'semiFgLv2' && in_array($actionMode, ['edit', 'view', 'delete'], true) && $componentId !== '') {
       $loadedComponent = $this->loadSemiFgLv2ComponentByBomAndComponentId(
         $request->get('levelMaterialId') ?: $request->get('materialId'),
         $componentId
       );
     }
 
-    if ($ownerLevel === 'semiFgLv1' && in_array($actionMode, ['edit', 'delete'], true) && $componentId !== '') {
+    if ($ownerLevel === 'semiFgLv1' && in_array($actionMode, ['edit', 'view', 'delete'], true) && $componentId !== '') {
       $loadedComponent = $this->loadSemiFgLv1ComponentByBomAndComponentId(
         $request->get('levelMaterialId') ?: $request->get('materialId'),
         $componentId

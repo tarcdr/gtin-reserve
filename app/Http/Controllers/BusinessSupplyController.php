@@ -808,7 +808,7 @@ class BusinessSupplyController extends Controller
     $bizsupId = $selectedBizSup['bizsupId'] ?? $this->requestString($request, 'bizsupId');
     $actionMode = $this->requestString($request, 'actionMode') !== '' ? $this->requestString($request, 'actionMode') : 'create';
     $componentId = $this->requestString($request, 'componentId');
-    $isEditMode = in_array($actionMode, ['edit', 'delete'], true);
+    $isEditMode = in_array($actionMode, ['view', 'edit', 'delete'], true);
     $bomRecord = $this->loadBusinessSupplyBomRecord($bizsupId) ?? [];
     $resolvedRecord = $isEditMode
       ? $this->mergeNonEmptyValues($bomRecord, $record)
@@ -1473,6 +1473,7 @@ class BusinessSupplyController extends Controller
       'subMattypes' => $this->subMattypes,
       'uoms' => $this->uoms,
       'selectedBusinessSupply' => $selectedBizSup,
+      'actionMode' => $actionMode,
     ]);
   }
 

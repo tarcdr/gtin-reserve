@@ -28,9 +28,10 @@ export default function useBomMaterialFormController({
   );
   const isFgCreateMode = data.ownerLevel === 'fg' && data.actionMode === 'create';
   const isSemiFgCreateMode = Boolean(isSemiFgOwner) && data.actionMode === 'create';
+  const isViewMode = data.actionMode === 'view';
   const isEditMode = data.actionMode === 'edit';
   const isDeleteMode = data.actionMode === 'delete';
-  const isExistingReadOnlyMode = isEditMode || isDeleteMode;
+  const isExistingReadOnlyMode = isEditMode || isDeleteMode || isViewMode;
   const shouldSkipProductCategoryLookup = isExistingReadOnlyMode && Boolean(data.productSubCat);
   const isSubMattypeLocked = isExistingReadOnlyMode;
   const isProductSubCatLocked = isExistingReadOnlyMode;
@@ -266,6 +267,7 @@ export default function useBomMaterialFormController({
     isSubMattypeLocked,
     isProductSubCatLocked,
     isDeleteMode,
+    isViewMode,
     primaryActionLabel,
     backLabel,
     handleSubmit: submit,

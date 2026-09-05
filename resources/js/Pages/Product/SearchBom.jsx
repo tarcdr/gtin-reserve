@@ -4,7 +4,6 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { useForm } from '@inertiajs/react';
-import TextInput from '@/Components/TextInput';
 import SecondaryButton from '@/Components/SecondaryButton';
 import ReactSelect from 'react-select';
 import { useEffect, useState } from 'react';
@@ -35,21 +34,32 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
   const storedFlow = readFlowState();
   const initialOptions = storedFlow.subMattypeOptions ?? InputData?.subMattypeOptions ?? [];
   const [subMattypeOptions, setSubMattypeOptions] = useState(initialOptions);
-  const { data, setData, patch, errors, processing } = useForm({
+  const { data, setData, processing } = useForm({
     brand: storedFlow.brand ?? InputData?.brand ?? '',
     mattype: storedFlow.mattype ?? InputData?.mattype ?? '',
     subMattype: storedFlow.subMattype ?? InputData?.subMattype ?? '',
     materialId: InputData?.materialId || ''
   });
+  const [errors, setErrors] = useState({});
 
   const selectedMaterial = materials.find(item => item.code === data.materialId) || null;
 
   const submit = (e) => {
     e.preventDefault();
+    if (!data.materialId) {
+      setErrors(prev => ({ ...prev, materialId: 'The Material ID field is required.' }));
+      return;
+    }
     router.get(route('product.view'), {
       materialId: data.materialId,
     });
   };
+
+  useEffect(() => {
+    if (data.materialId) {
+      setErrors(prev => ({ ...prev, materialId: '' }));
+    }
+  }, [data.materialId]);
 
   useEffect(() => {
     if (!data.mattype) {
@@ -104,8 +114,6 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                       <option key={`brand-code-${o.code}`} value={o.code}>{`${o.abb} - ${o.code}`}</option>
                     ))}
                   </select>
-
-                  <InputError className="mt-2" message={errors.brand} />
                 </div>
                 <div>
                   <InputLabel htmlFor="mattype" value="Mattype" />
@@ -121,8 +129,6 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                       <option key={`mattype-code-${o.code}`} value={o.code}>{o.label}</option>
                     ))}
                   </select>
-
-                  <InputError className="mt-2" message={errors.mattype} />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -140,8 +146,6 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
                       <option key={`subMattype-code-${option.code}`} value={option.code}>{option.label}</option>
                     ))}
                   </select>
-
-                  <InputError className="mt-2" message={errors.subMattype} />
                 </div>
               </div>
 

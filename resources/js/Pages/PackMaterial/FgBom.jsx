@@ -14,7 +14,14 @@ export default function FgBom({ auth, InputData, subMattypes = [], uoms = [] }) 
     isSemiFgOwner,
     defaultBackRoute,
   });
-  const headerTitle = `FG BOM - ${InputData?.actionMode === 'edit' ? 'Edit' : (InputData?.actionMode === 'delete' ? 'Delete' : 'Create')}`;
+  let headerTitle = 'FG BOM - Create';
+  if (InputData?.actionMode === 'delete') {
+    headerTitle = `FG BOM - Delete`;
+  } else if (InputData?.actionMode === 'edit') {
+    headerTitle = `FG BOM - Edit`;
+  } else if (InputData?.actionMode === 'view') {
+    headerTitle = `FG BOM - View`;
+  }
 
   const handleBack = () => {
     router.get(route('product.view'), {
@@ -48,6 +55,7 @@ export default function FgBom({ auth, InputData, subMattypes = [], uoms = [] }) 
       isSubMattypeLocked={form.isSubMattypeLocked}
       isProductSubCatLocked={form.isProductSubCatLocked}
       isDeleteMode={form.isDeleteMode}
+      isViewMode={form.isViewMode}
       levelBomIdLabel="FG BOM ID"
       levelBomDescLabel="FG BOM Description"
       primaryActionLabel={form.primaryActionLabel}

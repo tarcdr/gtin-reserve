@@ -291,6 +291,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
     (hasSemiFgLv2BomId && isSemiFgLv2Complete && !hasSemiFgLv1BomId) ||
     (hasSemiFgLv2BomId && isSemiFgLv2Complete && hasSemiFgLv1BomId && isSemiFgLv1Complete);
   const isFgCompleteDisabled = normalizedFgStatus === 'COM' || !canCompleteBySemiFgStatus;
+  const isCompleted = normalizedFgStatus === 'COM';
 
   useEffect(() => {
     if (!isDisabled || isEditMode) {
@@ -569,7 +570,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                   <fieldset className="border border-gray-300 rounded-md p-4 mt-8">
                     <legend className="px-2 text-gray-600">Components</legend>
                     <div className="flex items-center justify-end gap-4 mb-2">
-                        <SuccessButton type="button" onClick={goToPackMaterial} disabled={!isDisabled}>Add Component</SuccessButton>
+                        <SuccessButton type="button" onClick={goToPackMaterial} disabled={!isDisabled || isCompleted}>Add Component</SuccessButton>
                     </div>
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                       <table className="w-full text-sm text-left rtl:text-right text-gray-800">
@@ -607,8 +608,13 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                                   {item.label}
                                 </th>
                                 <td className="px-6 py-4 flex gap-2">
-                                  <PrimaryButton type="button" onClick={() => goToPackMaterialAction('edit', item)}>EDIT</PrimaryButton>
-                                  <DangerButton type="button" onClick={() => goToPackMaterialAction('delete', item)}>DELETE</DangerButton>
+                                  {!isCompleted && (
+                                    <PrimaryButton type="button" onClick={() => goToPackMaterialAction('edit', item)}>EDIT</PrimaryButton>
+                                  )}
+                                  {isCompleted && (
+                                    <SecondaryButton type="button" onClick={() => goToPackMaterialAction('view', item)}>VIEW</SecondaryButton>
+                                  )}
+                                  <DangerButton type="button" onClick={() => goToPackMaterialAction('delete', item)} disabled={isCompleted}>DELETE</DangerButton>
                                 </td>
                               </tr>
                             ))
@@ -651,7 +657,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             >
                               DELETE SEMI FG LV2
                             </DangerButton>
-                            <PrimaryButton
+                            <SecondaryButton
                               type="button"
                               onClick={() => goToSemiFgLv2({
                                 mode: 'view',
@@ -660,7 +666,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                               disabled={!isDisabled}
                             >
                               View Semi FG Level 2
-                            </PrimaryButton>
+                            </SecondaryButton>
                             <span className="text-sm font-medium text-gray-700">
                               STATUS: {semiFgLv2.statusRow || '-'}
                             </span>
@@ -703,11 +709,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             <DangerButton
                               type="button"
                               onClick={() => openDeleteModal({ type: 'semiFgLv1', item: semiFgLv1, label: 'Semi FG Level 1' })}
-                              disabled={semiFgLv1.statusRow === 'ETS'}
+                              disabled={['ETS', 'COM'].includes(semiFgLv1.statusRow)}
                             >
                               DELETE SEMI FG LV1
                             </DangerButton>
-                            <PrimaryButton
+                            <SecondaryButton
                               type="button"
                               onClick={() => goToSemiFgLv1({
                                 mode: 'view',
@@ -716,7 +722,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                               disabled={!isDisabled}
                             >
                               View Semi FG Level 1
-                            </PrimaryButton>
+                            </SecondaryButton>
                             <span className="text-sm font-medium text-gray-700">
                               STATUS: {semiFgLv1.statusRow || '-'}
                             </span>
@@ -740,8 +746,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                 </SecondaryButton>
                 {isDisabled ? (
                   <>
-                    <PrimaryButton type="button" onClick={goToEdit}>Edit FG</PrimaryButton>
-                    <DangerButton type="button" onClick={() => openDeleteModal({ type: 'fg', item: data, label: 'FG Material' })}>DELETE FG</DangerButton>
+                    <PrimaryButton type="button" onClick={goToEdit} disabled={data.fgStatus === 'COM'}>Edit FG</PrimaryButton>
+                    <DangerButton type="button" onClick={() => openDeleteModal({ type: 'fg', item: data, label: 'FG Material' })} disabled={data.fgStatus === 'COM'}>DELETE FG</DangerButton>
                     <SuccessButton type="button" onClick={() => { setCompleteError(''); setConfirmingComplete(true); }} disabled={isFgCompleteDisabled || isCompleting}>Complete</SuccessButton>
                   </>
                 ) : (
