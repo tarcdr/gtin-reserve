@@ -35,7 +35,7 @@ export default function SemiFgLv2Bom({ auth, InputData, subMattypes = [], uoms =
   };
 
   const handleDelete = () => {
-    router.delete(route('packmaterial.semi-fg-lv2-bom.delete'), {
+    router.delete(route('packmaterial.semi-fg-lv2-bom.component.delete'), {
       data: form.data,
       preserveScroll: true,
     });

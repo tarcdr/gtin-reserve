@@ -11,6 +11,7 @@ import Modal from '@/Components/Modal';
 import DeleteDebugPanel from '@/Components/DeleteDebugPanel';
 import { useState } from 'react';
 import { useEffect } from 'react';
+import { capitalizeFirstLetter } from '@/Utils/capitalizeFirstLetter';
 
 const normalizeSemiFgForBomDisplay = (item) => {
   if (!item || String(item?.bomId || '').trim() === '') {
@@ -264,14 +265,18 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
         setCompleteError('');
       },
       onError: (nextErrors) => {
-        const message = nextErrors?.complete || nextErrors?.bomId || nextErrors?.materialId || 'Unable to complete FG.';
+        const message = nextErrors?.complete || nextErrors?.bomId || nextErrors?.materialId || '';
         setCompleteError(message);
         setIsCompleteLoading(false);
-        window.setTimeout(() => {
-          setCompleteResult({ type: 'error', message });
-        }, 200);
+        console.log('Complete FG failed with error:', message);
+        if (message !== '') {
+          window.setTimeout(() => {
+            setCompleteResult({ type: 'error', message });
+          }, 200);
+        }
       },
       onFinish: () => {
+        console.log('Complete FG request finished.');
         setIsCompleting(false);
       },
     });
@@ -673,7 +678,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                           </div>
                         </div>
                       ) : (
-                        <SuccessButton type="button" onClick={() => goToSemiFgLv2()} disabled={!isDisabled}>
+                        <SuccessButton type="button" onClick={() => goToSemiFgLv2()} disabled={!isDisabled || isCompleted}>
                           Create Semi FG Level 2
                         </SuccessButton>
                       )}
@@ -795,10 +800,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
           <p className="text-gray-600">Please wait while Complete FG is being processed.</p>
         </div>
       </Modal>
-      <Modal show={Boolean(completeResult)} maxWidth="md" onClose={() => setCompleteResult(null)}>
+      <Modal show={Boolean(completeResult)} maxWidth="md">
         <div className="p-6 space-y-4">
           <h2 className={`text-xl font-semibold ${completeResult?.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
-            {completeResult?.type === 'success' ? 'Success' : 'Error'}
+            {capitalizeFirstLetter(completeResult?.type)}
           </h2>
           <p className="text-gray-700">{completeResult?.message}</p>
           <div className="flex justify-end border-t pt-4">

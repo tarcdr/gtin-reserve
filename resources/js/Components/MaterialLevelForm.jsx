@@ -10,6 +10,7 @@ import DangerButton from '@/Components/DangerButton';
 import Modal from '@/Components/Modal';
 import { getAxiosErrorMessage, getResponseErrorMessage } from '@/Utils/apiError';
 import { useEffect, useState } from 'react';
+import { capitalizeFirstLetter } from '@/Utils/capitalizeFirstLetter';
 
 export default function MaterialLevelForm({
   auth,
@@ -801,10 +802,10 @@ export default function MaterialLevelForm({
           <p className="text-gray-600">Please wait while {completeLabel} is being processed.</p>
         </div>
       </Modal>
-      <Modal show={Boolean(completeResult)} maxWidth="md" onClose={() => setCompleteResult(null)}>
+      <Modal show={Boolean(completeResult)} maxWidth="md">
         <div className="p-6 space-y-4">
           <h2 className={`text-xl font-semibold ${completeResult?.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
-            {completeResult?.type === 'success' ? 'Success' : 'Error'}
+            {capitalizeFirstLetter(completeResult?.type)}
           </h2>
           <p className="text-gray-700">{completeResult?.message}</p>
           <div className="flex justify-end border-t pt-4">

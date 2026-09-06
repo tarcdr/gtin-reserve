@@ -107,7 +107,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/packmaterial/semi-fg-lv2-bom', [SemiFgLv2BomController::class, 'save'])->name('packmaterial.semi-fg-lv2-bom.save');
     Route::delete('/packmaterial/fg-bom', [FgBomController::class, 'delete'])->name('packmaterial.fg-bom.delete');
     Route::delete('/packmaterial/semi-fg-lv1-bom', [SemiFgLv1BomController::class, 'delete'])->name('packmaterial.semi-fg-lv1-bom.delete');
+    Route::delete('/packmaterial/semi-fg-lv1-bom/component', [SemiFgLv1BomController::class, 'deleteComponent'])->name('packmaterial.semi-fg-lv1-bom.component.delete');
     Route::delete('/packmaterial/semi-fg-lv2-bom', [SemiFgLv2BomController::class, 'delete'])->name('packmaterial.semi-fg-lv2-bom.delete');
+    Route::delete('/packmaterial/semi-fg-lv2-bom/component', [SemiFgLv2BomController::class, 'deleteComponent'])->name('packmaterial.semi-fg-lv2-bom.component.delete');
     Route::get('/packmaterial/new', [BusinessSupplyBomController::class, 'new'])->name('packmaterial.new');
     Route::post('/packmaterial/new', [BusinessSupplyBomController::class, 'callNew'])->name('packmaterial.new.submit');
     Route::get('/packmaterial/product-categories', [PackMaterialController::class, 'productCategories'])->name('packmaterial.product-categories');

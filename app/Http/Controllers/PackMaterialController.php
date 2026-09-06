@@ -549,6 +549,32 @@ class PackMaterialController extends Controller
     ]);
   }
 
+  protected function deleteSemiFgLv2(array $data, ?string $userLogin = null, ?string $userRole = null): array
+  {
+    $isLevelDelete = $this->firstFilledString($data, ['deleteScope']) === 'level';
+    $fgBomId = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['fgBomId']),
+      'fgBomId',
+      'FG BOM ID is required.'
+    );
+    $semiFgLv2BomId = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['semiFgLvBomId', 'bomId', 'semiFgLv2BomId']),
+      'semiFgLvBomId',
+      'Semi FG LV2 BOM ID is required.'
+    );
+
+    return $this->callDeleteProcedure('PROJ1_2_DEL_BOM_SEMI_L2', [
+      'P_FG_BOM_ID' => $fgBomId,
+      'P_SEMI_FG_LV2_BOM_ID' => $semiFgLv2BomId,
+      'P_USER_ROLE' => (string) ($userRole ?: 'GTIN'),
+      'P_USER' => (string) ($userLogin ?: 'system'),
+    ], [
+      'ownerLevel' => 'semiFgLv2',
+      'fgBomId' => $fgBomId,
+      'semiFgLv2BomId' => $semiFgLv2BomId,
+    ]);
+  }
+
   protected function deleteSemiFgLv2ComponentBom(array $data, ?string $userLogin = null, ?string $userRole = null): array
   {
     $isLevelDelete = $this->firstFilledString($data, ['deleteScope']) === 'level';
@@ -583,6 +609,40 @@ class PackMaterialController extends Controller
       'materialIdM5' => $materialIdM5,
       'fgBomId' => $fgBomId,
       'semiFgLv2BomId' => $semiFgLv2BomId,
+    ]);
+  }
+
+  protected function deleteSemiFgLv1(array $data, ?string $userLogin = null, ?string $userRole = null): array
+  {
+    $isLevelDelete = $this->firstFilledString($data, ['deleteScope']) === 'level';
+    $fgBomId = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['fgBomId']),
+      'fgBomId',
+      'FG BOM ID is required.'
+    );
+    $semiFgLv2BomId = $this->requireDeleteValue(
+      $this->resolveSemiFgLv2BomIdForDelete($data),
+      'semiFgLv2BomId',
+      'Semi FG LV2 BOM ID is required.'
+    );
+    $semiFgLv1BomId = $this->requireDeleteValue(
+      $this->firstFilledString($data, ['semiFgLvBomId', 'bomId', 'semiFgLv1BomId']),
+      'semiFgLvBomId',
+      'Semi FG LV1 BOM ID is required.'
+    );
+
+    return $this->callDeleteProcedure('PROJ1_2_DEL_BOM_SEMI_L1', [
+      'P_FG_BOM_ID' => $fgBomId,
+      'P_SEMI_FG_LV2_BOM_ID' => $semiFgLv2BomId,
+      'P_SEMI_FG_LV1_BOM_ID' => $semiFgLv1BomId,
+      'P_USER_ROLE' => (string) ($userRole ?: 'GTIN'),
+      'P_USER' => (string) ($userLogin ?: 'system'),
+    ], [
+      'ownerLevel' => 'semiFgLv1',
+      'deleteScope' => $isLevelDelete ? 'level' : 'component',
+      'fgBomId' => $fgBomId,
+      'semiFgLv2BomId' => $semiFgLv2BomId,
+      'semiFgLv1BomId' => $semiFgLv1BomId,
     ]);
   }
 

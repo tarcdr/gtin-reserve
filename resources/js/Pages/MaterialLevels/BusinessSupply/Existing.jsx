@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 import BusinessSupplyDetail from '@/Components/BusinessSupply/BusinessSupplyDetail';
 import BusinessSupplyComponents from '@/Components/BusinessSupply/BusinessSupplyComponents';
 import SuccessButton from '@/Components/SuccessButton';
+import { capitalizeFirstLetter } from '@/Utils/capitalizeFirstLetter';
 
 export default function BusinessSupplyExisting({
   auth,
@@ -417,10 +418,10 @@ export default function BusinessSupplyExisting({
           <p className="text-gray-600">Please wait while Complete Business Supply is being processed.</p>
         </div>
       </Modal>
-      <Modal show={Boolean(completeResult)} maxWidth="md" onClose={() => setCompleteResult(null)}>
+      <Modal show={Boolean(completeResult)} maxWidth="md">
         <div className="p-6 space-y-4">
           <h2 className={`text-xl font-semibold ${completeResult?.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
-            {completeResult?.type === 'success' ? 'Success' : 'Error'}
+            {capitalizeFirstLetter(completeResult?.type)}
           </h2>
           <p className="text-gray-700">{completeResult?.message}</p>
           <div className="flex justify-end border-t pt-4">
