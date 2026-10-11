@@ -8,36 +8,13 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import ReactSelect from 'react-select';
 import { useEffect, useState } from 'react';
 
-const FLOW_KEY = 'product.search.flow';
-
-const readFlowState = () => {
-  if (typeof window === 'undefined') {
-    return {};
-  }
-
-  try {
-    return JSON.parse(window.sessionStorage.getItem(FLOW_KEY) || '{}') || {};
-  } catch {
-    return {};
-  }
-};
-
-const writeFlowState = (state) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.sessionStorage.setItem(FLOW_KEY, JSON.stringify(state));
-};
-
 export default function ProductSearchBom({ auth, InputData, isDisabled = true, brands = [], mattypes = [], materials = [] }) {
-  const storedFlow = readFlowState();
-  const initialOptions = storedFlow.subMattypeOptions ?? InputData?.subMattypeOptions ?? [];
+  const initialOptions = InputData?.subMattypeOptions ?? [];
   const [subMattypeOptions, setSubMattypeOptions] = useState(initialOptions);
   const { data, setData, processing } = useForm({
-    brand: storedFlow.brand ?? InputData?.brand ?? '',
-    mattype: storedFlow.mattype ?? InputData?.mattype ?? '',
-    subMattype: storedFlow.subMattype ?? InputData?.subMattype ?? '',
+    brand: InputData?.brand ?? '',
+    mattype: InputData?.mattype ?? '',
+    subMattype: InputData?.subMattype ?? '',
     materialId: InputData?.materialId || ''
   });
   const [errors, setErrors] = useState({});
@@ -173,31 +150,13 @@ export default function ProductSearchBom({ auth, InputData, isDisabled = true, b
               <div className="flex items-center justify-center gap-4">
                 <SecondaryButton
                   type="button"
-                  onClick={() => {
-                    writeFlowState({
-                      brand: data.brand,
-                      mattype: data.mattype,
-                      subMattype: data.subMattype,
-                      subMattypeOptions,
-                      step: 2,
-                    });
-                    window.history.back();
-                  }}
+                  onClick={() => window.history.back()}
                 >
                   Back
                 </SecondaryButton>
                 <SecondaryButton
                   type="button"
-                  onClick={() => {
-                    writeFlowState({
-                      brand: data.brand,
-                      mattype: data.mattype,
-                      subMattype: data.subMattype,
-                      subMattypeOptions,
-                      step: 1,
-                    });
-                    window.history.back();
-                  }}
+                  onClick={() => window.history.back()}
                 >
                   Change Brand / Mattype
                 </SecondaryButton>

@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { getAxiosErrorMessage, getFirstErrorMessage, getResponseErrorMessage } from '@/Utils/apiError';
 import {
@@ -16,6 +16,8 @@ export default function useBomMaterialFormController({
   isSemiFgOwner,
   defaultBackRoute,
 }) {
+  const { overviewFlow } = usePage().props;
+  InputData = { ...InputData, ...overviewFlow?.fields, overviewToken: overviewFlow?.token };
   const [isGeneratingComponentId, setIsGeneratingComponentId] = useState(false);
   const [productCategoryOptions, setProductCategoryOptions] = useState([]);
   const [productSubCategoryOptions, setProductSubCategoryOptions] = useState([]);

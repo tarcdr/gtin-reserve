@@ -1,6 +1,6 @@
 import BomMaterialForm from '@/Components/BomMaterialForm';
 import useBomMaterialFormController from '@/Components/useBomMaterialFormController';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 
 export default function SemiFgLv2Bom({ auth, InputData, subMattypes = [], uoms = [] }) {
   const ownerLevel = 'semiFgLv2';
@@ -23,7 +23,9 @@ export default function SemiFgLv2Bom({ auth, InputData, subMattypes = [], uoms =
     defaultBackRoute,
   });
 
+  const { overviewFlow } = usePage().props;
   const handleBack = () => {
+    if (overviewFlow?.returnUrl) { router.get(overviewFlow.returnUrl); return; }
     router.get(route(defaultBackRoute), {
       mode: 'view',
       levelMaterialId: form.data.backMaterialId || form.data.levelMaterialId || form.data.materialId || '',

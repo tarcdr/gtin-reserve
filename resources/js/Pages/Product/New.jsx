@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -10,6 +10,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import { getAxiosErrorMessage, getFirstErrorMessage, getResponseErrorMessage } from '@/Utils/apiError';
 
 export default function ProductNew({ auth, InputData, brands = [], mattypes = [], sites = [], masterUom = [] }) {
+  const { overviewFlow } = usePage().props;
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
   const [subMattypeOptions, setSubMattypeOptions] = useState([]);
@@ -19,6 +20,7 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
   const [isBomIdReady, setIsBomIdReady] = useState(false);
   const pageId = `${Math.min(Math.max(step, 1), 3)}N`;
   const { data, setData, patch, errors, processing, setError, clearErrors } = useForm({
+    overviewToken: overviewFlow?.token || '',
     brand: '',
     mattype: InputData?.mattype ?? '',
     subMattype: '',
@@ -503,7 +505,7 @@ export default function ProductNew({ auth, InputData, brands = [], mattypes = []
                     Change Sub Mattype
                   </SecondaryButton>
                 )}
-                <SecondaryButton type="button" onClick={() => window.history.back()}>
+                <SecondaryButton type="button" onClick={() => overviewFlow?.returnUrl ? router.get(overviewFlow.returnUrl) : window.history.back()}>
                   Back
                 </SecondaryButton>
                 <PrimaryButton disabled={processing || ((isGeneratingMaterialId || isGeneratingBomId) || (step === 3 && !isBomIdReady))}>

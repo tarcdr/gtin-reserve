@@ -4,6 +4,7 @@ export function buildBomMaterialInitialData({
   defaultBackRoute = 'product.view',
 }) {
   return {
+    overviewToken: InputData?.overviewToken || '',
     actionMode: InputData?.actionMode || 'create',
     ownerLevel: ownerLevel || InputData?.ownerLevel || 'fg',
     backRoute: InputData?.backRoute || defaultBackRoute,

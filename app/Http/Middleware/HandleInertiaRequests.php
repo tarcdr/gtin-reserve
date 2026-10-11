@@ -32,6 +32,7 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'overviewFlow' => fn () => $request->attributes->get('overviewFlow'),
             'auth' => [
                 'user' => $request->user(),
             ],

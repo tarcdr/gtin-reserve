@@ -11,19 +11,20 @@ export default function BusinessSupplyComponents({
   onDeleteComponent,
   onViewComponent,
   isCompleted = false,
+  canEdit = true,
 }) {
   const componentItems = components.filter((item) => item.sourceType === 'component');
   const materialIdItems = components.filter((item) => item.sourceType === 'matid');
 
-  const renderTable = ({ items, emptyMessage, allowEdit, allowView }) => (
-    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+  const renderTable = ({ items, emptyMessage, allowEdit, allowDelete = false }) => (
+    <div className="bg-white overflow-x-auto shadow-sm sm:rounded-lg">
       <table className="w-full text-sm text-left rtl:text-right text-gray-800">
         <thead className="text-xs bg-gray-50">
           <tr>
             <th scope="col" className="px-6 py-3" width="50">#</th>
             <th scope="col" className="px-6 py-3" width="220">Material ID/Component ID</th>
             <th scope="col" className="px-6 py-3">Description</th>
-            <th scope="col" className="px-6 py-3 text-center" width="220">Action</th>
+            <th scope="col" className="px-6 py-3 text-center" width="180">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -43,17 +44,16 @@ export default function BusinessSupplyComponents({
                   <th scope="row" className="px-6 py-4">{item.code || item.componentId || '-'}</th>
                   <th scope="row" className="px-6 py-4">{description}</th>
                   <td className="px-6 py-4">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      {allowEdit ? (
+                    <div className="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap">
+                      {allowEdit && canEdit && !isCompleted && onEditComponent ? (
                         <PrimaryButton
                           type="button"
                           onClick={() => onEditComponent?.(item)}
                           disabled={!onEditComponent}
                         >
-                          {isCompleted ? 'View' : 'Edit'}
+                          Edit
                         </PrimaryButton>
-                      ) : null}
-                      {allowView ? (
+                      ) : (
                         <SecondaryButton
                           type="button"
                           onClick={() => onViewComponent?.(item)}
@@ -61,14 +61,14 @@ export default function BusinessSupplyComponents({
                         >
                           View
                         </SecondaryButton>
-                      ) : null}
-                      <DangerButton
+                      )}
+                      {allowDelete ? <DangerButton
                         type="button"
                         onClick={() => onDeleteComponent?.(item)}
                         disabled={!onDeleteComponent || isCompleted}
                       >
                         Delete
-                      </DangerButton>
+                      </DangerButton> : null}
                     </div>
                   </td>
                 </tr>
@@ -93,7 +93,7 @@ export default function BusinessSupplyComponents({
           items: componentItems,
           emptyMessage: 'No components yet. Select a business supply to view details.',
           allowEdit: !isCompleted,
-          allowView: true,
+          allowDelete: true,
         })}
       </fieldset>
 
@@ -108,7 +108,7 @@ export default function BusinessSupplyComponents({
           items: materialIdItems,
           emptyMessage: 'No Material ID components yet. Select a business supply to view details.',
           allowEdit: false,
-          allowView: true,
+          allowDelete: true,
         })}
       </fieldset>
     </div>

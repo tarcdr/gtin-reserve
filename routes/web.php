@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RmController;
@@ -39,8 +40,17 @@ Route::get('/', function () {
     ]);
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\OverviewFlow::class])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'view'])->name('dashboard');
+
+    Route::get('/overview/products/add/{action}', [OverviewController::class, 'add'])->whereNumber('action')->name('overview.products.add');
+
+    foreach (['products', 'bs'] as $kind) {
+        Route::get('/overview/'.$kind, [OverviewController::class, 'show'])
+            ->defaults('kind', $kind)->name('overview.'.$kind);
+        Route::get('/overview/'.$kind.'/export', [OverviewController::class, 'export'])
+            ->defaults('kind', $kind)->name('overview.'.$kind.'.export');
+    }
 
     Route::get('/product/new', [ProductController::class, 'new'])->name('product.new');
     Route::patch('/product/create', [ProductController::class, 'create'])->name('product.create');

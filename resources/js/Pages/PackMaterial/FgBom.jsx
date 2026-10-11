@@ -1,6 +1,6 @@
 import BomMaterialForm from '@/Components/BomMaterialForm';
 import useBomMaterialFormController from '@/Components/useBomMaterialFormController';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 
 export default function FgBom({ auth, InputData, subMattypes = [], uoms = [] }) {
   const ownerLevel = 'fg';
@@ -23,7 +23,9 @@ export default function FgBom({ auth, InputData, subMattypes = [], uoms = [] }) 
     headerTitle = `FG BOM - View`;
   }
 
+  const { overviewFlow } = usePage().props;
   const handleBack = () => {
+    if (overviewFlow?.returnUrl) { router.get(overviewFlow.returnUrl); return; }
     router.get(route('product.view'), {
       materialId: form.data.backMaterialId || form.data.fgMaterialId || form.data.materialId || '',
     });

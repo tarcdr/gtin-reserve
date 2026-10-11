@@ -46,7 +46,7 @@ function UserAvatar({ user }) {
 export default function Authenticated({ user, header, pageIdentity = null, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [databaseError, setDatabaseError] = useState('');
-    const { flash } = usePage().props;
+    const { flash, overviewFlow, errors } = usePage().props;
     const isAdmin = user?.role === 'admin';
     const roleLabel = user?.role ? user.role.toUpperCase() : 'USER';
 
@@ -78,13 +78,46 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                     Dashboard
                                 </NavLink>
 
-                                <NavLink
-                                    href={route('material.report')}
-                                    active={route().current('material.report')}
-                                    className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md px-2"
-                                >
-                                    Product(FG)-Report
-                                </NavLink>
+                                <div className="hidden sm:flex sm:items-center sm:ml-6">
+                                    <div className="ml-3 relative">
+                                        <Dropdown>
+                                            <Dropdown.Trigger>
+                                                <span className="rounded-md">
+                                                    <button
+                                                        type="button"
+                                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-extrabold rounded-md text-gray-500 bg-white hover:bg-green-50 hover:text-green-800 focus:outline-none transition ease-in-out duration-150 text-green-900 font-extrabold"
+                                                    >
+                                                        Product (FG)
+
+                                                        <svg
+                                                            className="ml-2 -mr-0.5 h-4 w-4"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 20 20"
+                                                            fill="currentColor"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                </span>
+                                            </Dropdown.Trigger>
+
+                                            <Dropdown.Content>
+                                                <Dropdown.Link href={route('overview.products')}>Overview Products</Dropdown.Link>
+                                                <Dropdown.Link href={route('product.new')} className="text-green-900 font-extrabold hover:bg-green-50">
+                                                    New Product
+                                                </Dropdown.Link>
+                                                <Dropdown.Link href={route('product.search')} className="text-green-900 font-extrabold hover:bg-green-50">
+                                                    Existing Product
+                                                </Dropdown.Link>
+                                                <Dropdown.Link href={route('material.report')} className="text-green-900 font-extrabold hover:bg-green-50">Report (FG)</Dropdown.Link>
+                                            </Dropdown.Content>
+                                        </Dropdown>
+                                    </div>
+                                </div>
                                 <div className="hidden sm:flex sm:items-center sm:ml-6">
                                     <div className="ml-3 relative">
                                         <Dropdown>
@@ -113,6 +146,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                             </Dropdown.Trigger>
 
                                             <Dropdown.Content>
+                                                <Dropdown.Link href={route('overview.bs')}>Overview Business Supply</Dropdown.Link>
                                                 <Dropdown.Link href={route('business-supply.new')} className="text-green-900 font-extrabold hover:bg-green-50">
                                                     NEW BUSINESS SUPPLY
                                                 </Dropdown.Link>
@@ -257,6 +291,12 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                         >
                             Dashboard
                         </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('overview.products')} active={route().current('overview.products')}>
+                            Overview Products
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('overview.bs')} active={route().current('overview.bs')}>
+                            Overview Business Supply
+                        </ResponsiveNavLink>
                         {/* <ResponsiveNavLink href={route('material.request')} active={route().current('material.request')}>
                             Material/Request
                         </ResponsiveNavLink> */}
@@ -344,7 +384,12 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                 </header>
             )}
 
-            <main>{children}</main>
+            <main>{overviewFlow?.returnUrl ? <div className="max-w-7xl mx-auto px-4 pt-6 sm:px-6 lg:px-8">
+                <Link href={overviewFlow.returnUrl} className="inline-flex rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-[#4C5E86] hover:bg-gray-50">กลับ Overview Products</Link>
+                <p className="mt-2 text-xs font-normal text-gray-500">ข้อมูลใหม่จะปรากฏเมื่อกระบวนการเติม INDEX ทำงาน</p>
+            </div> : null}
+            {errors?.overview && <p role="alert" className="mx-auto mt-4 max-w-7xl rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">{errors.overview}</p>}
+            {children}</main>
 
             <Modal
                 show={Boolean(databaseError)}

@@ -899,6 +899,9 @@ class MaterialLevelController extends Controller
 
   public function rawMaterial(Request $request): Response
   {
+    if ($request->attributes->get('overviewFlow')) {
+      return Inertia::render('Overview/RawMaterial', ['context' => $request->attributes->get('overviewFlow')]);
+    }
     $InputData = [
       'bomId'      => $request->get('bomId'),
       'bomDesc'    => $request->get('bomDesc'),
@@ -1180,7 +1183,7 @@ class MaterialLevelController extends Controller
 
   public function saveRaw(Request $request): RedirectResponse
   {
-    return back()->with('success', 'Raw material saved.');
+    throw \Illuminate\Validation\ValidationException::withMessages(['overview' => 'ยังไม่มี flow บันทึก Raw Material ที่ใช้งานได้ กรุณาติดต่อ SA']);
   }
 
   public function saveSemiFgLevel2(Request $request): RedirectResponse

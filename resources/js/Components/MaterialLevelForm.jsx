@@ -12,6 +12,8 @@ import { getAxiosErrorMessage, getResponseErrorMessage } from '@/Utils/apiError'
 import { useEffect, useState } from 'react';
 import { capitalizeFirstLetter } from '@/Utils/capitalizeFirstLetter';
 
+const EMPTY_COMPONENTS = [];
+
 export default function MaterialLevelForm({
   auth,
   title,
@@ -52,6 +54,13 @@ export default function MaterialLevelForm({
   semiFgLv2 = null,
   fgDetail = null,
 }) {
+  const pageProps = usePage().props;
+  const { overviewFlow } = pageProps;
+  InputData = { ...InputData, ...overviewFlow?.fields };
+  if ([3, 5].includes(overviewFlow?.action)) {
+    InputData = { ...InputData, levelBomId: '', levelMaterialId: '', materialId: '', searchDesc: '', fullDescEn: '', fullDescTh: '', uom: '', subMattype: '', statusRow: '', fgDetail: { ...InputData?.fgDetail, [levelKey]: {} } };
+    components = EMPTY_COMPONENTS;
+  }
   const [componentRows, setComponentRows] = useState(components);
   const [isGeneratingLevelData, setIsGeneratingLevelData] = useState(false);
   const [confirmingComplete, setConfirmingComplete] = useState(false);
@@ -59,7 +68,6 @@ export default function MaterialLevelForm({
   const [isCompleteLoading, setIsCompleteLoading] = useState(false);
   const [completeError, setCompleteError] = useState('');
   const [completeResult, setCompleteResult] = useState(null);
-  const pageProps = usePage().props;
   const pageErrors = pageProps?.errors || {};
   const completeResponse = pageProps?.flash?.completeResponse;
   const completeLabel = levelKey === 'semiFgLv1'
@@ -88,6 +96,7 @@ export default function MaterialLevelForm({
 
   const { data, setData, patch, processing, errors, setError, clearErrors } = useForm({
     mode,
+    overviewToken: overviewFlow?.token || '',
     fgDetail: InputData?.fgDetail || {},
     fgMaterialId: InputData?.fgMaterialId || InputData?.referentMaterialId || '',
     referentMaterialId: InputData?.referentMaterialId || InputData?.fgMaterialId || '',
@@ -109,7 +118,7 @@ export default function MaterialLevelForm({
     statusRow: InputData?.statusRow || '',
     components: components,
     fg_bom_id: semiFgLv2?.fg_bom_id || '',
-    semi_fg_lv2_id: semiFgLv2?.semi_fg_lv2_id || '',
+    semi_fg_lv2_id: InputData?.semi_fg_lv2_id || semiFgLv2?.semi_fg_lv2_id || '',
     fgMaterialDesc: fgDetail?.search_description || '',
   });
   const mergedErrors = {
@@ -125,7 +134,7 @@ export default function MaterialLevelForm({
 
     router.patch(route(submitRoute), payload, {
       preserveScroll: true,
-      preserveState: false,
+      preserveState: overviewFlow ? 'errors' : false,
     });
   };
 
@@ -349,6 +358,7 @@ export default function MaterialLevelForm({
   };
 
   const goBack = () => {
+    if (overviewFlow?.returnUrl) { router.get(overviewFlow.returnUrl); return; }
     if (isEditMode && levelRoute) {
       router.get(route(levelRoute), buildLevelLookupPayload('view'));
       return;
