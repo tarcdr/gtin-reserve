@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ExistingComponentController;
+use App\Http\Controllers\RawChildComponentController;
 use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
@@ -51,6 +53,17 @@ Route::middleware(['auth', \App\Http\Middleware\OverviewFlow::class])->group(fun
         Route::get('/overview/'.$kind.'/export', [OverviewController::class, 'export'])
             ->defaults('kind', $kind)->name('overview.'.$kind.'.export');
     }
+
+    Route::get('/raw-child-components', [RawChildComponentController::class, 'form'])->name('raw-child.form');
+    Route::patch('/raw-child-components', [RawChildComponentController::class, 'save'])->name('raw-child.save');
+    Route::delete('/raw-child-components', [RawChildComponentController::class, 'remove'])->name('raw-child.delete');
+
+    Route::prefix('existing-components/{scope}')->where(['scope' => 'fg|raw4|semi1|semi2|level1|level2'])->group(function () {
+        Route::get('/', [ExistingComponentController::class, 'index'])->name('existing-components.index');
+        Route::get('/options', [ExistingComponentController::class, 'options'])->name('existing-components.options');
+        Route::post('/', [ExistingComponentController::class, 'save'])->name('existing-components.save');
+        Route::delete('/', [ExistingComponentController::class, 'delete'])->name('existing-components.delete');
+    });
 
     Route::get('/product/new', [ProductController::class, 'new'])->name('product.new');
     Route::patch('/product/create', [ProductController::class, 'create'])->name('product.create');

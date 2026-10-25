@@ -383,24 +383,21 @@ class PackMaterialController extends Controller
       ]);
     }
 
-    $pdo = DB::connection('oracle')->getPdo();
-    $error = null;
-    $stmt = $pdo->prepare('BEGIN proj1_2_save_comp_bom_semi_l2(:P_BOM_SEMI_LV2_ID, :P_MATTYPE, :P_SUBMATTYPE, :P_PRODUCT_CAT, :P_PROD_SUB_CAT, :P_SITE, :P_COMPONENT_ID, :P_SEARCH_DESC, :P_COMP_DESC_EN, :P_COMP_DESC_TH, :P_UOM, :P_USER_ROLE, :P_USER, :P_ERROR); END;');
-    $stmt->bindValue(':P_BOM_SEMI_LV2_ID', $bomSemiLv2Id, PDO::PARAM_STR);
-    $stmt->bindValue(':P_MATTYPE', $mattype, PDO::PARAM_STR);
-    $stmt->bindValue(':P_SUBMATTYPE', $subMattype, PDO::PARAM_STR);
-    $stmt->bindValue(':P_PRODUCT_CAT', $productCat, PDO::PARAM_STR);
-    $stmt->bindValue(':P_PROD_SUB_CAT', $productSubCat, PDO::PARAM_STR);
-    $stmt->bindValue(':P_SITE', $site, PDO::PARAM_STR);
-    $stmt->bindValue(':P_COMPONENT_ID', $componentId, PDO::PARAM_STR);
-    $stmt->bindValue(':P_SEARCH_DESC', $searchDesc, PDO::PARAM_STR);
-    $stmt->bindValue(':P_COMP_DESC_EN', $fullDescEn, PDO::PARAM_STR);
-    $stmt->bindValue(':P_COMP_DESC_TH', $fullDescTh, PDO::PARAM_STR);
-    $stmt->bindValue(':P_UOM', $uom, PDO::PARAM_STR);
-    $stmt->bindValue(':P_USER_ROLE', (string) $userRole, PDO::PARAM_STR);
-    $stmt->bindValue(':P_USER', (string) $userLogin, PDO::PARAM_STR);
-    $stmt->bindParam(':P_ERROR', $error, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
-    $stmt->execute();
+    $parent = app(\App\Services\ExistingComponentService::class)->context('semi2', [
+      'fgMaterialId' => trim((string) ($data['fgMaterialId'] ?? $data['referentMaterialId'] ?? '')),
+      'fgBomId' => trim((string) ($data['fgBomId'] ?? '')), 'semiFgLv2BomId' => $bomSemiLv2Id,
+    ]);
+    $service = app(\App\Services\ExistingComponentService::class);
+    $service->requireWritable($parent);
+    $service->callProcedure('PROJ1_2_SAVE_COMP_BOM_SEMI_L2', [
+      'P_FG_BOM_ID' => $parent['fgBomId'], 'P_MATERIAL_ID_FG_1' => $parent['fgMaterialId'],
+      'P_SEMI_FG_LV2_ID' => $parent['semiFgLv2Id'], 'P_SEMI_FG_LV2_BOM_ID' => $parent['semiFgLv2BomId'],
+      'P_MATTYPE' => $mattype, 'P_SUBMATTYPE' => $subMattype, 'P_PRODUCT_CAT' => $productCat, 'P_PROD_SUB_CAT' => $productSubCat,
+      'P_SITE' => $site, 'P_COMPONENT_ID' => $componentId, 'P_SEARCH_DESC' => $searchDesc,
+      'P_COMP_DESC_EN' => $fullDescEn, 'P_COMP_DESC_TH' => $fullDescTh, 'P_UOM' => $uom,
+      'P_USER_ROLE' => $userRole, 'P_USER' => $userLogin,
+    ]);
+    $error = '';
 
     $resolvedError = trim((string) $this->resolveProcedureErrorMessage($error));
     if ($resolvedError !== '') {
@@ -1590,7 +1587,7 @@ class PackMaterialController extends Controller
         ? ($request->fgBomDesc ?: $resolvedSemiFgLv1FgBomDesc)
         : ($request->fgBomDesc ?: ($loadedComponent['bomDesc'] ?? $request->bomDesc)));
 
-    if ($ownerLevel === 'semiFgLv1' && $actionMode === 'create' && ($resolvedFgBomId === '' || !$this->loadSemiFgLv2ByFgBomId($resolvedFgBomId))) {
+    if ($ownerLevel === 'semiFgLv1' && $actionMode === 'create' && ($resolvedFgBomId === '' || !app(\App\Services\BomContextService::class)->level(2, $resolvedFgBomId))) {
       throw ValidationException::withMessages([
         'componentId' => 'Create Semi FG Level 2 first.',
       ]);
@@ -1637,6 +1634,13 @@ class PackMaterialController extends Controller
       'fullDescTh' => $request->fullDescTh ?: ($loadedComponent['fullDescTh'] ?? ''),
       'uom' => $request->uom ?: ($loadedComponent['uom'] ?? ''),
     ];
+
+    if ($ownerLevel === 'semiFgLv1' && $resolvedFgBomId !== '') {
+      $ownLevel = app(\App\Services\BomContextService::class)->level(1, $resolvedFgBomId, $resolvedBOMId);
+      $parent = app(\App\Services\BomContextService::class)->level(2, $resolvedFgBomId, $ownLevel['semiFgLv2BomId'] ?? null);
+      $InputData['semiFgLv2BomId'] = $parent['bomId'] ?? '';
+      $InputData['semiFgLv2BomDesc'] = $parent['bomDesc'] ?? '';
+    }
 
     if ($ownerLevel === 'semiFgLv1') {
       $InputData['subMattype'] = $request->subMattype ?: ($loadedComponent['subMattype'] ?? '0');

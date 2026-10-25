@@ -41,6 +41,7 @@ export default function BomMaterialForm({
   onFullDescEnChange,
   onFullDescThChange,
   onUomChange,
+  extraSections = null,
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const saveError = data?.actionMode !== 'delete'
@@ -65,6 +66,18 @@ export default function BomMaterialForm({
           <DeleteDebugPanel />
           <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div className="space-y-6">
+              {isSemiFgOwner && (
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                  {[
+                    ['FG BOM ID', data.fgBomId], ['FG BOM Description', data.fgBomDesc],
+                    ...(data.masterMaterialId ? [['MASTER MATERIAL ID M4', data.masterMaterialId], ['MASTER MATERIAL DESCRIPTION', data.masterDescription]] : []),
+                    ...(data.ownerLevel === 'semiFgLv1' ? [['SEMI FG LV2 BOM ID', data.semiFgLv2BomId], ['SEMI FG LV2 BOM Description', data.semiFgLv2BomDesc]] : []),
+                  ].map(([label, value], index) => <div key={label}>
+                    <InputLabel htmlFor={`bom-parent-${index}`} value={label} />
+                    <TextInput id={`bom-parent-${index}`} value={value || ''} disabled className="mt-1 block w-full bg-gray-100" />
+                  </div>)}
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <InputLabel htmlFor={isSemiFgOwner ? 'semiFgLvBomId' : 'bomId'} value={levelBomIdLabel} />
@@ -261,6 +274,7 @@ export default function BomMaterialForm({
               ) : null}
             </form>
           </div>
+          {extraSections}
         </div>
       </div>
 

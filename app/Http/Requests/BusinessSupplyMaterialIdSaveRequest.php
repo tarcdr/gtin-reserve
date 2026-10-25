@@ -10,7 +10,7 @@ class BusinessSupplyMaterialIdSaveRequest extends FormRequest
     {
         return [
             'bomBsId' => ['required'],
-            'matType' => ['required'],
+            'matType' => ['required', 'string', 'in:1,5'],
             'subMatType' => ['required'],
             'componentId' => ['required'],
             'materialId' => ['nullable'],
@@ -20,7 +20,7 @@ class BusinessSupplyMaterialIdSaveRequest extends FormRequest
             'uom' => ['nullable'],
             'site' => ['nullable'],
             'bizsupId' => ['nullable'],
-            'brand' => ['nullable'],
+            'brand' => ['required_if:matType,1', 'nullable', 'string'],
             'actionMode' => ['nullable'],
         ];
     }

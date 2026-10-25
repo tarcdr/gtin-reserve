@@ -311,7 +311,14 @@ export default function MaterialLevelForm({
     router.get(route(createComponentRoute), createPayload);
   };
 
+  const goExistingComponent = (item) => router.get(route('existing-components.index', { scope: levelKey === 'semiFgLv1' ? 'semi1' : 'semi2' }), {
+    fgMaterialId: data.fgMaterialId, fgBomId: data.fgBomId,
+    ...(levelKey === 'semiFgLv1' ? { semiFgLv1BomId: data.levelBomId } : { semiFgLv2BomId: data.levelBomId }),
+    ...(item ? { mode: 'view', componentId: item.code, no: item.no } : {}),
+  });
+
   const goComponentAction = (actionMode, item = {}) => {
+    if (item.sourceType === 'matid') { goExistingComponent(item); return; }
     if (levelKey === 'semiFgLv2') {
       router.get(route('packmaterial.semi-fg-lv2-bom.new'), buildSemiFgLv2ComponentPayload(actionMode, item));
       return;
@@ -706,60 +713,81 @@ export default function MaterialLevelForm({
               </div>
 
               {(isViewMode || (showComponentSectionWhenNotView && !isCreateMode)) && (
-                <fieldset className="border border-gray-300 rounded-md p-4">
-                  <legend className="px-2 text-gray-600">{componentLegend || `${title} Components`}</legend>
-                  {isViewMode && (
-                    <div className="flex items-center justify-end gap-4 mb-2">
-                      <SuccessButton type="button" onClick={goCreateComponent} disabled={!createComponentRoute || isSemiFgCompleted}>
-                        {createComponentLabel}
-                      </SuccessButton>
-                    </div>
-                  )}
-                  <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <table className="w-full text-sm text-left rtl:text-right text-gray-800">
-                      <thead className="text-xs bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3">#</th>
-                          <th scope="col" className="px-6 py-3">Component ID</th>
-                          <th scope="col" className="px-6 py-3">Description</th>
-                          <th scope="col" className="px-6 py-3" width="120">Status</th>
-                          <th scope="col" className="px-6 py-3" width="180">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {componentRows.length === 0 ? (
-                          <tr>
-                            <td colSpan="5" className="px-6 py-4 text-gray-500">No components yet. Create one to map with FG.</td>
-                          </tr>
-                        ) : (
-                          componentRows.map((item, index) => (
-                            <tr key={`${title}-component-${item.code}`}>
-                              <th scope="row" className="px-6 py-4">{index + 1}</th>
-                              <td className="px-6 py-4">{item.code}</td>
-                              <td className="px-6 py-4">{item.label}</td>
-                              <td className="px-6 py-4">{item.status}</td>
-                              <td className="px-6 py-4">
-                                {isViewMode ? (
-                                  <div className="flex items-center gap-2">
-                                    {!isSemiFgCompleted && (
-                                      <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>EDIT</PrimaryButton>
-                                    )}
-                                    {isSemiFgCompleted && (
-                                      <SecondaryButton type="button" onClick={() => goComponentAction('view', item)}>VIEW</SecondaryButton>
-                                    )}
-                                    <DangerButton type="button" onClick={() => goComponentAction('delete', item)} disabled={isSemiFgCompleted}>DELETE</DangerButton>
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400">View Only</span>
-                                )}
-                              </td>
+                <div className="space-y-6">
+                  {[
+                    {
+                      key: 'new',
+                      legend: `${title} New Components`,
+                      addLabel: 'ADD COMPONENT NEW',
+                      onAdd: goCreateComponent,
+                      items: componentRows.filter((item) => item.sourceType !== 'matid'),
+                      emptyMessage: 'No new components yet.',
+                    },
+                    {
+                      key: 'existing',
+                      onAdd: InputData?.existingComponentsAvailability?.ready ? () => goExistingComponent() : undefined,
+                      legend: `${title} Components From Existing`,
+                      addLabel: 'ADD COMPONENT EXISTING',
+                      items: componentRows.filter((item) => item.sourceType === 'matid'),
+                      emptyMessage: 'No existing components yet.',
+                    },
+                  ].map((section) => (
+                    <fieldset key={section.key} className="border border-gray-300 rounded-md p-4">
+                      <legend className="px-2 text-gray-600">{section.legend}</legend>
+                      {isViewMode && (
+                        <div className="flex items-center justify-end gap-4 mb-2">
+                          <SuccessButton type="button" onClick={section.onAdd} disabled={!section.onAdd || !createComponentRoute || isSemiFgCompleted}>
+                            {section.addLabel}
+                          </SuccessButton>
+                        </div>
+                      )}
+                      <div className="bg-white overflow-x-auto shadow-sm sm:rounded-lg">
+                        <table className="w-full text-sm text-left rtl:text-right text-gray-800">
+                          <thead className="text-xs bg-gray-50">
+                            <tr>
+                              <th scope="col" className="px-6 py-3">#</th>
+                              <th scope="col" className="px-6 py-3">Material ID/Component ID</th>
+                              <th scope="col" className="px-6 py-3">Description</th>
+                              <th scope="col" className="px-6 py-3" width="120">Status</th>
+                              <th scope="col" className="px-6 py-3" width="180">Action</th>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </fieldset>
+                          </thead>
+                          <tbody>
+                            {section.items.length === 0 ? (
+                              <tr>
+                                <td colSpan="5" className="px-6 py-4 text-gray-500">{section.emptyMessage}</td>
+                              </tr>
+                            ) : (
+                              section.items.map((item, index) => (
+                                <tr key={`${title}-component-${item.code}`}>
+                                  <th scope="row" className="px-6 py-4">{index + 1}</th>
+                                  <td className="px-6 py-4">{item.code}</td>
+                                  <td className="px-6 py-4">{item.label}</td>
+                                  <td className="px-6 py-4">{item.status}</td>
+                                  <td className="px-6 py-4">
+                                    {isViewMode ? (
+                                      <div className="flex items-center gap-2">
+                                        {!isSemiFgCompleted && item.sourceType !== 'matid' && (
+                                          <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>EDIT</PrimaryButton>
+                                        )}
+                                        {(isSemiFgCompleted || item.sourceType === 'matid') && (
+                                          <SecondaryButton type="button" onClick={() => goComponentAction('view', item)}>VIEW</SecondaryButton>
+                                        )}
+                                        <DangerButton type="button" onClick={() => goComponentAction('delete', item)} disabled={isSemiFgCompleted}>DELETE</DangerButton>
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-400">View Only</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </fieldset>
+                  ))}
+                </div>
               )}
 
               <div className="flex flex-col items-stretch justify-center gap-3 md:flex-row md:items-center">

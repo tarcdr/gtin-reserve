@@ -418,6 +418,15 @@ class ProductController extends Controller
       $inputData['materialId'] ?? '',
       $inputData['bomId'] ?? null
     );
+    $existing = app(\App\Services\ExistingComponentService::class);
+    $inputData['existingComponentsAvailability'] = $existing->availability('fg');
+    if ($inputData['existingComponentsAvailability']['ready'] && ($inputData['bomId'] ?? '') !== '') {
+      $inputData['fgComponents'] = array_merge($inputData['fgComponents'], $existing->rows('fg', ['fgBomId' => $inputData['bomId']]));
+    }
+    $levels = app(\App\Services\ExistingLevelService::class);
+    $inputData['existingLevelAvailability'] = ['level1' => $levels->availability(1), 'level2' => $levels->availability(2)];
+    $inputData['semiFgLv2Existing'] = $inputData['existingLevelAvailability']['level2']['ready'] ? app(\App\Services\BomContextService::class)->existing(2, $inputData['bomId']) : [];
+    $inputData['semiFgLv1Existing'] = $inputData['existingLevelAvailability']['level1']['ready'] ? app(\App\Services\BomContextService::class)->existing(1, $inputData['bomId']) : [];
     $inputData['semiFgLv2'] = $this->loadSemiFgLv2ByFgBomId($inputData['bomId'] ?? null);
     $inputData['semiFgLv1'] = $this->loadSemiFgLv1ByFgBomId($inputData['bomId'] ?? null);
 

@@ -69,6 +69,17 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
 
     return () => window.clearTimeout(resultTimer);
   }, [completeResponse]);
+  const existingLv2 = InputData?.semiFgLv2Existing || [];
+  const existingLv1 = InputData?.semiFgLv1Existing || [];
+  const level2Parents = [...(semiFgLv2?.bomId ? [semiFgLv2] : []), ...existingLv2];
+  const [selectedLv2Bom, setSelectedLv2Bom] = useState('');
+  const parentLv2 = level2Parents.find((item) => item.bomId === selectedLv2Bom) || level2Parents[0];
+  const hasAnyLv2 = level2Parents.length > 0;
+  const openExistingLevel = (scope, item) => router.get(route('existing-components.index', { scope }), {
+    fgMaterialId: data.materialId, fgBomId: data.bomId,
+    ...(scope === 'level1' ? { semiFgLv2BomId: item?.semiFgLv2BomId || parentLv2?.bomId || '' } : {}),
+    ...(item ? { mode: 'view', componentId: item.bomId, no: item.no } : {}),
+  });
   const hasSemiFgLv2 = String(semiFgLv2?.bomId || '').trim() !== '';
   const hasSemiFgLv1 = String(semiFgLv1?.bomId || '').trim() !== '';
 
@@ -94,6 +105,12 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   };
 
   const goToPackMaterialAction = (actionMode, item) => {
+    if (item?.sourceType === 'matid') {
+      router.get(route('existing-components.index', { scope: 'fg' }), {
+        fgMaterialId: data.materialId, fgBomId: data.bomId, mode: 'view', no: item.no, componentId: item.code,
+      });
+      return;
+    }
     router.get(route('packmaterial.fg-bom.new'), {
       ownerLevel: 'fg',
       backRoute: 'product.view',
@@ -126,6 +143,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
 
     if (mode === 'create') {
       payload.referentMaterialId = data.materialId;
+      payload.parentLevelBomId = parentLv2?.bomId || '';
+      payload.fgBomId = data.bomId;
     }
 
     router.get(route('material-levels.semi-fg-lv1.new'), payload);
@@ -572,62 +591,78 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
               </div>
               {isDisabled && (
                 <>
-                  <fieldset className="border border-gray-300 rounded-md p-4 mt-8">
-                    <legend className="px-2 text-gray-600">Components</legend>
-                    <div className="flex items-center justify-end gap-4 mb-2">
-                        <SuccessButton type="button" onClick={goToPackMaterial} disabled={!isDisabled || isCompleted}>Add Component</SuccessButton>
-                    </div>
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                      <table className="w-full text-sm text-left rtl:text-right text-gray-800">
-                        <thead className="text-xs bg-gray-50">
-                            <tr>
-                                <th scope="col" className="px-6 py-3">
-                                    #
-                                </th>
-                                <th scope="col" className="px-6 py-3">
-                                    Component ID
-                                </th>
-                                <th scope="col" className="px-6 py-3">
-                                    Description
-                                </th>
-                                <th scope="col" className="px-6 py-3" width="100">
-                                    Action
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                          {fgComponents.length === 0 ? (
-                            <tr>
-                              <td colSpan="4" className="px-6 py-4 text-gray-500">No FG components yet.</td>
-                            </tr>
-                          ) : (
-                            fgComponents.map((item, index) => (
-                              <tr key={`fg-component-${item.code}`}>
-                                <th scope="row" className="px-6 py-4">
-                                  {index + 1}
-                                </th>
-                                <th scope="row" className="px-6 py-4">
-                                  {item.code}
-                                </th>
-                                <th scope="row" className="px-6 py-4">
-                                  {item.label}
-                                </th>
-                                <td className="px-6 py-4 flex gap-2">
-                                  {!isCompleted && (
-                                    <PrimaryButton type="button" onClick={() => goToPackMaterialAction('edit', item)}>EDIT</PrimaryButton>
-                                  )}
-                                  {isCompleted && (
-                                    <SecondaryButton type="button" onClick={() => goToPackMaterialAction('view', item)}>VIEW</SecondaryButton>
-                                  )}
-                                  <DangerButton type="button" onClick={() => goToPackMaterialAction('delete', item)} disabled={isCompleted}>DELETE</DangerButton>
-                                </td>
+                  <div className="mt-8 space-y-6">
+                    {[
+                      {
+                        key: 'new',
+                        title: 'FG New Components',
+                        addLabel: 'ADD COMPONENT NEW',
+                        onAdd: goToPackMaterial,
+                        items: fgComponents.filter((item) => item.sourceType !== 'matid'),
+                        emptyMessage: 'No new FG components yet.',
+                      },
+                      {
+                        key: 'existing',
+                        onAdd: InputData?.existingComponentsAvailability?.ready ? () => router.get(route('existing-components.index', { scope: 'fg' }), { fgMaterialId: data.materialId, fgBomId: data.bomId }) : undefined,
+                        title: 'FG Components From Existing',
+                        addLabel: 'ADD COMPONENT EXISTING',
+                        items: fgComponents.filter((item) => item.sourceType === 'matid'),
+                        emptyMessage: 'No existing FG components yet.',
+                      },
+                    ].map((section) => (
+                      <fieldset key={section.key} className="rounded-md border border-gray-300 p-4">
+                        <legend className="px-2 text-gray-700">{section.title}</legend>
+                        <div className="mb-3 flex items-center justify-end">
+                          <SuccessButton type="button" onClick={section.onAdd} disabled={!section.onAdd || isCompleted}>
+                            {section.addLabel}
+                          </SuccessButton>
+                        </div>
+                        <div className="overflow-x-auto bg-white shadow-sm sm:rounded-lg">
+                          <table className="w-full text-sm text-left rtl:text-right text-gray-800">
+                            <thead className="text-xs bg-gray-50">
+                              <tr>
+                                <th scope="col" className="px-6 py-3" width="50">#</th>
+                                <th scope="col" className="px-6 py-3" width="220">Material ID/Component ID</th>
+                                <th scope="col" className="px-6 py-3">Description</th>
+                                <th scope="col" className="px-6 py-3 text-center" width="180">Action</th>
                               </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </fieldset>
+                            </thead>
+                            <tbody>
+                              {section.items.length === 0 ? (
+                                <tr>
+                                  <td colSpan="4" className="px-6 py-4 text-gray-500">{section.emptyMessage}</td>
+                                </tr>
+                              ) : section.items.map((item, index) => (
+                                <tr key={`${section.key}-${item.code}`}>
+                                  <th scope="row" className="px-6 py-4">{index + 1}</th>
+                                  <td className="px-6 py-4">{item.code}</td>
+                                  <td className="px-6 py-4">{item.label}</td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap">
+                                      {!isCompleted && item.sourceType !== 'matid' ? (
+                                        <PrimaryButton type="button" onClick={() => goToPackMaterialAction('edit', item)}>EDIT</PrimaryButton>
+                                      ) : (
+                                        <SecondaryButton type="button" onClick={() => goToPackMaterialAction('view', item)}>VIEW</SecondaryButton>
+                                      )}
+                                      <DangerButton type="button" onClick={() => goToPackMaterialAction('delete', item)} disabled={isCompleted || (item.sourceType === 'matid' && (item.status !== 'INS' || item.userCreate !== auth.user.user_login))}>DELETE</DangerButton>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </fieldset>
+                    ))}
+                  </div>
+                  {data?.mattype === '1' && (
+                    <fieldset className="rounded-md border border-gray-300 p-4">
+                      <legend className="px-2 text-gray-700">Semi FG Level 2 From Existing</legend>
+                      <SuccessButton type="button" disabled={isCompleted || !InputData?.existingLevelAvailability?.level2?.ready} onClick={() => openExistingLevel('level2')}>CREATE SEMI FG LEVEL 2 BY EXISTING</SuccessButton>
+                      {!InputData?.existingLevelAvailability?.level2?.ready && <p className="mt-3 text-sm text-gray-500">ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ</p>}
+                      <div className="mt-3 space-y-2">{existingLv2.map((item) => <div key={item.bomId} className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><span>{item.id} — {item.bomId} — {item.bomDesc}</span><SecondaryButton type="button" onClick={() => openExistingLevel('level2', item)}>VIEW / DELETE</SecondaryButton></div>)}</div>
+                    </fieldset>
+                  )}
                   {data?.mattype === '1' && (
                     <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
                       {hasSemiFgLv2 ? (
@@ -679,10 +714,19 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                         </div>
                       ) : (
                         <SuccessButton type="button" onClick={() => goToSemiFgLv2()} disabled={!isDisabled || isCompleted}>
-                          Create Semi FG Level 2
+                          CREATE SEMI FG LEVEL 2 NEW
                         </SuccessButton>
                       )}
                     </div>
+                  )}
+                  {data?.mattype === '1' && (
+                    <fieldset className="rounded-md border border-gray-300 p-4">
+                      <legend className="px-2 text-gray-700">Semi FG Level 1 From Existing</legend>
+                      {level2Parents.length > 1 && <div className="mb-4"><InputLabel htmlFor="lv1ParentBom" value="SEMI FG LV2 parent BOM" /><select id="lv1ParentBom" className="mt-1 block w-full rounded-md border-gray-300" value={parentLv2?.bomId || ''} onChange={(event) => setSelectedLv2Bom(event.target.value)}>{level2Parents.map((item) => <option key={item.bomId} value={item.bomId}>{item.bomId}</option>)}</select></div>}
+                      <SuccessButton type="button" disabled={isCompleted || !hasAnyLv2 || !InputData?.existingLevelAvailability?.level1?.ready} onClick={() => openExistingLevel('level1')}>CREATE SEMI FG LEVEL 1 BY EXISTING</SuccessButton>
+                      {!hasAnyLv2 && <p className="mt-3 text-sm text-gray-500">Create Semi FG Level 2 first.</p>}
+                      <div className="mt-3 space-y-2">{existingLv1.map((item) => <div key={`${item.semiFgLv2BomId}-${item.bomId}`} className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><span>{item.id} — {item.bomId} — {item.bomDesc}</span><SecondaryButton type="button" onClick={() => openExistingLevel('level1', item)}>VIEW / DELETE</SecondaryButton></div>)}</div>
+                    </fieldset>
                   )}
                   {data?.mattype === '1' && (
                     <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
@@ -734,11 +778,11 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                           </div>
                         </div>
                       ) : (
-                        <SuccessButton type="button" onClick={() => goToSemiFgLv1()} disabled={!isDisabled || !hasSemiFgLv2}>
-                          Create Semi FG Level 1
+                        <SuccessButton type="button" onClick={() => goToSemiFgLv1()} disabled={!isDisabled || !hasAnyLv2 || isCompleted}>
+                          CREATE SEMI FG LEVEL 1 NEW
                         </SuccessButton>
                       )}
-                      {!hasSemiFgLv2 && (
+                      {!hasAnyLv2 && (
                         <div className="text-sm text-gray-500">Create Semi FG Level 2 first.</div>
                       )}
                     </div>

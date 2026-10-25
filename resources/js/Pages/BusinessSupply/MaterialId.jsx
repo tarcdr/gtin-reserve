@@ -16,7 +16,6 @@ export default function BusinessSupplyMaterialId({
   auth,
   InputData,
   brands = [],
-  mattypes = [],
   subMattypes = [],
   materialOptions = [],
   selectedMaterial = null,
@@ -34,14 +33,15 @@ export default function BusinessSupplyMaterialId({
     pageTitle = 'BUSINESS SUPPLY BOM - EDIT MATERIAL ID';
   }
   const bizsupId = InputData?.bizsupId || selectedBusinessSupply?.bizsupId || '';
-  const defaultBrand = InputData?.brand || '';
+  const defaultBrand = InputData?.matType === '5' ? '' : InputData?.brand || '';
   const defaultMatType = InputData?.matType || '';
   const defaultSubMatType = InputData?.subMatType || '';
   const [step, setStep] = useState(InputData?.componentId || selectedMaterial?.componentId ? 3 : 1);
   const [brand, setBrand] = useState(defaultBrand);
   const [matType, setMatType] = useState(defaultMatType);
   const [subMatType, setSubMatType] = useState(defaultSubMatType);
-  const [availableMattypes, setAvailableMattypes] = useState(mattypes || []);
+  const availableMattypes = [{ code: '1', label: '1' }, { code: '5', label: '5' }];
+  const [availableBrands, setAvailableBrands] = useState(brands || []);
   const [availableSubMattypes, setAvailableSubMattypes] = useState(subMattypes || []);
   const [options, setOptions] = useState(materialOptions);
   const [componentId, setComponentId] = useState(InputData?.componentId || selectedMaterial?.componentId || '');
@@ -85,8 +85,8 @@ export default function BusinessSupplyMaterialId({
   }, [materialOptions]);
 
   useEffect(() => {
-    setAvailableMattypes(mattypes || []);
-  }, [mattypes]);
+    setAvailableBrands(brands || []);
+  }, [brands]);
 
   useEffect(() => {
     setAvailableSubMattypes(subMattypes || []);
@@ -132,7 +132,7 @@ export default function BusinessSupplyMaterialId({
       } catch (error) {
         if (active) {
           setOptions([]);
-          setSaveError(getAxiosErrorMessage(error, 'Unable to load Component BD Material ID list.'));
+          setSaveError(getAxiosErrorMessage(error, 'Unable to load Component BS Material ID list.'));
         }
       } finally {
         if (active) {
@@ -172,8 +172,8 @@ export default function BusinessSupplyMaterialId({
     const requestId = relatedOptionsRequestRef.current + 1;
     relatedOptionsRequestRef.current = requestId;
 
-    if (!nextBrand) {
-      setAvailableMattypes([]);
+    if (!['1', '5'].includes(nextMatType)) {
+      setAvailableBrands([]);
       setAvailableSubMattypes([]);
       setIsLoadingRelatedOptions(false);
       return;
@@ -194,14 +194,14 @@ export default function BusinessSupplyMaterialId({
         return;
       }
 
-      setAvailableMattypes(payload?.mattypes || []);
+      setAvailableBrands(payload?.brands || []);
       setAvailableSubMattypes(payload?.subMattypes || []);
     } catch (error) {
       if (requestId !== relatedOptionsRequestRef.current) {
         return;
       }
 
-      setAvailableMattypes([]);
+      setAvailableBrands([]);
       setAvailableSubMattypes([]);
       setSaveError(getAxiosErrorMessage(error, 'Unable to load related Mattype options.'));
     } finally {
@@ -212,11 +212,13 @@ export default function BusinessSupplyMaterialId({
   };
 
   const handleReset = () => {
+    relatedOptionsRequestRef.current += 1;
+    setIsLoadingRelatedOptions(false);
     hasLoadedOptionsRef.current = false;
     setBrand(defaultBrand);
     setMatType(defaultMatType);
     setSubMatType(defaultSubMatType);
-    setAvailableMattypes(mattypes || []);
+    setAvailableBrands(brands || []);
     setAvailableSubMattypes(subMattypes || []);
     setOptions(materialOptions || []);
     setComponentId(InputData?.componentId || selectedMaterial?.componentId || '');
@@ -228,22 +230,22 @@ export default function BusinessSupplyMaterialId({
 
   const handleBrandChange = (nextBrand) => {
     setBrand(nextBrand);
-    setMatType('');
     setSubMatType('');
-    setAvailableMattypes([]);
     setAvailableSubMattypes([]);
     setStep(1);
     resetSelection();
-    loadRelatedOptions(nextBrand);
+    loadRelatedOptions(nextBrand, matType);
   };
 
   const handleMatTypeChange = (nextMatType) => {
     setMatType(nextMatType);
+    setBrand('');
+    setAvailableBrands([]);
     setSubMatType('');
     setAvailableSubMattypes([]);
     setStep(1);
     resetSelection();
-    loadRelatedOptions(brand, nextMatType);
+    loadRelatedOptions('', nextMatType);
   };
 
   const handleSubMatTypeChange = (nextSubMatType) => {
@@ -254,7 +256,7 @@ export default function BusinessSupplyMaterialId({
 
   const handleNextStep = () => {
     if (step === 1) {
-      if (!brand) {
+      if (matType === '1' && !brand) {
         setFieldError('brand', 'The Brand field is required.');
         return;
       }
@@ -297,7 +299,7 @@ export default function BusinessSupplyMaterialId({
       return;
     }
 
-    if (!brand) {
+    if (matType === '1' && !brand) {
       setFieldError('brand', 'The Brand field is required.');
       hasError = true;
     }
@@ -313,12 +315,12 @@ export default function BusinessSupplyMaterialId({
     }
 
     if (!componentId) {
-      setFieldError('componentId', 'The Component BD Material ID field is required.');
+      setFieldError('componentId', 'The Component BS Material ID field is required.');
       hasError = true;
     }
 
     if (componentId && !materialDetail) {
-      setFieldError('componentId', 'Unable to load Component BD Material ID detail.');
+      setFieldError('componentId', 'Unable to load Component BS Material ID detail.');
       hasError = true;
     }
 
@@ -370,31 +372,13 @@ export default function BusinessSupplyMaterialId({
     <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-          <InputLabel htmlFor="brand" value="Brand" />
-          <select
-            id="brand"
-            className="mt-1 block w-full border-gray-300 rounded-md"
-            value={brand}
-            onChange={(e) => handleBrandChange(e.target.value)}
-            disabled={isDeleteMode || isViewMode}
-          >
-            <option value="">---- Select Brand ----</option>
-            {brands.map((item) => (
-              <option key={`brand-${item.value}`} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-          <InputError className="mt-2" message={errors.brand} />
-        </div>
-        <div>
           <InputLabel htmlFor="matType" value="Mattype" />
           <select
             id="matType"
             className="mt-1 block w-full border-gray-300 rounded-md"
             value={matType}
             onChange={(e) => handleMatTypeChange(e.target.value)}
-            disabled={isDeleteMode || isViewMode || !brand || isLoadingRelatedOptions}
+            disabled={isDeleteMode || isViewMode}
           >
             <option value="">---- Select Mattype ----</option>
             {availableMattypes.map((item) => (
@@ -404,6 +388,24 @@ export default function BusinessSupplyMaterialId({
             ))}
           </select>
           <InputError className="mt-2" message={errors.matType} />
+        </div>
+        <div>
+          <InputLabel htmlFor="brand" value="Brand" />
+          <select
+            id="brand"
+            className="mt-1 block w-full border-gray-300 rounded-md"
+            value={brand}
+            onChange={(e) => handleBrandChange(e.target.value)}
+            disabled={isDeleteMode || isViewMode || matType !== '1' || isLoadingRelatedOptions}
+          >
+            <option value="">---- Select Brand ----</option>
+            {availableBrands.map((item) => (
+              <option key={`brand-${item.value}`} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          <InputError className="mt-2" message={errors.brand} />
         </div>
       </div>
 
@@ -416,7 +418,7 @@ export default function BusinessSupplyMaterialId({
             RESET
           </SecondaryButton>
         )}
-        <PrimaryButton type="button" onClick={handleNextStep} disabled={!brand || !matType || isLoadingRelatedOptions}>
+        <PrimaryButton type="button" onClick={handleNextStep} disabled={!matType || (matType === '1' && !brand) || isLoadingRelatedOptions}>
           NEXT
         </PrimaryButton>
       </div>
@@ -427,12 +429,12 @@ export default function BusinessSupplyMaterialId({
     <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-          <InputLabel htmlFor="brandStep2" value="Brand" />
-          <TextInput id="brandStep2" className="mt-1 block w-full bg-gray-100" value={brand} disabled />
-        </div>
-        <div>
           <InputLabel htmlFor="matTypeStep2" value="Mattype" />
           <TextInput id="matTypeStep2" className="mt-1 block w-full bg-gray-100" value={matType} disabled />
+        </div>
+        <div>
+          <InputLabel htmlFor="brandStep2" value="Brand" />
+          <TextInput id="brandStep2" className="mt-1 block w-full bg-gray-100" value={brand} disabled />
         </div>
       </div>
 
@@ -468,7 +470,7 @@ export default function BusinessSupplyMaterialId({
           </SecondaryButton>
         )}
         <PrimaryButton type="button" onClick={handleNextStep} disabled={!subMatType || isLoadingRelatedOptions}>
-          SEARCH FG
+          NEXT
         </PrimaryButton>
       </div>
     </div>
@@ -479,18 +481,18 @@ export default function BusinessSupplyMaterialId({
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <InputLabel htmlFor="brandStep3" value="Brand" />
-            <TextInput id="brandStep3" className="mt-1 block w-full bg-gray-100" value={brand} disabled />
-          </div>
-          <div>
             <InputLabel htmlFor="matTypeStep3" value="Mattype" />
             <TextInput id="matTypeStep3" className="mt-1 block w-full bg-gray-100" value={matType} disabled />
+          </div>
+          <div>
+            <InputLabel htmlFor="brandStep3" value="Brand" />
+            <TextInput id="brandStep3" className="mt-1 block w-full bg-gray-100" value={brand} disabled />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <InputLabel htmlFor="subMatTypeStep3" value="Sub Mattyp" />
+            <InputLabel htmlFor="subMatTypeStep3" value="Sub Mattype" />
             <TextInput id="subMatTypeStep3" className="mt-1 block w-full bg-gray-100" value={subMatType} disabled />
           </div>
           <div />
@@ -498,7 +500,7 @@ export default function BusinessSupplyMaterialId({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <InputLabel htmlFor="componentId" value="Component BD Material ID" />
+            <InputLabel htmlFor="componentId" value="Component BS Material ID" />
             <select
               id="componentId"
               className={`mt-1 block w-full border-gray-300 rounded-md ${isDeleteMode || isViewMode ? 'bg-gray-100 text-gray-500' : ''}`}
@@ -599,6 +601,9 @@ export default function BusinessSupplyMaterialId({
             </div>
           </div>
 
+          {step !== 3 && saveError && (
+            <p role="alert" className="text-sm font-semibold text-red-600">{saveError}</p>
+          )}
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}

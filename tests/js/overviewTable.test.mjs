@@ -20,3 +20,16 @@ test('only Y/N are checkboxes; missing and unknown values remain text', () => {
     assert.equal(resultState(' n '), false);
     for (const value of [null, '', '—', 'unexpected', '1', '0']) assert.equal(resultState(value), null);
 });
+
+test('Business Supply merges consecutive BS IDs while retaining every component row', () => {
+    const rows = [
+        { parents: [], id: '60LS00370', component: '501012063' },
+        { parents: [], id: '60LS00370', component: '510001122' },
+        { parents: [], id: '60LS00370', component: '510005689' },
+        { parents: [], id: '60LS00371', component: '510005689' },
+        { parents: [], id: '60LS00370', component: '501012063' },
+    ];
+    assert.deepEqual(rows.map((_, index) => cellSpan(rows, index, 0)), [3, 0, 0, 1, 1]);
+    assert.equal(rows.length, 5);
+    assert.equal(cellSpan([{ parents: [], id: '' }, { parents: [], id: '' }], 0, 0), 1);
+});

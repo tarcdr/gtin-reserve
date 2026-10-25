@@ -10,6 +10,8 @@ const buttonClass = 'inline-flex shrink-0 items-center justify-center whitespace
 const secondaryClass = `${buttonClass} border-gray-300 bg-white text-[#4C5E86] hover:bg-gray-50`;
 const disabledClass = `${buttonClass} cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400`;
 const exportClass = `${buttonClass} border-transparent bg-[#5E9E6B] text-white hover:bg-[#518B5D] focus:ring-[#5E9E6B]`;
+// Enable in the next phase when Overview creation actions are ready.
+const showCreationActions = false;
 
 function Result({ value, raw, checkbox }) {
     const checked = resultState(raw);
@@ -44,13 +46,13 @@ function Section({ section, number, products, plus }) {
                         {section.rows.length ? section.rows.map((row, index) => (
                             <tr key={index} className="border-b border-gray-100 last:border-b-0 even:bg-gray-50/60 hover:bg-green-50/50">
                                 {[...row.parents, row.id, row.component].map((value, cell) => {
-                                    const span = products && cell <= row.parents.length ? cellSpan(section.rows, index, cell) : 1;
+                                    const span = cell <= row.parents.length ? cellSpan(section.rows, index, cell) : 1;
                                     return span ? <td rowSpan={span} key={cell} className="border-r border-gray-100 px-4 py-3 whitespace-nowrap align-middle tabular-nums">{display(value)}</td> : null;
                                 })}
                                 <td className={`border-r border-gray-100 px-4 py-3 whitespace-nowrap align-middle font-semibold ${row.status === 'NEW' ? 'text-[#4C5E86]' : 'text-gray-600'}`}>{display(row.status)}</td>
                                 <td className="min-w-44 border-r border-gray-100 px-4 py-3 align-middle whitespace-pre-wrap break-words">{display(row.action)}</td>
-                                <td className="border-r border-gray-100 px-3 py-3 text-center align-middle"><Result value={row.built} raw={row.builtRaw} checkbox={products} /></td>
-                                <td className="px-3 py-3 text-center align-middle"><Result value={row.complete} raw={row.completeRaw} checkbox={products} /></td>
+                                <td className="border-r border-gray-100 px-3 py-3 text-center align-middle"><Result value={row.built} raw={row.builtRaw} checkbox /></td>
+                                <td className="px-3 py-3 text-center align-middle"><Result value={row.complete} raw={row.completeRaw} checkbox /></td>
                             </tr>
                         )) : <tr><td colSpan={columns.length + 2} className="px-4 py-6 text-center font-normal text-gray-500">ไม่มีข้อมูลในส่วนนี้</td></tr>}
                     </tbody>
@@ -69,6 +71,7 @@ export default function Overview({ auth, title, kind, records, page, total, erro
     const pageRoute = `overview.${kind}`;
     const openForm = (action, path) => router.get(route('overview.products.add', { action }), { ...record?.identity, path });
     const plus = (action) => {
+        if (!showCreationActions) return null;
         const options = actions[action] || [];
         const disabled = action !== 1 && options.length === 0;
         const reason = 'ไม่มี parent ที่พร้อมเพิ่มข้อมูล หรือเจ้าของข้อมูลเป็น COM / ข้อมูลไม่ครบ';
@@ -98,7 +101,7 @@ export default function Overview({ auth, title, kind, records, page, total, erro
                     </div>
                 </div>
                 {notice && <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">{notice}</p>}
-                {kind === 'products' && !record && <div>New Product {plus(1)}</div>}
+                {showCreationActions && kind === 'products' && !record && <div>New Product {plus(1)}</div>}
                 {error ? (
                     <div role="alert" className="space-y-4 rounded-lg border border-red-200 bg-red-50 p-6 text-red-800">
                         <p>{error}</p>
@@ -109,8 +112,8 @@ export default function Overview({ auth, title, kind, records, page, total, erro
                         <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                             {record.header.map((field) => <div key={field.label}><dt className="text-xs font-semibold text-[#4C5E86]">{field.label}</dt><dd className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 break-all text-sm font-semibold text-green-900">{display(field.value)}</dd></div>)}
                         </dl>
-                        <p className="border-t border-gray-100 pt-4 text-xs font-normal text-gray-500">BUILT / COMPLETE: {kind === 'products' ? '☑ = Y, ☐ = N, — = ไม่มีค่า' : <><span className="font-semibold text-green-800">1 = Y</span>, <span className="font-semibold text-[#964D55]">0 = N</span>, — = ไม่มีค่า</>}</p>
-                        {kind === 'products' && <p className="text-xs text-gray-500">ปุ่ม + ที่ปิดอยู่: ไม่มี parent ที่พร้อมเพิ่มข้อมูล เจ้าของข้อมูลเป็น COM หรือข้อมูล DML ไม่ครบ</p>}
+                        <p className="border-t border-gray-100 pt-4 text-xs font-normal text-gray-500">BUILT / COMPLETE: ☑ = Y, ☐ = N, — = ไม่มีค่า</p>
+                        {showCreationActions && kind === 'products' && <p className="text-xs text-gray-500">ปุ่ม + ที่ปิดอยู่: ไม่มี parent ที่พร้อมเพิ่มข้อมูล เจ้าของข้อมูลเป็น COM หรือข้อมูล DML ไม่ครบ</p>}
                         {record.sections.map((section, index) => <Section key={section.label} section={section} number={index + 1} products={kind === 'products'} plus={plus} />)}
                     </div>
                 ) : <p role="status" className="rounded-lg border border-gray-200 bg-white p-6 font-normal text-gray-600">ไม่มีรายการ Overview ที่เข้าเงื่อนไข</p>}

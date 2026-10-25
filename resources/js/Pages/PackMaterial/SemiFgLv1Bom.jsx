@@ -1,3 +1,4 @@
+import RawMaterialExistingComponents from '@/Components/RawMaterialExistingComponents';
 import BomMaterialForm from '@/Components/BomMaterialForm';
 import useBomMaterialFormController from '@/Components/useBomMaterialFormController';
 import { router, usePage } from '@inertiajs/react';
@@ -54,6 +55,7 @@ export default function SemiFgLv1Bom({ auth, InputData, subMattypes = [], uoms =
 
   return (
     <BomMaterialForm
+      extraSections={['view', 'edit'].includes(InputData?.actionMode) && form.data.mattype === '4' && form.data.componentId ? <RawMaterialExistingComponents data={form.data} /> : null}
       auth={auth}
       headerTitle={config.headerTitle}
       pageIdentity={{ pageId: config.pageId }}

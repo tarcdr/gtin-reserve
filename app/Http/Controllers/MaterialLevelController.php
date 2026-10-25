@@ -1017,6 +1017,13 @@ class MaterialLevelController extends Controller
       $components = $this->resolveComponents($request);
     }
 
+    $existingComponents = app(\App\Services\ExistingComponentService::class);
+    $InputData['existingComponentsAvailability'] = $existingComponents->availability('semi2');
+    if ($InputData['existingComponentsAvailability']['ready'] && ($InputData['levelBomId'] ?? '') !== '') {
+      $componentContext = ['fgBomId' => $InputData['fgBomId'], 'semiFgLv2BomId' => $InputData['levelBomId']];
+      $components = array_merge($components, $existingComponents->rows('semi2', $componentContext));
+    }
+
     return Inertia::render('MaterialLevels/SemiFgLevel2', [
       'InputData'   => $InputData,
       'mattypes'    => $this->mattypes,
@@ -1168,6 +1175,30 @@ class MaterialLevelController extends Controller
 
     if (empty($components)) {
       $components = $this->resolveComponents($request);
+    }
+
+    $parentBom = trim((string) ($request->get('parentLevelBomId') ?: ($InputData['parentLevelBomId'] ?? '')));
+    if ($parentBom === '' && ($InputData['levelBomId'] ?? '') !== '' && ($InputData['fgBomId'] ?? '') !== '') {
+      $ownLevel = app(\App\Services\BomContextService::class)->level(1, $InputData['fgBomId'], $InputData['levelBomId']);
+      $parentBom = $ownLevel['semiFgLv2BomId'] ?? '';
+    }
+    if ($parentBom !== '' && ($InputData['fgBomId'] ?? '') !== '') {
+      $parent = app(\App\Services\BomContextService::class)->level(2, $InputData['fgBomId'], $parentBom);
+      abort_unless($parent, 404);
+      $InputData['parentLevelBomId'] = $parent['bomId'];
+      $InputData['parentLevelBomDesc'] = $parent['bomDesc'];
+      $InputData['semiFgLv2BomId'] = $parent['bomId'];
+      $InputData['semi_fg_lv2_id'] = $parent['id'];
+      $InputData['fgDetail']['semiFgLv2'] = $parent;
+      $semiFgLv2 = ['fg_bom_id' => $InputData['fgBomId'], 'semi_fg_lv2_id' => $parent['id'], 'bomId' => $parent['bomId'], 'bomDesc' => $parent['bomDesc']];
+    }
+
+    $existingComponents = app(\App\Services\ExistingComponentService::class);
+    $InputData['existingComponentsAvailability'] = $existingComponents->availability('semi1');
+    if ($InputData['existingComponentsAvailability']['ready'] && ($InputData['levelBomId'] ?? '') !== '') {
+      $componentContext = ['fgBomId' => $InputData['fgBomId'], 'semiFgLv1BomId' => $InputData['levelBomId']];
+      $componentContext['semiFgLv2BomId'] = $InputData['parentLevelBomId'] ?? '';
+      $components = array_merge($components, $existingComponents->rows('semi1', $componentContext));
     }
 
     return Inertia::render('MaterialLevels/SemiFgLevel1', [
@@ -1454,6 +1485,10 @@ class MaterialLevelController extends Controller
       ?: $request->get('semi_fg_lv2_bom_id')
       ?: ''
     ));
+    $semiFgLv2BomId = $semiFgLv2BomId ?: trim((string) $request->get('parentLevelBomId'));
+    $guard = app(\App\Services\ExistingLevelService::class)->context(1, ['fgMaterialId' => $inputData['fgMaterialId'], 'fgBomId' => $inputData['fgBomId'], 'semiFgLv2BomId' => $semiFgLv2BomId]);
+    app(\App\Services\ExistingComponentService::class)->requireWritable($guard);
+    $request->merge(['semi_fg_lv2_id' => $guard['semiFgLv2Id'], 'semiFgLv2BomId' => $guard['semiFgLv2BomId']]);
     $this->callSaveSemiFgLevel1Procedure($request, array_merge($inputData, [
       'levelBomId' => $validated['levelBomId'],
       'levelBomDesc' => $validated['levelBomDesc'],
