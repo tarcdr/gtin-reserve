@@ -11,18 +11,24 @@
         "@tailwindcss/forms": "^0.5.11",
         "@vitejs/plugin-react": "^4.7.0",
         "autoprefixer": "^10.4.23",
-        "axios": "^1.13.2",
+        "axios": "^1.20.0",
         "laravel-vite-plugin": "^2.0.1",
         "postcss": "^8.5.6",
         "react": "^18.2.0",
         "react-dom": "^18.3.1",
         "tailwindcss": "^3.4.19",
-        "vite": "^7.3.1"
+        "vite": "^7.3.7"
     },
     "dependencies": {
         "html-react-parser": "^5.2.11",
         "jsbarcode": "^3.11.6",
         "qrcode": "^1.5.4",
         "react-select": "^5.10.2"
+    },
+    "overrides": {
+        "postcss-selector-parser": "^7.1.6"
+    },
+    "engines": {
+        "node": ">=22.12.0"
     }
 }
