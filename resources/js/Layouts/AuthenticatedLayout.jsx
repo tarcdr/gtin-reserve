@@ -195,6 +195,13 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                         </Dropdown>
                                     </div>
                                 </div>
+                                <NavLink
+                                    href={route('rm.report')}
+                                    active={route().current('rm.report')}
+                                    className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md px-2"
+                                >
+                                    Export-to-SAP
+                                </NavLink>
                                 {isAdmin && (
                                     <NavLink
                                         href={route('admin.users.index')}
@@ -327,6 +334,13 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                             className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
                         >
                             GTIN_Confirm/Report
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('rm.report')}
+                            active={route().current('rm.report')}
+                            className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
+                        >
+                            Export-to-SAP
                         </ResponsiveNavLink>
                         {isAdmin && (
                             <ResponsiveNavLink

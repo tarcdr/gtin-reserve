@@ -24,7 +24,7 @@ class ExistingLevelService
             $parent = $this->parents->level(2, $context['fgBomId'], $input['semiFgLv2BomId'] ?? '', $lock);
             abort_unless($parent && !empty($input['semiFgLv2BomId']), 404);
             $context += ['semiFgLv2BomId' => $parent['bomId'], 'semiFgLv2BomDesc' => $parent['bomDesc'], 'semiFgLv2Id' => $parent['id']];
-            $context['canWrite'] = $context['canWrite'] && !in_array($parent['statusRow'], ['COM', 'ETS'], true) && !in_array($parent['idStatus'], ['COM', 'ETS'], true);
+            $context['canWrite'] = $context['canWrite'] && $parent['sourceType'] === 'new' && !in_array($parent['statusRow'], ['COM', 'ETS'], true) && !in_array($parent['idStatus'], ['COM', 'ETS'], true);
         }
         return $context;
     }

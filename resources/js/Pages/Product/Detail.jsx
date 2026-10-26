@@ -21,6 +21,16 @@ const normalizeSemiFgForBomDisplay = (item) => {
   return item;
 };
 
+function BomZone({ title, subtitle, number, children }) {
+  return <section aria-label={title} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+    <div className="mb-5 flex items-start gap-3">
+      {number && <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#3e8054] text-sm font-semibold text-white">{number}</span>}
+      <div><h3 className="text-base font-semibold text-gray-800">{title}</h3><p className="mt-1 text-xs font-normal text-gray-500">{subtitle}</p></div>
+    </div>
+    <div className="space-y-5">{children}</div>
+  </section>;
+}
+
 export default function ProductDetail({ auth, InputData, isDisabled = true, isEditMode = false, brands = [], mattypes = [], sites = [], masterUom = [] }) {
   const [showSite, setShowSite] = useState(false);
   const [showBomId, setShowBomId] = useState(false);
@@ -71,10 +81,8 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
   }, [completeResponse]);
   const existingLv2 = InputData?.semiFgLv2Existing || [];
   const existingLv1 = InputData?.semiFgLv1Existing || [];
-  const level2Parents = [...(semiFgLv2?.bomId ? [semiFgLv2] : []), ...existingLv2];
-  const [selectedLv2Bom, setSelectedLv2Bom] = useState('');
-  const parentLv2 = level2Parents.find((item) => item.bomId === selectedLv2Bom) || level2Parents[0];
-  const hasAnyLv2 = level2Parents.length > 0;
+  const parentLv2 = semiFgLv2?.bomId ? semiFgLv2 : null;
+  const hasAnyLv2 = !!parentLv2;
   const openExistingLevel = (scope, item) => router.get(route('existing-components.index', { scope }), {
     fgMaterialId: data.materialId, fgBomId: data.bomId,
     ...(scope === 'level1' ? { semiFgLv2BomId: item?.semiFgLv2BomId || parentLv2?.bomId || '' } : {}),
@@ -591,12 +599,13 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
               </div>
               {isDisabled && (
                 <>
-                  <div className="mt-8 space-y-6">
+                  <div className="mt-8">
+                    <BomZone title="FG Components" subtitle="Materials that make up this finished good">
                     {[
                       {
                         key: 'new',
-                        title: 'FG New Components',
-                        addLabel: 'ADD COMPONENT NEW',
+                        title: 'New components',
+                        addLabel: '+ ADD COMPONENT NEW',
                         onAdd: goToPackMaterial,
                         items: fgComponents.filter((item) => item.sourceType !== 'matid'),
                         emptyMessage: 'No new FG components yet.',
@@ -604,33 +613,31 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                       {
                         key: 'existing',
                         onAdd: InputData?.existingComponentsAvailability?.ready ? () => router.get(route('existing-components.index', { scope: 'fg' }), { fgMaterialId: data.materialId, fgBomId: data.bomId }) : undefined,
-                        title: 'FG Components From Existing',
-                        addLabel: 'ADD COMPONENT EXISTING',
+                        title: 'From existing',
+                        addLabel: '+ ADD COMPONENT EXISTING',
                         items: fgComponents.filter((item) => item.sourceType === 'matid'),
                         emptyMessage: 'No existing FG components yet.',
                       },
                     ].map((section) => (
-                      <fieldset key={section.key} className="rounded-md border border-gray-300 p-4">
-                        <legend className="px-2 text-gray-700">{section.title}</legend>
-                        <div className="mb-3 flex items-center justify-end">
-                          <SuccessButton type="button" onClick={section.onAdd} disabled={!section.onAdd || isCompleted}>
-                            {section.addLabel}
-                          </SuccessButton>
+                      <div key={section.key} className={section.key === 'existing' ? 'border-t border-gray-100 pt-5' : ''}>
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                          <h4 className="text-sm font-semibold text-gray-700">{section.title}</h4>
+                          {section.key === 'existing' ? <SecondaryButton type="button" onClick={section.onAdd} disabled={!section.onAdd || isCompleted}>{section.addLabel}</SecondaryButton> : <SuccessButton type="button" onClick={section.onAdd} disabled={!section.onAdd || isCompleted}>{section.addLabel}</SuccessButton>}
                         </div>
                         <div className="overflow-x-auto bg-white shadow-sm sm:rounded-lg">
                           <table className="w-full text-sm text-left rtl:text-right text-gray-800">
-                            <thead className="text-xs bg-gray-50">
+                            {section.items.length > 0 && <thead className="text-xs font-medium uppercase tracking-wide text-gray-500">
                               <tr>
                                 <th scope="col" className="px-6 py-3" width="50">#</th>
-                                <th scope="col" className="px-6 py-3" width="220">Material ID/Component ID</th>
+                                <th scope="col" className="px-6 py-3" width="220">Material ID</th>
                                 <th scope="col" className="px-6 py-3">Description</th>
                                 <th scope="col" className="px-6 py-3 text-center" width="180">Action</th>
                               </tr>
-                            </thead>
+                            </thead>}
                             <tbody>
                               {section.items.length === 0 ? (
                                 <tr>
-                                  <td colSpan="4" className="px-6 py-4 text-gray-500">{section.emptyMessage}</td>
+                                  <td colSpan="4" className="rounded-lg border border-dashed border-gray-200 px-6 py-4 text-center font-normal text-gray-500">{section.emptyMessage}</td>
                                 </tr>
                               ) : section.items.map((item, index) => (
                                 <tr key={`${section.key}-${item.code}`}>
@@ -652,21 +659,22 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             </tbody>
                           </table>
                         </div>
-                      </fieldset>
+                      </div>
                     ))}
+                    </BomZone>
                   </div>
                   {data?.mattype === '1' && (
-                    <fieldset className="rounded-md border border-gray-300 p-4">
-                      <legend className="px-2 text-gray-700">Semi FG Level 2 From Existing</legend>
-                      <SuccessButton type="button" disabled={isCompleted || !InputData?.existingLevelAvailability?.level2?.ready} onClick={() => openExistingLevel('level2')}>CREATE SEMI FG LEVEL 2 BY EXISTING</SuccessButton>
+                    <BomZone title="Semi FG Level 2" number="2" subtitle="Always available">
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-3"><h4 className="text-sm font-semibold text-gray-700">From existing</h4>
+                      <SuccessButton type="button" disabled={isCompleted || !InputData?.existingLevelAvailability?.level2?.ready} onClick={() => openExistingLevel('level2')}>CREATE SEMI FG LEVEL 2 BY EXISTING</SuccessButton></div>
                       {!InputData?.existingLevelAvailability?.level2?.ready && <p className="mt-3 text-sm text-gray-500">ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ</p>}
-                      <div className="mt-3 space-y-2">{existingLv2.map((item) => <div key={item.bomId} className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><span>{item.id} — {item.bomId} — {item.bomDesc}</span><SecondaryButton type="button" onClick={() => openExistingLevel('level2', item)}>VIEW / DELETE</SecondaryButton></div>)}</div>
-                    </fieldset>
-                  )}
-                  {data?.mattype === '1' && (
-                    <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
+                      <div className="mt-3 space-y-2">{existingLv2.map((item) => <div key={item.bomId} className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><div className="min-w-0"><p className="break-all text-sm font-semibold text-green-900">{item.id}</p><p className="mt-1 break-all text-xs font-normal text-gray-500">{item.bomId} · {item.bomDesc}</p></div><SecondaryButton type="button" onClick={() => openExistingLevel('level2', item)}>VIEW / DELETE</SecondaryButton></div>)}</div>
+                    </div>
+                    <div className="space-y-4 border-t border-gray-100 pt-5">
+                      <div className="flex items-center justify-between gap-3"><h4 className="text-sm font-semibold text-gray-700">New</h4>{semiFgLv2?.statusRow && <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">STATUS: {semiFgLv2.statusRow}</span>}</div>
                       {hasSemiFgLv2 ? (
-                        <div className="space-y-3">
+                        <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
                           <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                               <div>
@@ -693,7 +701,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             <DangerButton
                               type="button"
                               onClick={() => openDeleteModal({ type: 'semiFgLv2', item: semiFgLv2, label: 'Semi FG Level 2' })}
-                              disabled={semiFgLv2.statusRow === 'ETS' || hasSemiFgLv1}
+                              disabled={semiFgLv2.statusRow === 'ETS' || hasSemiFgLv1 || existingLv1.some((item) => item.semiFgLv2BomId === semiFgLv2.bomId)}
                             >
                               DELETE SEMI FG LV2
                             </DangerButton>
@@ -707,9 +715,6 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             >
                               View Semi FG Level 2
                             </SecondaryButton>
-                            <span className="text-sm font-medium text-gray-700">
-                              STATUS: {semiFgLv2.statusRow || '-'}
-                            </span>
                           </div>
                         </div>
                       ) : (
@@ -718,20 +723,21 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                         </SuccessButton>
                       )}
                     </div>
+                    </BomZone>
                   )}
+                  {data?.mattype === '1' && hasAnyLv2 && <div className="border-l-2 border-green-200 pl-3"><p className="inline-flex rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">Level 1 unlocked · Semi FG Level 2 New created</p></div>}
                   {data?.mattype === '1' && (
-                    <fieldset className="rounded-md border border-gray-300 p-4">
-                      <legend className="px-2 text-gray-700">Semi FG Level 1 From Existing</legend>
-                      {level2Parents.length > 1 && <div className="mb-4"><InputLabel htmlFor="lv1ParentBom" value="SEMI FG LV2 parent BOM" /><select id="lv1ParentBom" className="mt-1 block w-full rounded-md border-gray-300" value={parentLv2?.bomId || ''} onChange={(event) => setSelectedLv2Bom(event.target.value)}>{level2Parents.map((item) => <option key={item.bomId} value={item.bomId}>{item.bomId}</option>)}</select></div>}
-                      <SuccessButton type="button" disabled={isCompleted || !hasAnyLv2 || !InputData?.existingLevelAvailability?.level1?.ready} onClick={() => openExistingLevel('level1')}>CREATE SEMI FG LEVEL 1 BY EXISTING</SuccessButton>
-                      {!hasAnyLv2 && <p className="mt-3 text-sm text-gray-500">Create Semi FG Level 2 first.</p>}
-                      <div className="mt-3 space-y-2">{existingLv1.map((item) => <div key={`${item.semiFgLv2BomId}-${item.bomId}`} className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><span>{item.id} — {item.bomId} — {item.bomDesc}</span><SecondaryButton type="button" onClick={() => openExistingLevel('level1', item)}>VIEW / DELETE</SecondaryButton></div>)}</div>
-                    </fieldset>
-                  )}
-                  {data?.mattype === '1' && (
-                    <div className="space-y-6 border p-3 border-gray-300 sm:rounded-lg">
+                    <BomZone title="Semi FG Level 1" number="1" subtitle={hasAnyLv2 ? 'Ready to create' : 'Create Semi FG Level 2 New first'}>
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-3"><h4 className="text-sm font-semibold text-gray-700">From existing</h4>
+                      <SuccessButton type="button" disabled={isCompleted || !hasAnyLv2 || !InputData?.existingLevelAvailability?.level1?.ready} onClick={() => openExistingLevel('level1')}>CREATE SEMI FG LEVEL 1 BY EXISTING</SuccessButton></div>
+                      {!hasAnyLv2 && <p className="mt-3 text-sm text-gray-500">Create Semi FG Level 2 New first.</p>}
+                      <div className="mt-3 space-y-2">{existingLv1.map((item) => <div key={`${item.semiFgLv2BomId}-${item.bomId}`} className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><div className="min-w-0"><p className="break-all text-sm font-semibold text-green-900">{item.id}</p><p className="mt-1 break-all text-xs font-normal text-gray-500">{item.bomId} · {item.bomDesc}</p></div><SecondaryButton type="button" onClick={() => openExistingLevel('level1', item)}>VIEW / DELETE</SecondaryButton></div>)}</div>
+                    </div>
+                    <div className="space-y-4 border-t border-gray-100 pt-5">
+                      <div className="flex items-center justify-between gap-3"><h4 className="text-sm font-semibold text-gray-700">New</h4>{semiFgLv1?.statusRow && <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">STATUS: {semiFgLv1.statusRow}</span>}</div>
                       {hasSemiFgLv1 ? (
-                        <div className="space-y-3">
+                        <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
                           <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                               <div>
@@ -772,9 +778,6 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                             >
                               View Semi FG Level 1
                             </SecondaryButton>
-                            <span className="text-sm font-medium text-gray-700">
-                              STATUS: {semiFgLv1.statusRow || '-'}
-                            </span>
                           </div>
                         </div>
                       ) : (
@@ -783,9 +786,10 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                         </SuccessButton>
                       )}
                       {!hasAnyLv2 && (
-                        <div className="text-sm text-gray-500">Create Semi FG Level 2 first.</div>
+                        <div className="text-sm text-gray-500">Create Semi FG Level 2 New first.</div>
                       )}
                     </div>
+                    </BomZone>
                   )}
                 </>
               )}

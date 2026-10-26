@@ -5,7 +5,7 @@ Implemented and applied to the application's Oracle database on 2026-10-25.
 ## Completed flows
 
 - FG, Semi FG LV1 and LV2 have separate New and Existing component sections.
-- Existing LV1/LV2 BOMs can be selected by Brand, Mattype and Sub Mattype, viewed and detached. LV1 requires an explicit LV2 parent; multiple available parents are selectable.
+- Existing LV1/LV2 BOMs can be selected by Brand, Mattype and Sub Mattype, viewed and detached. LV1 creation requires the FG’s New LV2 BOM; Existing LV2 attachments are excluded from parent selection. The parent BOM is retained internally and shown on the creation form; the FG summary card does not repeat it.
 - Existing component selectors support FG, LV1, LV2 and nested Mattype 4. LV2 includes Product SUB Category.
 - Mattype 4 supports nested New creation/edit/deletion and Existing attachment/view/deletion, with the complete parent BOM headers.
 - Existing attachments preserve the source BOM. They have no update operation. Nested Mattype 4 mutations through a reused Existing LV1 remain read-only because the nested tables have no FG key to isolate source modifications.
