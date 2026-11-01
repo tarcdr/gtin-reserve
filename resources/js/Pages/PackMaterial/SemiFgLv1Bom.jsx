@@ -1,7 +1,9 @@
 import RawMaterialExistingComponents from '@/Components/RawMaterialExistingComponents';
 import BomMaterialForm from '@/Components/BomMaterialForm';
 import useBomMaterialFormController from '@/Components/useBomMaterialFormController';
-import { router, usePage } from '@inertiajs/react';
+import PrimaryButton from '@/Components/PrimaryButton';
+import DangerButton from '@/Components/DangerButton';
+import { router } from '@inertiajs/react';
 
 function buildSemiFgLv1BomConfig(actionMode = 'create') {
   const isEditMode = actionMode === 'edit';
@@ -13,7 +15,7 @@ function buildSemiFgLv1BomConfig(actionMode = 'create') {
   } else if (isDeleteMode) {
     headerTitle = 'SEMI FG LV1 BOM - Delete';
   } else if (isViewMode) {
-    headerTitle = 'SEMI FG LV1 BOM - View';
+    headerTitle = 'SEMI FG LV1 BOM - Detail';
   }
 
   return {
@@ -25,7 +27,12 @@ function buildSemiFgLv1BomConfig(actionMode = 'create') {
   };
 }
 
-export default function SemiFgLv1Bom({ auth, InputData, subMattypes = [], uoms = [] }) {
+export default function SemiFgLv1Bom(props) {
+  const data = props.InputData || {};
+  return <SemiFgLv1BomForm key={`${data.actionMode}:${data.fgBomId}:${data.semiFgLvBomId}:${data.componentId}`} {...props} />;
+}
+
+function SemiFgLv1BomForm({ auth, InputData, subMattypes = [], uoms = [] }) {
   const ownerLevel = 'semiFgLv1';
   const isSemiFgOwner = true;
   const config = buildSemiFgLv1BomConfig(InputData?.actionMode);
@@ -37,12 +44,20 @@ export default function SemiFgLv1Bom({ auth, InputData, subMattypes = [], uoms =
     defaultBackRoute: 'material-levels.semi-fg-lv1.new',
   });
 
-  const { overviewFlow } = usePage().props;
+  const openComponent = (actionMode) => router.get(route('packmaterial.semi-fg-lv1-bom.new'), {
+    actionMode, fgMaterialId: form.data.fgMaterialId, referentMaterialId: form.data.fgMaterialId,
+    fgBomId: form.data.fgBomId, levelMaterialId: form.data.levelMaterialId,
+    semiFgLvBomId: form.data.semiFgLvBomId, semiFgLv2BomId: form.data.semiFgLv2BomId,
+    componentId: form.data.componentId,
+  });
   const handleBack = () => {
-    if (overviewFlow?.returnUrl) { router.get(overviewFlow.returnUrl); return; }
+    if (['edit', 'delete'].includes(form.data.actionMode)) { openComponent('view'); return; }
     router.get(route('material-levels.semi-fg-lv1.new'), {
       mode: 'view',
       levelMaterialId: form.data.levelMaterialId || form.data.backMaterialId || form.data.materialId || '',
+      fgMaterialId: form.data.fgMaterialId, referentMaterialId: form.data.fgMaterialId,
+      fgBomId: form.data.fgBomId, levelBomId: form.data.semiFgLvBomId,
+      parentLevelBomId: form.data.semiFgLv2BomId,
     });
   };
 
@@ -55,7 +70,9 @@ export default function SemiFgLv1Bom({ auth, InputData, subMattypes = [], uoms =
 
   return (
     <BomMaterialForm
-      extraSections={['view', 'edit'].includes(InputData?.actionMode) && form.data.mattype === '4' && form.data.componentId ? <RawMaterialExistingComponents data={form.data} /> : null}
+      detailActions={<><PrimaryButton type="button" disabled={!InputData?.canEdit} onClick={() => openComponent('edit')}>EDIT</PrimaryButton><DangerButton type="button" disabled={!InputData?.canDelete} onClick={() => openComponent('delete')}>DELETE</DangerButton></>}
+      beforeActions={form.isViewMode && form.data.mattype === '4' && form.data.componentId ? <RawMaterialExistingComponents data={form.data} embedded /> : null}
+      detailStatus={form.isViewMode ? InputData?.statusRow || '' : null}
       auth={auth}
       headerTitle={config.headerTitle}
       pageIdentity={{ pageId: config.pageId }}
@@ -77,7 +94,7 @@ export default function SemiFgLv1Bom({ auth, InputData, subMattypes = [], uoms =
       levelBomIdLabel={config.levelBomIdLabel}
       levelBomDescLabel={config.levelBomDescLabel}
       primaryActionLabel={form.primaryActionLabel}
-      backLabel="Back to Semi FG Lv.1 Detail"
+      backLabel={['edit', 'delete'].includes(form.data.actionMode) ? 'Back to BOM Detail' : 'Back to Semi FG Lv.1 Detail'}
       onSubmit={form.handleSubmit}
       onBack={handleBack}
       onDelete={handleDelete}

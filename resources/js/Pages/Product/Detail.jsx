@@ -603,14 +603,6 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                     <BomZone title="FG Components" subtitle="Materials that make up this finished good">
                     {[
                       {
-                        key: 'new',
-                        title: 'New components',
-                        addLabel: '+ ADD COMPONENT NEW',
-                        onAdd: goToPackMaterial,
-                        items: fgComponents.filter((item) => item.sourceType !== 'matid'),
-                        emptyMessage: 'No new FG components yet.',
-                      },
-                      {
                         key: 'existing',
                         onAdd: InputData?.existingComponentsAvailability?.ready ? () => router.get(route('existing-components.index', { scope: 'fg' }), { fgMaterialId: data.materialId, fgBomId: data.bomId }) : undefined,
                         title: 'From existing',
@@ -618,8 +610,16 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                         items: fgComponents.filter((item) => item.sourceType === 'matid'),
                         emptyMessage: 'No existing FG components yet.',
                       },
+                      {
+                        key: 'new',
+                        title: 'New components',
+                        addLabel: '+ ADD COMPONENT NEW',
+                        onAdd: goToPackMaterial,
+                        items: fgComponents.filter((item) => item.sourceType !== 'matid'),
+                        emptyMessage: 'No new FG components yet.',
+                      },
                     ].map((section) => (
-                      <div key={section.key} className={section.key === 'existing' ? 'border-t border-gray-100 pt-5' : ''}>
+                      <div key={section.key} className={section.key === 'new' ? 'border-t border-gray-100 pt-5' : ''}>
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                           <h4 className="text-sm font-semibold text-gray-700">{section.title}</h4>
                           {section.key === 'existing' ? <SecondaryButton type="button" onClick={section.onAdd} disabled={!section.onAdd || isCompleted}>{section.addLabel}</SecondaryButton> : <SuccessButton type="button" onClick={section.onAdd} disabled={!section.onAdd || isCompleted}>{section.addLabel}</SuccessButton>}

@@ -742,14 +742,15 @@ export default function MaterialLevelForm({
                         </div>
                       )}
                       <div className="bg-white overflow-x-auto shadow-sm sm:rounded-lg">
-                        <table className="w-full text-sm text-left rtl:text-right text-gray-800">
+                        <table className="w-full min-w-[960px] table-fixed text-sm text-left rtl:text-right text-gray-800">
+                          <colgroup>{[6, 24, 38, 10, 22].map((width) => <col key={width} style={{ width: `${width}%` }} />)}</colgroup>
                           <thead className="text-xs bg-gray-50">
                             <tr>
                               <th scope="col" className="px-6 py-3">#</th>
                               <th scope="col" className="px-6 py-3">Material ID/Component ID</th>
                               <th scope="col" className="px-6 py-3">Description</th>
-                              <th scope="col" className="px-6 py-3" width="120">Status</th>
-                              <th scope="col" className="px-6 py-3" width="180">Action</th>
+                              <th scope="col" className="px-6 py-3">Status</th>
+                              <th scope="col" className="px-6 py-3">Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -762,15 +763,15 @@ export default function MaterialLevelForm({
                                 <tr key={`${title}-component-${item.code}`}>
                                   <th scope="row" className="px-6 py-4">{index + 1}</th>
                                   <td className="px-6 py-4">{item.code}</td>
-                                  <td className="px-6 py-4">{item.label}</td>
+                                  <td className="break-words px-6 py-4">{item.label}</td>
                                   <td className="px-6 py-4">{item.status}</td>
                                   <td className="px-6 py-4">
                                     {isViewMode ? (
                                       <div className="flex items-center gap-2">
-                                        {!isSemiFgCompleted && item.sourceType !== 'matid' && (
+                                        {!isSemiFgCompleted && item.sourceType !== 'matid' && levelKey !== 'semiFgLv1' && (
                                           <PrimaryButton type="button" onClick={() => goComponentAction('edit', item)}>EDIT</PrimaryButton>
                                         )}
-                                        {(isSemiFgCompleted || item.sourceType === 'matid') && (
+                                        {(isSemiFgCompleted || item.sourceType === 'matid' || levelKey === 'semiFgLv1') && (
                                           <SecondaryButton type="button" onClick={() => goComponentAction('view', item)}>VIEW</SecondaryButton>
                                         )}
                                         <DangerButton type="button" onClick={() => goComponentAction('delete', item)} disabled={isSemiFgCompleted}>DELETE</DangerButton>

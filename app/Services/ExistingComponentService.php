@@ -130,8 +130,16 @@ class ExistingComponentService
         $subView = $prefix.($scope === 'fg' ? '_SUBMT_LS' : '_SUB_LS');
         $result = [
             'mattypes' => $db->table($typeView)->selectRaw('TRIM(MATTYPE) as code')->distinct()->orderBy('code')->get()->map(fn ($row) => ['value' => $row->code, 'label' => $row->code])->all(),
-            'subMattypes' => $db->table($subView)->selectRaw('TRIM(SUB_MATTYPE) as code'.(in_array($scope, ['fg', 'semi2'], true) ? ', TRIM(DESC_PROD_CAT) as description' : ''))->distinct()->orderBy('code')->get()->map(fn ($row) => ['value' => $row->code, 'label' => $row->code.(isset($row->description) ? ' - '.$row->description : '')])->all(),
+            'subMattypes' => $scope === 'semi1' ? [] : $db->table($subView)->selectRaw('TRIM(SUB_MATTYPE) as code'.(in_array($scope, ['fg', 'semi2'], true) ? ', TRIM(DESC_PROD_CAT) as description' : ''))->distinct()->orderBy('code')->get()->map(fn ($row) => ['value' => $row->code, 'label' => $row->code.(isset($row->description) ? ' - '.$row->description : '')])->all(),
         ];
+        if ($scope === 'semi1') {
+            // The existing-material LOV uses this master, while the legacy subtype LOV reads a different source.
+            $result['subMattypes'] = $db->table('PROJ1_2_SEMI_L1_COM_EXS_ID_LS as choices')
+                ->join('PROJ1_2_MASTER_MATERIAL as master', fn ($join) => $join->whereRaw('TRIM(master.MATERIAL_ID) = TRIM(choices.M4_ID)'))
+                ->whereRaw('TRIM(master.MAT_TYPE) LIKE ?', ['4_'])
+                ->selectRaw('SUBSTR(TRIM(master.MAT_TYPE), 2, 1) as code')->distinct()->orderBy('code')->get()
+                ->map(fn ($row) => ['value' => (string) $row->code, 'label' => (string) $row->code])->all();
+        }
         if ($scope === 'semi2') $result['productSubCats'] = $db->table($prefix.'_CAT_LS')->selectRaw('TRIM(CODE_SUB_CAT) as code, TRIM(DESC_PROD_SUB_CAT) as description')->distinct()->orderBy('code')->get()->map(fn ($row) => ['value' => $row->code, 'label' => $row->code.' - '.$row->description])->all();
         return $result;
     }

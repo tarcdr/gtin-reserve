@@ -30,7 +30,17 @@ class ExistingComponentController extends Controller
 
     private function back(string $scope, array $context): string
     {
-        if (in_array($scope, ['fg', 'level1', 'level2', 'semi1', 'semi2'], true)) {
+        if (in_array($scope, ['semi1', 'semi2'], true)) {
+            $level = $scope === 'semi1' ? 1 : 2;
+            return route("material-levels.semi-fg-lv{$level}.new", [
+                'mode' => 'view', 'levelMaterialId' => $context['levelMaterialId'],
+                'referentMaterialId' => $context['fgMaterialId'],
+                'fgMaterialId' => $context['fgMaterialId'], 'fgBomId' => $context['fgBomId'],
+                'levelBomId' => $context["semiFgLv{$level}BomId"],
+                'parentLevelBomId' => $context['semiFgLv2BomId'],
+            ]);
+        }
+        if (in_array($scope, ['fg', 'level1', 'level2'], true)) {
             return route('product.view', ['materialId' => $context['fgMaterialId']]);
         }
         return route('packmaterial.semi-fg-lv1-bom.new', [
@@ -58,9 +68,9 @@ class ExistingComponentController extends Controller
     {
         $input = $this->input($request, $scope);
         $context = $this->context($scope, $input);
-        $view = $request->validate(['mode' => ['nullable', 'in:create,view']])['mode'] ?? 'create';
+        $view = $request->validate(['mode' => ['nullable', $scope === 'raw4' ? 'in:create,view,delete' : 'in:create,view']])['mode'] ?? 'create';
         $selected = null;
-        if ($view === 'view') {
+        if (in_array($view, ['view', 'delete'], true)) {
             $selected = collect($this->rows($scope, $context))->first(fn ($row) => $row['no'] === ($input['no'] ?? '') && $row['code'] === ($input['componentId'] ?? ''));
             abort_unless($selected, 404);
         }

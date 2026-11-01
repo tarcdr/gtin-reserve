@@ -82,6 +82,64 @@ class ExistingComponentsTest extends TestCase
         DB::connection('oracle')->table($table)->insert($row);
     }
 
+    public function test_semi_lv1_existing_subtypes_use_the_same_master_as_material_choices(): void
+    {
+        foreach ([
+            'PROJ1_2_SEMI_L1_COM_EXS_MAT_LS' => ['MATTYPE'],
+            'PROJ1_2_SEMI_L1_COM_EXS_SUB_LS' => ['SUB_MATTYPE'],
+            'PROJ1_2_SEMI_L1_COM_EXS_ID_LS' => ['M4_ID', 'M4_DESCRIPTION'],
+        ] as $table => $columns) {
+            DB::connection('oracle')->getSchemaBuilder()->create($table, function (Blueprint $schema) use ($columns) {
+                foreach ($columns as $column) $schema->string($column)->nullable();
+            });
+        }
+        $this->insert('PROJ1_2_SEMI_L1_COM_EXS_MAT_LS', ['MATTYPE' => '4']);
+        // The old subtype LOV is intentionally empty; SUB_TYPE is a product subcategory, not the form subtype.
+        foreach ([['NOT-AN-ID-PREFIX', '40', '14'], ['SECOND', '40', '09'], ['ANOTHER', '41', '01'], ['WRONG', '50', '01']] as [$id, $type, $subtype]) {
+            $this->insert('PROJ1_2_MASTER_MATERIAL', ['MATERIAL_ID' => $id, 'MAT_TYPE' => $type, 'SUB_TYPE' => $subtype]);
+            $this->insert('PROJ1_2_SEMI_L1_COM_EXS_ID_LS', ['M4_ID' => $id, 'M4_DESCRIPTION' => 'Raw '.$id]);
+        }
+        $this->assertSame(['0', '1'], array_column($this->service->filters('semi1')['subMattypes'], 'value'));
+        $options = $this->service->options('semi1', ['mattype' => '4', 'subMattype' => '0']);
+        $this->assertSame(['NOT-AN-ID-PREFIX', 'SECOND'], array_column($options, 'value'));
+        $this->assertSame([], $this->service->options('semi1', ['mattype' => '4', 'subMattype' => '9']));
+    }
+
+    public function test_raw_existing_view_and_delete_are_separate_and_delete_get_does_not_mutate(): void
+    {
+        $this->insert('PROJ1_2_DML_SEMI_L1_M4_COMP_ID', [
+            'NO' => '1', 'STORE_MATERIAL_ID_M4' => 'RAW4', 'FG_BOM_ID' => 'BFG1',
+            'SEMI_FG_LV2_BOM_ID' => 'BL2', 'SEMI_FG_LV1_BOM_ID' => 'BL1',
+            'MASTER_MATERIAL_ID_M4' => 'MASTER4', 'STATUS_ROW' => 'INS', 'USER_CREATE' => 'tester',
+        ]);
+        foreach (['view', 'delete'] as $mode) {
+            $this->get(route('existing-components.index', ['scope' => 'raw4', 'mode' => $mode, 'no' => '1'] + $this->rawInput))
+                ->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                    ->component('ExistingComponents/Select')->where('mode', $mode)->where('selected.code', 'RAW4'));
+        }
+        $this->assertSame(1, DB::connection('oracle')->table('PROJ1_2_DML_SEMI_L1_M4_COMP_ID')->count());
+        $this->get(route('existing-components.index', ['scope' => 'raw4', 'mode' => 'delete', 'no' => '99'] + $this->rawInput))->assertNotFound();
+    }
+
+    public function test_raw_new_form_uses_raw_material_category_subtypes(): void
+    {
+        DB::connection('oracle')->getSchemaBuilder()->create('PROJ1_2_COMP_SEMI_L1_V', function (Blueprint $schema) {
+            foreach (['MATTYPE', 'SUB_MATTYPE', 'DESC_PROD_CAT'] as $column) $schema->string($column)->nullable();
+        });
+        foreach (['0', '1', '2', '3'] as $code) {
+            $this->insert('PROJ1_2_COMP_SEMI_L1_V', ['MATTYPE' => '4', 'SUB_MATTYPE' => $code, 'DESC_PROD_CAT' => 'Raw '.$code]);
+        }
+        $this->insert('PROJ1_2_COMP_SEMI_L1_V', ['MATTYPE' => '4', 'SUB_MATTYPE' => '0', 'DESC_PROD_CAT' => 'Raw 0']);
+        $this->insert('PROJ1_2_COMP_SEMI_L1_V', ['MATTYPE' => '5', 'SUB_MATTYPE' => '9', 'DESC_PROD_CAT' => 'Packaging']);
+        $this->app->instance(\App\Http\Controllers\RawChildComponentController::class, new class extends \App\Http\Controllers\RawChildComponentController {
+            public function __construct() { $this->uoms = []; }
+        });
+        $this->get(route('raw-child.form', $this->rawInput))->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->component('ExistingComponents/RawNew')->has('subMattypes', 4)
+            ->where('subMattypes.0.code', '0')->where('subMattypes.0.description', 'Raw 0')
+            ->where('subMattypes.1.code', '1')->where('subMattypes.2.code', '2')->where('subMattypes.3.code', '3'));
+    }
+
     public function test_fg_form_and_filtered_options_use_existing_views_and_master_attributes(): void
     {
         $this->get(route('existing-components.index', ['scope' => 'fg'] + $this->fgInput))->assertOk();

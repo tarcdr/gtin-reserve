@@ -12,10 +12,11 @@ import Modal from '@/Components/Modal';
 import { getAxiosErrorMessage } from '@/Utils/apiError';
 
 export default function SelectExistingComponent({ auth, scope, context, mode, selected, filters, backUrl }) {
-  const isView = mode === 'view';
+  const isDelete = mode === 'delete';
+  const isView = mode === 'view' || isDelete;
   const isLevel = scope === 'level1' || scope === 'level2';
   const hasFilters = scope !== 'raw4';
-  const title = `${({ fg: 'FG BOM', semi1: 'Semi FG LV1', semi2: 'Semi FG LV2', level1: 'Semi FG LV1 BOM', level2: 'Semi FG LV2 BOM', raw4: 'Raw Material' })[scope]} - ${isView ? 'View' : 'Add'} ${isLevel ? 'Existing BOM' : 'Existing Component'}`;
+  const title = `${({ fg: 'FG BOM', semi1: 'Semi FG LV1', semi2: 'Semi FG LV2', level1: 'Semi FG LV1 BOM', level2: 'Semi FG LV2 BOM', raw4: 'Raw Material' })[scope]} - ${isDelete ? 'Delete' : isView ? 'View' : 'Add'} ${isLevel ? 'Existing BOM' : 'Existing Component'}`;
   const [step, setStep] = useState(hasFilters && !isView ? 1 : 2);
   const [options, setOptions] = useState([]);
   const [reloadOptions, setReloadOptions] = useState(0);
@@ -80,7 +81,7 @@ export default function SelectExistingComponent({ auth, scope, context, mode, se
         {!context.canWrite && <p role="status" className="text-sm text-gray-600">ข้อมูล Complete หรือส่งออกแล้ว ดูรายละเอียดได้เท่านั้น</p>}
         <form className="space-y-6 rounded-lg bg-white p-6 shadow" onSubmit={(event) => {
           event.preventDefault();
-          if (!isView && step === 2 && option && context.canWrite && !loading) post(route('existing-components.save', { scope }));
+          if (!isView && step === 2 && option && option.selectable !== false && context.canWrite && !loading) post(route('existing-components.save', { scope }));
         }}>
           {hasFilters && !isView && <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {[...(isLevel ? [['brand', 'Brand', filters?.brands]] : []), [ 'mattype', 'Mattype', filters?.mattypes ], [ 'subMattype', 'Sub Mattype', filters?.subMattypes ], ...(scope === 'semi2' ? [['productSubCat', 'Product SUB Category', filters?.productSubCats]] : [])].map(([field, label, choices]) => <div key={field}>
@@ -98,7 +99,7 @@ export default function SelectExistingComponent({ auth, scope, context, mode, se
               {isView ? <TextInput id="existingComponentId" value={isLevel ? selected?.id || data.componentId : data.componentId} disabled className="mt-1 block w-full bg-gray-100" /> :
                 <select id="existingComponentId" value={data.componentId} onChange={(event) => setData('componentId', event.target.value)} disabled={loading || processing || !context.canWrite} className="mt-1 block w-full rounded-md border-gray-300">
                   <option value="">{loading ? 'Loading...' : '---- Select Material ID ----'}</option>
-                  {options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                  {options.map((item) => <option key={item.value} value={item.value} disabled={item.selectable === false}>{item.label}{item.unavailableReason ? ` — ${item.unavailableReason}` : ''}</option>)}
                 </select>}
               {!loading && !isView && !loadError && options.length === 0 && <p className="mt-2 text-sm text-gray-500">ไม่มี Material ID ที่ตรงกับเงื่อนไข</p>}
             </div>
@@ -107,10 +108,10 @@ export default function SelectExistingComponent({ auth, scope, context, mode, se
           {isLevel && (option || selected) && <div className="grid grid-cols-1 gap-6 sm:grid-cols-2"><div><InputLabel value="Selected BOM ID" /><TextInput disabled value={option?.bomId || selected?.bomId || ''} className="mt-1 block w-full bg-gray-100" /></div><div><InputLabel value="BOM Description" /><TextInput disabled value={option?.bomDescription || selected?.bomDesc || ''} className="mt-1 block w-full bg-gray-100" /></div></div>}
           {(loadError || errors.componentId || errors.no || errors.fgBomId || errors.masterMaterialId || errors.semiFgLv1BomId || errors.fgMaterialId) && <p role="alert" className="text-sm text-red-600">{loadError || errors.componentId || errors.no || errors.fgBomId || errors.masterMaterialId || errors.semiFgLv1BomId || errors.fgMaterialId}</p>}
           <div className="flex flex-wrap justify-center gap-3">
-            <SecondaryButton type="button" disabled={processing} onClick={() => step === 2 && hasFilters && !isView ? (setStep(1), setData('componentId', '')) : router.get(backUrl)}>BACK</SecondaryButton>
+            <SecondaryButton type="button" disabled={processing} onClick={() => router.get(backUrl)}>BACK</SecondaryButton>
             {!isView && <SecondaryButton type="button" disabled={processing} onClick={resetForm}>RESET</SecondaryButton>}
-            {step === 1 ? <PrimaryButton type="button" disabled={!data.mattype || data.subMattype === '' || (isLevel && !data.brand) || (scope === 'semi2' && !data.productSubCat) || !context.canWrite} onClick={() => { setLoading(true); setStep(2); }}>NEXT</PrimaryButton> : !isView && <PrimaryButton disabled={processing || loading || !option || !context.canWrite}>SAVE</PrimaryButton>}
-            {isView && <DangerButton type="button" disabled={!canDelete || processing} onClick={() => setConfirmDelete(true)}>DELETE</DangerButton>}
+            {step === 1 ? <PrimaryButton type="button" disabled={!data.mattype || data.subMattype === '' || (isLevel && !data.brand) || (scope === 'semi2' && !data.productSubCat) || !context.canWrite} onClick={() => { setLoading(true); setStep(2); }}>NEXT</PrimaryButton> : !isView && <PrimaryButton disabled={processing || loading || !option || option.selectable === false || !context.canWrite}>SAVE</PrimaryButton>}
+            {isView && (scope !== 'raw4' || isDelete) && <DangerButton type="button" disabled={!canDelete || processing} onClick={() => setConfirmDelete(true)}>DELETE</DangerButton>}
           </div>
         </form>
       </div>

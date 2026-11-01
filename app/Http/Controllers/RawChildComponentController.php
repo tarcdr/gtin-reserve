@@ -57,7 +57,12 @@ class RawChildComponentController extends PackMaterialController
             'fullDescEn' => $row['FULL_DESCRIPTION_EN'] ?? '', 'fullDescTh' => $row['FULL_DESCRIPTION_TH'] ?? '', 'uom' => $row['UOM'] ?? '',
             'canEdit' => $context['canWrite'] && ($row === null || (($row['STATUS_ROW'] ?? '') === 'INS' && ($row['USER_CREATE'] ?? '') === $request->user()->user_login)),
         ];
-        return Inertia::render('ExistingComponents/RawNew', ['InputData' => $InputData, 'subMattypes' => $this->packSubMattypes('4'), 'uoms' => $this->uoms, 'backUrl' => $this->back($context)]);
+        $subMattypes = DB::connection('oracle')->table('PROJ1_2_COMP_SEMI_L1_V')
+            ->whereRaw('TRIM(MATTYPE) = ?', ['4'])->whereRaw('TRIM(SUB_MATTYPE) IS NOT NULL')
+            ->selectRaw('TRIM(SUB_MATTYPE) as code, MIN(TRIM(DESC_PROD_CAT)) as description')
+            ->groupByRaw('TRIM(SUB_MATTYPE)')->orderByRaw('TRIM(SUB_MATTYPE)')->get()
+            ->map(fn ($row) => ['code' => (string) $row->code, 'description' => (string) $row->description])->all();
+        return Inertia::render('ExistingComponents/RawNew', ['InputData' => $InputData, 'subMattypes' => $subMattypes, 'uoms' => $this->uoms, 'backUrl' => $this->back($context)]);
     }
 
     public function save(Request $request)

@@ -10,7 +10,7 @@ Implemented and applied to the application's Oracle database on 2026-10-25.
 - Mattype 4 supports nested New creation/edit/deletion and Existing attachment/view/deletion, with the complete parent BOM headers.
 - Existing attachments preserve the source BOM. They have no update operation. Nested Mattype 4 mutations through a reused Existing LV1 remain read-only because the nested tables have no FG key to isolate source modifications.
 
-Source BOM selectors use actual saved BOM/ID pairs. ERP-only materials without a saved BOM are excluded. Sub Mattype choices come from the same canonical source views, since the older LOV can be empty. Category filtering uses actual master fields: combined MAT_TYPE (for example 50) and product SUB_TYPE, rather than guessing from material IDs.
+Selectable source BOMs use actual saved BOM/ID pairs. In the LV1 native catalog, ERP-only materials without a saved BOM remain visible but cannot be selected. Sub Mattype choices come from the same canonical source views, since the older LOV can be empty. Category filtering uses actual master fields: combined MAT_TYPE (for example 50) and product SUB_TYPE, rather than guessing from material IDs.
 
 Mutations resolve descriptions and parent IDs from Oracle, lock parent rows, reject completed/exported paths and duplicate links, and scope changes to the full parent path. Editing/deleting saved INS rows requires their creator. Deletion removes the attachment, not the source master, and records an audit entry. Nested raw materials attached through an Existing LV1 cannot modify the shared source BOM.
 
@@ -44,3 +44,26 @@ Applied backup: `storage/app/bom-object-backups/SYSTEM_20261025_152253_58e05c.js
 - Local browser verification loads actual LV2 Existing source BOM options after selecting Brand/Mattype/Sub Mattype. Earlier FG selection verification also passed. No Save/Delete or ID-generation action was submitted against application data.
 - Test DML ran only in an isolated disposable GTIN_QA Oracle schema, guarded by the verification script. No test records were inserted into the application's database. Some nested flows lack suitable real records for browser testing; they are covered by the isolated Oracle checks.
 - The historical full PHPUnit Auth/Profile schema mismatches remain documented in `dependency-security-update.md`; the 33 passing tests above are the relevant regression set, not the complete suite.
+
+## Component refinements — 2026-11-01
+
+- FG Components and the single Raw Material Components card show Existing before New. Raw Material row actions and ownership/status checks remain in place.
+- Semi FG LV1/LV2 New and Existing tables share fixed columns (6%, 24%, 38%, 10%, 22%) and a 960px minimum width, with horizontal scrolling on smaller screens.
+- Existing Component Save, Back and Delete for `semi1`/`semi2` return to the canonical owning Semi FG detail page in View mode. Existing BOM attachments still return to FG. Validation errors preserve form input.
+- LV1 options merge the native `PROJ1_2_SEMI_FG_L1_ID_EXIST_LS` catalog with saved DML BOMs. ERP master attributes take priority over the source FG brand. Split and combined master material category fields are supported; material IDs are not parsed for filtering.
+- Options include `selectable` and `unavailableReason`. A catalog material without a matching source BOM is visible but disabled with “ไม่มี BOM ต้นทาง”; the server also rejects its submission. Multiple real BOMs remain separate choices.
+- No database definition or business-record changes were needed. Read-only local Oracle inspection found neither `30SW0001` nor other `30SW%` materials in the native LOV, detail view or ERP master; the screenshot's exact record cannot be verified against this local dataset. Fixtures cover that record's missing-BOM and valid/multiple-BOM cases.
+- Regression tests cover canonical return URLs and validation retention, missing BOMs, ERP-only records, category/brand filtering, source brand discrepancies and forged submissions. Browser verification was unavailable because the browser access host could not be reached.
+
+## Semi FG LV1 BOM detail flow — 2026-11-01
+
+- Creating or updating a New Mattype 4 BOM Component now redirects to that component's own Detail (`actionMode=view`), with canonical FG/LV2/LV1 context and the saved Component ID.
+- Detail fields are read-only; Edit/Delete actions use the stored creator/status and parent completion gates. Edit/confirm-delete Back returns to Component Detail; Detail Back and successful deletion return to the owning Semi FG LV1.
+- Saved views reload descriptions, categories and parent headers from Oracle rather than URL field values. Category/ID fields stay locked, and missing/foreign components or unauthorized mutations are rejected. Validation failures retain form input.
+- The LV1 page remounts its form when mode/component changes, so an Inertia redirect after Save cannot retain editable Create/Edit state. The shared form has an optional detail-action slot used only by the LV1 BOM Component page; other BOM pages keep their existing behavior.
+- Regression: 51 tests / 516 assertions pass, including nine dedicated LV1 flow tests with simulated procedure writes in SQLite. Production build passes. No schema/procedure changes or application-data test writes were made.
+- Read-only Oracle checks of the screenshot's `400200004` return the correct Detail/Edit component and parent path (`B11BR00012_RK_01` → `B20BR00007_RK_01` → `B30BR0001_RK_01`). Browser screenshot verification remains unavailable because the browser access host cannot be reached.
+
+### Detail/Edit layout
+
+The LV1 BOM Component Detail now groups read-only component fields (including UOM and Status), embedded Raw Material Components (Existing before New), and then Back/Edit/Delete inside the same form card. Edit shows only the main component form; Raw Material management is mounted only in Detail. Optional form slots preserve other BOM pages' layouts. Five server-rendered React tests verify section order, read-only/editable fields, mode-specific content, disabled actions and shared-form defaults. All five pass, alongside the 51 PHP regression tests and production build. Browser access remains unavailable, so desktop/mobile screenshot verification is not claimed.

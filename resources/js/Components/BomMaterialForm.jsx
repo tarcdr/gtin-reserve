@@ -42,6 +42,9 @@ export default function BomMaterialForm({
   onFullDescThChange,
   onUomChange,
   extraSections = null,
+  detailActions = null,
+  beforeActions = null,
+  detailStatus = null,
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const saveError = data?.actionMode !== 'delete'
@@ -252,12 +255,18 @@ export default function BomMaterialForm({
 
                   <InputError className="mt-2" message={errors?.uom} />
                 </div>
+                {detailStatus !== null && <div>
+                  <InputLabel htmlFor="componentStatus" value="Status" />
+                  <TextInput id="componentStatus" value={detailStatus} disabled className="mt-1 block w-full bg-gray-100" />
+                </div>}
               </div>
 
+              {beforeActions}
               <div className="flex flex-col items-stretch justify-center gap-3 md:flex-row md:items-center">
                 <SecondaryButton type="button" onClick={onBack}>
                   {backLabel}
                 </SecondaryButton>
+                {isViewMode && detailActions}
                 {!['delete', 'view'].includes(data?.actionMode) && (
                   <SuccessButton disabled={processing || isGeneratingComponentId}>{primaryActionLabel}</SuccessButton>
                 )}

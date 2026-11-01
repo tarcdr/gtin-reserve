@@ -12,6 +12,7 @@ class ExistingLevelService
     public function availability(int $level): array
     {
         $names = ["PROJ1_2_SEMI_FG_LV{$level}_ID_V", "PROJ1_2_SAVE_BOM_SEMI_L{$level}_EXIST", "PROJ1_2_DML_SEMI_L{$level}_BOM_EXIST", "PROJ1_2_DML_SEMI_L{$level}_ID_EXIST", 'PROJ1_2_BOM_LINK_SEQ'];
+        if ($level === 1) $names = array_merge($names, ['PROJ1_2_SEMI_FG_L1_ID_EXIST_LS', 'PROJ1_MATERIAL', 'PROJ1_2_MASTER_MATERIAL', 'PROJ1_BRAND']);
         $valid = DB::connection('oracle')->table('USER_OBJECTS')->whereIn('OBJECT_NAME', $names)->where('STATUS', 'VALID')->get(['OBJECT_NAME'])->map(fn ($r) => $r->object_name ?? $r->OBJECT_NAME)->all();
         return ['ready' => !array_diff($names, $valid), 'reason' => array_diff($names, $valid) ? 'ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ' : ''];
     }
@@ -33,22 +34,59 @@ class ExistingLevelService
     {
         $db = DB::connection('oracle');
         $prefix = "PROJ1_2_SEMI_L{$level}_EXIST";
+        $subtypes = $db->table("PROJ1_2_SEMI_FG_LV{$level}_ID_V")->whereNotNull('SUB_MATTYPE')->selectRaw('TRIM(SUB_MATTYPE) as code')->distinct()->get()->pluck('code');
+        if ($level === 1) $subtypes = $subtypes->merge($db->table($prefix.'_SUBMT_LS')->selectRaw('TRIM(SUB_MATTYPE) as code')->distinct()->get()->pluck('code'));
         return [
             'brands' => $db->table($prefix.'_BRAND_LS')->selectRaw('TRIM(BRAND_ABB) as code, TRIM(BRAND) as description')->distinct()->orderBy('code')->get()->map(fn ($r) => ['value' => $r->code, 'label' => $r->code.' - '.$r->description])->all(),
             'mattypes' => $db->table($prefix.($level === 2 ? '_MATYP_LS' : '_MATTY_LS'))->selectRaw('TRIM(MATTYPE) as code')->distinct()->get()->map(fn ($r) => ['value' => $r->code, 'label' => $r->code])->all(),
-            'subMattypes' => $db->table("PROJ1_2_SEMI_FG_LV{$level}_ID_V")->whereNotNull('SUB_MATTYPE')->selectRaw('TRIM(SUB_MATTYPE) as code')->distinct()->orderBy('code')->get()->map(fn ($r) => ['value' => $r->code, 'label' => $r->code])->all(),
+            'subMattypes' => $subtypes->filter(fn ($code) => $code !== null && $code !== '')->unique()->sort()->values()->map(fn ($code) => ['value' => $code, 'label' => $code])->all(),
         ];
     }
 
     public function options(int $level, array $input): array
     {
         foreach (['brand', 'mattype', 'subMattype'] as $field) if (!isset($input[$field]) || $input[$field] === '') return [];
-        return DB::connection('oracle')->table("PROJ1_2_SEMI_FG_LV{$level}_ID_V")
-            ->whereRaw('TRIM(BRAND_ABB) = ?', [$input['brand']])->whereRaw('TRIM(MATTYPE) = ?', [$input['mattype']])->whereRaw('TRIM(SUB_MATTYPE) = ?', [$input['subMattype']])
-            ->orderBy('MATERIAL_ID')->orderBy('BOM_ID')->get()->map(function ($record) {
-                $r = array_map(fn ($v) => is_string($v) ? trim($v) : $v, array_change_key_case((array) $record, CASE_UPPER));
-                return ['value' => $r['BOM_ID'], 'label' => $r['MATERIAL_ID'].' — '.$r['BOM_ID'], 'description' => $r['SEARCH_DESCRIPTION'] ?? '', 'materialId' => $r['MATERIAL_ID'], 'bomId' => $r['BOM_ID'], 'bomDescription' => $r['BOM_DESCRIPTION'] ?? '', 'status' => $r['STATUS_ROW'] ?? '', 'fullDescEn' => $r['FULL_DESCRIPTION_EN'] ?? '', 'fullDescTh' => $r['FULL_DESCRIPTION_TH'] ?? '', 'uom' => $r['UOM'] ?? ''];
-            })->unique('value')->values()->all();
+        $db = DB::connection('oracle');
+        $query = $db->table("PROJ1_2_SEMI_FG_LV{$level}_ID_V")
+            ->whereRaw('TRIM(BRAND_ABB) = ?', [$input['brand']])->whereRaw('TRIM(MATTYPE) = ?', [$input['mattype']])->whereRaw('TRIM(SUB_MATTYPE) = ?', [$input['subMattype']]);
+        if ($level === 1) {
+            // ERP LOV membership and master attributes take precedence over a source FG's brand.
+            $query->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('PROJ1_2_SEMI_FG_L1_ID_EXIST_LS as lov')
+                    ->whereRaw('TRIM(lov.MATERIAL_ID) = TRIM(PROJ1_2_SEMI_FG_LV1_ID_V.MATERIAL_ID)');
+            });
+        }
+        $records = $query->orderBy('MATERIAL_ID')->orderBy('BOM_ID')->get();
+        if ($level === 1) {
+            $legacy = $db->table('PROJ1_2_SEMI_FG_L1_ID_EXIST_LS as lov')
+                ->leftJoin('PROJ1_MATERIAL as erp', fn ($j) => $j->whereRaw('TRIM(erp.MATERIAL_ID) = TRIM(lov.MATERIAL_ID)'))
+                ->leftJoin('PROJ1_2_MASTER_MATERIAL as m', fn ($j) => $j->whereRaw('TRIM(m.MATERIAL_ID) = TRIM(lov.MATERIAL_ID)'))
+                ->leftJoin('PROJ1_BRAND as br', fn ($j) => $j->whereRaw('TRIM(br.BRAND) = COALESCE(TRIM(erp.BRAND), TRIM(m.BRAND)) OR TRIM(br.BRAND_ABB) = COALESCE(TRIM(erp.BRAND), TRIM(m.BRAND))'))
+                ->leftJoin('PROJ1_2_SEMI_FG_LV1_ID_V as d', function ($j) use ($input) {
+                    $j->whereRaw('TRIM(d.MATERIAL_ID) = TRIM(lov.MATERIAL_ID)')
+                        ->whereRaw('TRIM(d.MATTYPE) = ?', [$input['mattype']])->whereRaw('TRIM(d.SUB_MATTYPE) = ?', [$input['subMattype']]);
+                })
+                ->where(function ($q) use ($input) {
+                    $q->where(function ($master) use ($input) {
+                        $master->whereRaw('TRIM(br.BRAND_ABB) = ?', [$input['brand']])
+                            ->where(function ($type) use ($input) {
+                                $type->whereRaw('COALESCE(TRIM(erp.MAT_TYPE), TRIM(m.MAT_TYPE)) = ?', [$input['mattype'].$input['subMattype']])
+                                    ->orWhere(fn ($split) => $split->whereRaw('COALESCE(TRIM(erp.MAT_TYPE), TRIM(m.MAT_TYPE)) = ?', [$input['mattype']])->whereRaw('COALESCE(TRIM(erp.SUB_TYPE), TRIM(m.SUB_TYPE)) = ?', [$input['subMattype']]));
+                            });
+                    })->orWhere(fn ($fallback) => $fallback->whereNull('m.MATERIAL_ID')->whereNull('erp.MATERIAL_ID')->whereRaw('TRIM(d.BRAND_ABB) = ?', [$input['brand']]));
+                })
+                ->selectRaw('TRIM(lov.MATERIAL_ID) as MATERIAL_ID, COALESCE(TRIM(d.SEARCH_DESCRIPTION), TRIM(lov.MATERIAL_DESCRIPTION)) as SEARCH_DESCRIPTION, d.BOM_ID, d.BOM_DESCRIPTION, d.STATUS_ROW, d.FULL_DESCRIPTION_EN, d.FULL_DESCRIPTION_TH, d.UOM')
+                ->distinct()->get();
+            $records = $records->concat($legacy);
+        }
+        return $records->map(function ($record) {
+            $r = array_map(fn ($v) => is_string($v) ? trim($v) : $v, array_change_key_case((array) $record, CASE_UPPER));
+            $bom = $r['BOM_ID'] ?? '';
+            return ['value' => $bom ?: 'unavailable:'.$r['MATERIAL_ID'], 'label' => $r['MATERIAL_ID'].($bom ? ' — '.$bom : ''),
+                'selectable' => $bom !== '', 'unavailableReason' => $bom ? '' : 'ไม่มี BOM ต้นทาง',
+                'description' => $r['SEARCH_DESCRIPTION'] ?? '', 'materialId' => $r['MATERIAL_ID'], 'bomId' => $bom,
+                'bomDescription' => $r['BOM_DESCRIPTION'] ?? '', 'status' => $r['STATUS_ROW'] ?? '', 'fullDescEn' => $r['FULL_DESCRIPTION_EN'] ?? '', 'fullDescTh' => $r['FULL_DESCRIPTION_TH'] ?? '', 'uom' => $r['UOM'] ?? ''];
+        })->unique('value')->sortBy('label')->values()->all();
     }
 
     public function rows(int $level, array $context): array
@@ -62,7 +100,7 @@ class ExistingLevelService
             $context = $this->context($level, $input, true);
             $this->components->requireWritable($context);
             $selected = collect($this->options($level, $input))->firstWhere('value', $input['componentId']);
-            if (!$selected) throw ValidationException::withMessages(['componentId' => 'เลือก Existing BOM ที่ตรงกับ Brand/Mattype/Sub Mattype']);
+            if (!$selected || !$selected['selectable']) throw ValidationException::withMessages(['componentId' => 'เลือก Existing BOM ที่ตรงกับ Brand/Mattype/Sub Mattype']);
             if ($this->parents->level($level, $context['fgBomId'], $selected['bomId'])) throw ValidationException::withMessages(['componentId' => 'BOM นี้ถูกเพิ่มแล้ว']);
             $fg = DB::connection('oracle')->table('PROJ1_2_DML_FG_MATTYPE_1')->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [$context['fgMaterialId']])->first();
             $common = ['P_MATTYPE' => $input['mattype'], 'P_SUB_MATTYPE' => $input['subMattype'], 'P_FG_BOM_ID' => $context['fgBomId'], 'P_MATERIAL_ID_FG_1' => $context['fgMaterialId'], 'P_STATUS_ROW' => 'INS', 'P_USER_ROLE' => $role, 'P_USER_LOGIN' => $user];
