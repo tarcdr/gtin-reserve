@@ -78,7 +78,10 @@ class ExistingComponentService
 
     private function row(Builder $query, bool $lock): array
     {
-        $record = ($lock ? $query->lockForUpdate() : $query)->first();
+        // Keep FOR UPDATE on the base table, without Oracle's limit/ROWNUM wrapper.
+        $matches = ($lock ? $query->lockForUpdate() : $query->limit(2))->get();
+        if ($matches->count() > 1) throw ValidationException::withMessages(['parent' => 'พบข้อมูล parent มากกว่าหนึ่งรายการ กรุณาตรวจความสัมพันธ์ต้นทาง']);
+        $record = $matches->first();
         abort_unless($record, 404);
         return array_map(fn ($value) => is_string($value) ? trim($value) : $value, array_change_key_case((array) $record, CASE_UPPER));
     }

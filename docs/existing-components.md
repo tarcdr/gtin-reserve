@@ -94,3 +94,18 @@ Applied locally on 2026-11-02. Pre-apply definition backup: `storage/app/bom-obj
 - React server-render tests: **14 pass**, including section order, matching columns, Detail/Edit separation, View/Delete separation and both navigation variants. Production build passes (Vite reports an existing CSS minification warning for `-: T`).
 - Browser access host is unavailable, so live desktop/mobile screenshot verification and a browser Save/Refresh round trip are not claimed. Application-database business writes were not used for tests. The local Oracle dataset has no matching source options for the screenshot's tested LV1 parent/filter combination; fixture tests cover these cases instead.
 - App and Oracle containers were already running when this task began and remain running.
+
+## Oracle parent lock correction — 2026-11-02
+
+The reported Existing Component Save failed before the procedure call with ORA-02014. `limit(2)->lockForUpdate()` caused the installed Oracle grammar to wrap the parent query in a ROWNUM pagination inline view and append FOR UPDATE to that view.
+
+`BomContextService` now uses unpaginated `lockForUpdate()->get()` when locking BOM/ID rows, then rejects ambiguous results. Read-only lookups retain `limit(2)`. The shared `ExistingComponentService` parent helper follows the same pattern, rejects duplicate parents, and preserves missing-parent errors. Existing predicates, transactions, status/ownership gates, APIs and business procedures are unchanged.
+
+Verification:
+
+- Related regression: **80 tests / 729 assertions pass**, including nine Oracle grammar tests that compile real service queries without OCI/network. These assert unwrapped FOR UPDATE SQL, complete FG/LV2/LV1 bindings, bounded read-only queries, and missing/duplicate-parent rejection.
+- **14 Oracle integration checks pass** in a newly created, isolated `GTIN_LOCK_QA` schema in XEPDB1. The old query reproduces ORA-02014; the corrected helper holds row locks against a second independent Oracle session (ORA-00054 with NOWAIT). Actual copied application procedures save Existing components for LV1, LV2 and nested Raw Material. Controller redirects target View mode and saved Existing detail reloads twice successfully.
+- Integration uses copied table/procedure definitions, synthetic LOVs and fixture rows only. No application-schema DDL or business-data writes occur. This verifies controller responses/data reloads, not browser screenshots or full owning-page rendering.
+- The disposable QA schema was dropped after verification; DBA_USERS confirmed zero remaining `GTIN_LOCK_QA` users. Existing application containers remain running.
+
+Reproduction helper: `scripts/verify-parent-lock-oracle.php`. It requires explicit `GTIN_LOCK_QA=1`, a `GTIN_LOCK_QA_PASSWORD`, and a freshly provisioned `GTIN_LOCK_QA` user with CREATE SESSION/TABLE/VIEW/PROCEDURE/SEQUENCE and quota in XEPDB1. It refuses a different user/PDB or nonempty schema, copies only source definitions, and switches application services to QA before fixture writes. Use temporary test credentials, run inside the app container, then drop that disposable schema. It does not apply migrations or modify application objects.

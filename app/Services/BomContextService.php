@@ -37,7 +37,8 @@ class BomContextService
             $query = $db->table($table)->whereRaw('TRIM(FG_BOM_ID) = ?', [$fgBomId]);
             if ($bomId !== null && $bomId !== '') $query->whereRaw("TRIM({$bomColumn}) = ?", [$bomId]);
             if ($level === 1 && $parentLv2BomId) $query->whereRaw('TRIM(SEMI_FG_LV2_BOM_ID) = ?', [$parentLv2BomId]);
-            $matches = ($lock ? $query->lockForUpdate() : $query)->limit(2)->get();
+            // Oracle cannot lock the pagination inline view generated for limit(2).
+            $matches = ($lock ? $query->lockForUpdate() : $query->limit(2))->get();
             if ($matches->count() > 1) throw ValidationException::withMessages(['parent' => 'พบ BOM มากกว่าหนึ่งรายการ กรุณาระบุ parent BOM ให้ครบ']);
             $record = $matches->first();
             if (!$record) continue;
@@ -45,7 +46,7 @@ class BomContextService
             $idTable = "PROJ1_2_DML_SEMI_L{$level}_ID{$suffix}";
             $idQuery = $db->table($idTable)->whereRaw('TRIM(FG_BOM_ID) = ?', [$fgBomId])->whereRaw("TRIM({$bomColumn}) = ?", [$row[$bomColumn]]);
             if ($existing && $level === 1) $idQuery->whereRaw('TRIM(SEMI_FG_LV2_BOM_ID) = ?', [$row['SEMI_FG_LV2_BOM_ID']]);
-            $idMatches = ($lock ? $idQuery->lockForUpdate() : $idQuery)->limit(2)->get();
+            $idMatches = ($lock ? $idQuery->lockForUpdate() : $idQuery->limit(2))->get();
             if ($idMatches->count() > 1) throw ValidationException::withMessages(['parent' => 'BOM เชื่อมกับหลาย Material กรุณาตรวจข้อมูลต้นทาง']);
             $idRecord = $idMatches->first();
             if (!$idRecord) continue;
