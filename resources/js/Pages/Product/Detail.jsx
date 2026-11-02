@@ -622,7 +622,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                       <div key={section.key} className={section.key === 'new' ? 'border-t border-gray-100 pt-5' : ''}>
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                           <h4 className="text-sm font-semibold text-gray-700">{section.title}</h4>
-                          {section.key === 'existing' ? <SecondaryButton type="button" onClick={section.onAdd} disabled={!section.onAdd || isCompleted}>{section.addLabel}</SecondaryButton> : <SuccessButton type="button" onClick={section.onAdd} disabled={!section.onAdd || isCompleted}>{section.addLabel}</SuccessButton>}
+                          {section.key === 'existing' ? <SecondaryButton className="text-green-900" type="button" onClick={section.onAdd} disabled={!section.onAdd || isCompleted}>{section.addLabel}</SecondaryButton> : <SuccessButton type="button" onClick={section.onAdd} disabled={!section.onAdd || isCompleted}>{section.addLabel}</SuccessButton>}
                         </div>
                         <div className="overflow-x-auto bg-white shadow-sm sm:rounded-lg">
                           <table className="w-full text-sm text-left rtl:text-right text-gray-800">
@@ -667,7 +667,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                     <BomZone title="Semi FG Level 2" number="2" subtitle="Always available">
                     <div>
                       <div className="flex flex-wrap items-center justify-between gap-3"><h4 className="text-sm font-semibold text-gray-700">From existing</h4>
-                      <SuccessButton type="button" disabled={isCompleted || !InputData?.existingLevelAvailability?.level2?.ready} onClick={() => openExistingLevel('level2')}>CREATE SEMI FG LEVEL 2 BY EXISTING</SuccessButton></div>
+                      <SecondaryButton className="text-green-900" type="button" disabled={isCompleted || !InputData?.existingLevelAvailability?.level2?.ready} onClick={() => openExistingLevel('level2')}>CREATE SEMI FG LEVEL 2 BY EXISTING</SecondaryButton></div>
                       {!InputData?.existingLevelAvailability?.level2?.ready && <p className="mt-3 text-sm text-gray-500">ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ</p>}
                       <div className="mt-3 space-y-2">{existingLv2.map((item) => <div key={item.bomId} className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><div className="min-w-0"><p className="break-all text-sm font-semibold text-green-900">{item.id}</p><p className="mt-1 break-all text-xs font-normal text-gray-500">{item.bomId} · {item.bomDesc}</p></div><SecondaryButton type="button" onClick={() => openExistingLevel('level2', item)}>VIEW / DELETE</SecondaryButton></div>)}</div>
                     </div>
@@ -730,7 +730,7 @@ export default function ProductDetail({ auth, InputData, isDisabled = true, isEd
                     <BomZone title="Semi FG Level 1" number="1" subtitle={hasAnyLv2 ? 'Ready to create' : 'Create Semi FG Level 2 New first'}>
                     <div>
                       <div className="flex flex-wrap items-center justify-between gap-3"><h4 className="text-sm font-semibold text-gray-700">From existing</h4>
-                      <SuccessButton type="button" disabled={isCompleted || !hasAnyLv2 || !InputData?.existingLevelAvailability?.level1?.ready} onClick={() => openExistingLevel('level1')}>CREATE SEMI FG LEVEL 1 BY EXISTING</SuccessButton></div>
+                      <SecondaryButton className="text-green-900" type="button" disabled={isCompleted || !hasAnyLv2 || !InputData?.existingLevelAvailability?.level1?.ready} onClick={() => openExistingLevel('level1')}>CREATE SEMI FG LEVEL 1 BY EXISTING</SecondaryButton></div>
                       {!hasAnyLv2 && <p className="mt-3 text-sm text-gray-500">Create Semi FG Level 2 New first.</p>}
                       <div className="mt-3 space-y-2">{existingLv1.map((item) => <div key={`${item.semiFgLv2BomId}-${item.bomId}`} className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><div className="min-w-0"><p className="break-all text-sm font-semibold text-green-900">{item.id}</p><p className="mt-1 break-all text-xs font-normal text-gray-500">{item.bomId} · {item.bomDesc}</p></div><SecondaryButton type="button" onClick={() => openExistingLevel('level1', item)}>VIEW / DELETE</SecondaryButton></div>)}</div>
                     </div>

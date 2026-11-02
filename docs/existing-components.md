@@ -5,12 +5,12 @@ Implemented and applied to the application's Oracle database on 2026-10-25.
 ## Completed flows
 
 - FG, Semi FG LV1 and LV2 have separate New and Existing component sections.
-- Existing LV1/LV2 BOMs can be selected by Brand, Mattype and Sub Mattype, viewed and detached. LV1 creation requires the FG’s New LV2 BOM; Existing LV2 attachments are excluded from parent selection. The parent BOM is retained internally and shown on the creation form; the FG summary card does not repeat it.
+- Existing LV1 BOMs are selected by Mattype/Sub Mattype; LV2 retains Brand/Mattype/Sub Mattype. Both can be viewed and detached. LV1 creation requires the FG’s New LV2 BOM; Existing LV2 attachments are excluded from parent selection. The parent BOM is retained internally and shown on the creation form; the FG summary card does not repeat it.
 - Existing component selectors support FG, LV1, LV2 and nested Mattype 4. LV2 includes Product SUB Category.
 - Mattype 4 supports nested New creation/edit/deletion and Existing attachment/view/deletion, with the complete parent BOM headers.
 - Existing attachments preserve the source BOM. They have no update operation. Nested Mattype 4 mutations through a reused Existing LV1 remain read-only because the nested tables have no FG key to isolate source modifications.
 
-Selectable source BOMs use actual saved BOM/ID pairs. In the LV1 native catalog, ERP-only materials without a saved BOM remain visible but cannot be selected. Sub Mattype choices come from the same canonical source views, since the older LOV can be empty. Category filtering uses actual master fields: combined MAT_TYPE (for example 50) and product SUB_TYPE, rather than guessing from material IDs.
+Selectable source BOMs use actual saved BOM/ID pairs. LV1 now reads only `PROJ1_2_SEMI_FG_LV1_ID_V`; the former LOV/ERP merge described in the historical 2026-11-01 notes below has been superseded. Sub Mattype choices come from the same canonical source views, since the older LOV can be empty. Category filtering uses actual master fields: combined MAT_TYPE (for example 50) and product SUB_TYPE, rather than guessing from material IDs.
 
 Mutations resolve descriptions and parent IDs from Oracle, lock parent rows, reject completed/exported paths and duplicate links, and scope changes to the full parent path. Editing/deleting saved INS rows requires their creator. Deletion removes the attachment, not the source master, and records an audit entry. Nested raw materials attached through an Existing LV1 cannot modify the shared source BOM.
 
@@ -67,3 +67,30 @@ Applied backup: `storage/app/bom-object-backups/SYSTEM_20261025_152253_58e05c.js
 ### Detail/Edit layout
 
 The LV1 BOM Component Detail now groups read-only component fields (including UOM and Status), embedded Raw Material Components (Existing before New), and then Back/Edit/Delete inside the same form card. Edit shows only the main component form; Raw Material management is mounted only in Detail. Optional form slots preserve other BOM pages' layouts. Five server-rendered React tests verify section order, read-only/editable fields, mode-specific content, disabled actions and shared-form defaults. All five pass, alongside the 51 PHP regression tests and production build. Browser access remains unavailable, so desktop/mobile screenshot verification is not claimed.
+
+## Existing LV1, canonical parents and menu settings — 2026-11-02
+
+This revision supersedes the LV1 LOV/ERP merge and Brand filtering described above.
+
+- Add Existing LV1 BOM uses Mattype 3 and Sub Mattype (including `0`), without Brand. A single source query reads `PROJ1_2_SEMI_FG_LV1_ID_V`; its correlated `NOT EXISTS` checks `PROJ1_2_DML_SEMI_L1_ID_EXIST.SEMI_FG_LV1_ID_EXIST` plus the target FG/LV2 BOMs. Multiple source BOMs remain separate choices until that material is attached to the same parent. Save repeats this query using database-validated parents. The procedure enforces the same duplicate rule.
+- LV1 parent resolution uses stored BOM/Material foreign keys and the full FG/LV2/LV1 path. Missing or ambiguous mappings produce a parent validation error. BOM identifiers are never derived from Material identifiers. New Component Save redirects to its own Detail; the same canonical path is used on reload and Existing Component navigation.
+- Both Semi FG component lists place Existing before New, retaining shared column widths and horizontal overflow. Existing add buttons use the same white/green outlined style as FG.
+- Account Management exposes admin-only Enable-TAB/Disable-TAB controls. `PATCH /admin/settings/export-to-sap-tab` stores the global flag in `PROJ1_2_APP_SETTINGS`, with updater and timestamp. Missing settings default to enabled. Inertia shares `features.exportToSapTabEnabled` for desktop/mobile menus. Disabling hides navigation only; Export routes and permissions are unchanged.
+
+### Installation and rollback evidence
+
+The additive migration `2026_11_02_000001_create_app_settings_table.php` creates/seeds settings without resetting an existing value. The focused Oracle installer also installs the corrected LV1 procedure:
+
+```sh
+docker compose exec -T laravel.test php scripts/apply-bom-sql.php --refinements
+docker compose exec -T laravel.test php scripts/apply-bom-sql.php --refinements --apply
+```
+
+Applied locally on 2026-11-02. Pre-apply definition backup: `storage/app/bom-object-backups/SYSTEM_20261102_154410_67a796.json`. The installer reported all changed procedures/views VALID. Read-only application checks confirmed LV1 readiness and the default enabled menu flag. The table and initial configuration seed are additive; restoring a procedure definition does not remove settings. No legacy business records were repaired or moved.
+
+### Verification and limits
+
+- Related PHPUnit regression: **71 tests / 669 assertions pass** with SQLite fixtures and simulated procedure writes. Coverage includes no Brand, subtype zero, multiple source BOMs, parent-specific duplicate exclusion, forged submissions, Material `30BS0001` mapped to BOM `B30000008_RK_01`, missing/ambiguous parents, Component Detail round trips, authorization, audit fields and persistent menu settings.
+- React server-render tests: **14 pass**, including section order, matching columns, Detail/Edit separation, View/Delete separation and both navigation variants. Production build passes (Vite reports an existing CSS minification warning for `-: T`).
+- Browser access host is unavailable, so live desktop/mobile screenshot verification and a browser Save/Refresh round trip are not claimed. Application-database business writes were not used for tests. The local Oracle dataset has no matching source options for the screenshot's tested LV1 parent/filter combination; fixture tests cover these cases instead.
+- App and Oracle containers were already running when this task began and remain running.

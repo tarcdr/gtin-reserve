@@ -317,7 +317,7 @@ class MaterialLevelController extends Controller
     $levelBomId = trim((string) $levelBomId);
 
     try {
-      $candidates = array_values(array_unique(array_filter([
+      $candidates = $levelBomId !== '' ? [$levelBomId] : array_values(array_unique(array_filter([
         $levelBomId,
         $fgBomId,
         $levelMaterialId,
@@ -539,53 +539,11 @@ class MaterialLevelController extends Controller
     ];
   }
 
-  protected function loadSemiFgLv1BomById(?string $levelMaterialId): ?array
+  protected function loadSemiFgLv1BomById(?string $levelMaterialId, ?string $fgBomId = null, ?string $bomId = null, ?string $parentLv2BomId = null): ?array
   {
-    $levelMaterialId = trim((string) $levelMaterialId);
-
-    if ($levelMaterialId === '') {
-      return null;
-    }
-
-    try {
-      $idRow = Proj12SemiFgLv1Id::query()
-        ->selectRaw('
-          TRIM(FG_BOM_ID) as fg_bom_id,
-          TRIM(MATERIAL_ID_FG_1) as material_id_fg_1
-        ')
-        ->whereRaw('TRIM(SEMI_FG_LV1_ID) = ?', [$levelMaterialId])
-        ->first();
-
-      if (!$idRow) {
-        return null;
-      }
-
-      $row = Proj12SemiFgLv1Bom::query()
-        ->selectRaw('
-          TRIM(SEMI_FG_LV1_BOM_ID) as semi_fg_lv1_bom_id,
-          TRIM(DESC_SEMI_FG_LV1_BOM_ID) as semi_fg_lv1_bom_desc,
-          TRIM(FG_BOM_ID) as fg_bom_id,
-          TRIM(MATERIAL_ID_FG_1) as material_id_fg_1
-        ')
-        ->whereRaw('TRIM(FG_BOM_ID) = ?', [trim((string) ($idRow->fg_bom_id ?? ''))])
-        ->whereRaw('TRIM(MATERIAL_ID_FG_1) = ?', [trim((string) ($idRow->material_id_fg_1 ?? ''))])
-        ->first();
-    } catch (\Throwable $e) {
-      Log::debug('material-levels.load-semi-fg-lv1-bom.failed', [
-        'levelMaterialId' => $levelMaterialId,
-        'error' => $e->getMessage(),
-      ]);
-      return null;
-    }
-
-    if (!$row) {
-      return null;
-    }
-
-    return [
-      'bomId' => trim((string) ($row->semi_fg_lv1_bom_id ?? '')),
-      'bomDesc' => trim((string) ($row->semi_fg_lv1_bom_desc ?? '')),
-    ];
+    if (trim((string) $levelMaterialId) === '') return null;
+    $level = app(\App\Services\BomContextService::class)->resolveLevel1($fgBomId, $levelMaterialId, $bomId, $parentLv2BomId);
+    return ['bomId' => $level['bomId'], 'bomDesc' => $level['bomDesc']];
   }
 
   protected function loadSemiFgLv2BomById(?string $levelMaterialId): ?array
@@ -637,7 +595,7 @@ class MaterialLevelController extends Controller
     ];
   }
 
-  protected function loadSemiFgLv1ByMaterialId(?string $levelMaterialId): ?array
+  protected function loadSemiFgLv1ByMaterialId(?string $levelMaterialId, ?string $fgBomId = null, ?string $bomId = null): ?array
   {
     $levelMaterialId = trim((string) $levelMaterialId);
 
@@ -660,6 +618,8 @@ class MaterialLevelController extends Controller
         TRIM(STATUS_ROW) as status_row
       ')
       ->whereRaw('TRIM(SEMI_FG_LV1_ID) = ?', [$levelMaterialId])
+      ->when($fgBomId, fn ($q) => $q->whereRaw('TRIM(FG_BOM_ID) = ?', [$fgBomId]))
+      ->when($bomId, fn ($q) => $q->whereRaw('TRIM(SEMI_FG_LV1_BOM_ID) = ?', [$bomId]))
       ->first();
 
     if (!$row) {
@@ -1040,9 +1000,20 @@ class MaterialLevelController extends Controller
     $subMattypes = $this->fetchSubMattypesFromView('PROJ1_2_MASTER_BOM_SEMI_LV1_V', $this->subMattypes);
     $levelMaterialId = $request->get('levelMaterialId');
     $referentMaterialId = $request->get('referentMaterialId');
-    $semiFgLv1Bom = $this->loadSemiFgLv1BomById($levelMaterialId);
-    $semiFgLv1 = $this->loadSemiFgLv1ByMaterialId($levelMaterialId)
-      ?? $this->loadSemiFgLv1ByFgBomId($InputData['fgBomId'] ?? null);
+    $canonical = null;
+    if ($levelMaterialId) {
+      $canonical = app(\App\Services\BomContextService::class)->resolveLevel1(
+        $InputData['fgBomId'] ?: null, $levelMaterialId, $request->get('levelBomId') ?: null, $request->get('parentLevelBomId') ?: null
+      );
+      $InputData['fgMaterialId'] = $canonical['fgMaterialId'];
+      $InputData['fgBomId'] = $canonical['fgBomId'];
+      $request->merge(['fgMaterialId' => $canonical['fgMaterialId'], 'referentMaterialId' => $canonical['fgMaterialId'],
+        'fgBomId' => $canonical['fgBomId'], 'levelBomId' => $canonical['bomId'], 'parentLevelBomId' => $canonical['semiFgLv2BomId']]);
+    }
+    $semiFgLv1Bom = $canonical ? ['bomId' => $canonical['bomId'], 'bomDesc' => $canonical['bomDesc']] : null;
+    $semiFgLv1 = $this->loadSemiFgLv1ByMaterialId($levelMaterialId, $canonical['fgBomId'] ?? null, $canonical['bomId'] ?? null);
+    if (!$semiFgLv1 && !$canonical) $semiFgLv1 = $this->loadSemiFgLv1ByFgBomId($InputData['fgBomId'] ?? null);
+    if (!$semiFgLv1 && $canonical) throw ValidationException::withMessages(['parent' => 'ไม่พบข้อมูล LV1 สำหรับ BOM ที่เลือก กรุณาตรวจความสัมพันธ์ต้นทาง']);
 
     Log::warning('material-levels.semi-fg-lv1.lookup.failed', [
       'viewName' => 'semi_fg_lv1',
@@ -1173,7 +1144,7 @@ class MaterialLevelController extends Controller
       $InputData['levelBomId'] ?? $request->get('levelBomId') ?? $semiFgLv1['bomId'] ?? null
     );
 
-    if (empty($components)) {
+    if (empty($components) && !$canonical) {
       $components = $this->resolveComponents($request);
     }
 

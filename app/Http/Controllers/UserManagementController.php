@@ -41,6 +41,7 @@ class UserManagementController extends Controller
             ->get(['code', 'first_name', 'last_name']);
 
         return Inertia::render('Admin/UserManagement', [
+            'exportToSapTabEnabled' => app(\App\Services\AppSettingsService::class)->exportTabEnabled(),
             'users' => $users,
             'roles' => self::ROLES,
             'employees' => $employees,

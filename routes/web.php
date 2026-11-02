@@ -165,6 +165,7 @@ Route::middleware(['auth', \App\Http\Middleware\OverviewFlow::class])->group(fun
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::middleware('admin')->group(function () {
+        Route::patch('/admin/settings/export-to-sap-tab', \App\Http\Controllers\ExportToSapTabController::class)->name('admin.settings.export-to-sap-tab');
         Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users.index');
         Route::post('/admin/users', [UserManagementController::class, 'store'])->name('admin.users.store');
         Route::patch('/admin/users/{user_login}', [UserManagementController::class, 'update'])->name('admin.users.update');

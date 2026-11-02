@@ -13,7 +13,8 @@ if (in_array('--qa', $argv, true)) {
 }
 $db = Illuminate\Support\Facades\DB::connection('oracle');
 $schema = $db->selectOne('SELECT USER AS SCHEMA_NAME FROM DUAL')->schema_name;
-$sql = file_get_contents(dirname(__DIR__).'/database/sql/complete_existing_bom_flows.sql');
+$refinements = in_array('--refinements', $argv, true);
+$sql = file_get_contents(dirname(__DIR__).'/database/sql/'.($refinements ? 'existing_lv1_and_export_tab.sql' : 'complete_existing_bom_flows.sql'));
 $statements = preg_split('/^\/\s*$/m', $sql);
 $apply = in_array('--apply', $argv, true);
 $backup = [];
@@ -35,7 +36,7 @@ echo 'Backup: '.$file.PHP_EOL;
 if (!$apply) { echo 'Dry run. No Oracle objects changed.'.PHP_EOL; exit(0); }
 // Existing LV2 links without an exact BOM association require explicit data mapping, never a guessed join.
 $columns = $db->select("SELECT COLUMN_NAME FROM USER_TAB_COLUMNS WHERE TABLE_NAME='PROJ1_2_DML_SEMI_L2_ID_EXIST' AND COLUMN_NAME='SEMI_FG_LV2_BOM_ID_EXIST'");
-if (!$columns && $db->table('PROJ1_2_DML_SEMI_L2_ID_EXIST')->count() > 0) throw new RuntimeException('Unmapped legacy LV2 Existing rows require an explicit BOM mapping before applying.');
+if (!$refinements && !$columns && $db->table('PROJ1_2_DML_SEMI_L2_ID_EXIST')->count() > 0) throw new RuntimeException('Unmapped legacy LV2 Existing rows require an explicit BOM mapping before applying.');
 foreach ($statements as $statement) {
     if (trim(preg_replace('/^--.*$/m', '', $statement)) === '') continue;
     $db->unprepared(trim($statement));

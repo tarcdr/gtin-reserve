@@ -32,6 +32,7 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'features' => fn () => ['exportToSapTabEnabled' => !$request->user() || app(\App\Services\AppSettingsService::class)->exportTabEnabled()],
             'overviewFlow' => fn () => $request->attributes->get('overviewFlow'),
             'auth' => [
                 'user' => $request->user(),

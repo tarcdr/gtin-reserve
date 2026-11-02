@@ -235,6 +235,8 @@ export default function MaterialLevelForm({
   const buildLevelLookupPayload = (nextMode = mode) => ({
     mode: nextMode,
     levelMaterialId: data.materialId || '',
+    fgMaterialId: data.fgMaterialId, referentMaterialId: data.fgMaterialId, fgBomId: data.fgBomId,
+    levelBomId: data.levelBomId, parentLevelBomId: data.parentLevelBomId,
   });
 
   const buildSemiFgLv2ComponentPayload = (actionMode, item = {}) => ({
@@ -249,6 +251,8 @@ export default function MaterialLevelForm({
 
   const buildSemiFgLv1ComponentPayload = (actionMode, item = {}) => ({
     ownerLevel: 'semiFgLv1',
+    fgMaterialId: data.fgMaterialId, fgBomId: data.fgBomId,
+    semiFgLvBomId: data.levelBomId, semiFgLv2BomId: data.parentLevelBomId,
     actionMode,
     backRoute: levelRoute,
     levelMaterialId: data.materialId || data.levelMaterialId || '',
@@ -313,7 +317,7 @@ export default function MaterialLevelForm({
 
   const goExistingComponent = (item) => router.get(route('existing-components.index', { scope: levelKey === 'semiFgLv1' ? 'semi1' : 'semi2' }), {
     fgMaterialId: data.fgMaterialId, fgBomId: data.fgBomId,
-    ...(levelKey === 'semiFgLv1' ? { semiFgLv1BomId: data.levelBomId } : { semiFgLv2BomId: data.levelBomId }),
+    ...(levelKey === 'semiFgLv1' ? { semiFgLv1BomId: data.levelBomId, semiFgLv2BomId: data.parentLevelBomId } : { semiFgLv2BomId: data.levelBomId }),
     ...(item ? { mode: 'view', componentId: item.code, no: item.no } : {}),
   });
 
@@ -716,14 +720,6 @@ export default function MaterialLevelForm({
                 <div className="space-y-6">
                   {[
                     {
-                      key: 'new',
-                      legend: `${title} New Components`,
-                      addLabel: 'ADD COMPONENT NEW',
-                      onAdd: goCreateComponent,
-                      items: componentRows.filter((item) => item.sourceType !== 'matid'),
-                      emptyMessage: 'No new components yet.',
-                    },
-                    {
                       key: 'existing',
                       onAdd: InputData?.existingComponentsAvailability?.ready ? () => goExistingComponent() : undefined,
                       legend: `${title} Components From Existing`,
@@ -731,14 +727,20 @@ export default function MaterialLevelForm({
                       items: componentRows.filter((item) => item.sourceType === 'matid'),
                       emptyMessage: 'No existing components yet.',
                     },
+                    {
+                      key: 'new',
+                      legend: `${title} New Components`,
+                      addLabel: 'ADD COMPONENT NEW',
+                      onAdd: goCreateComponent,
+                      items: componentRows.filter((item) => item.sourceType !== 'matid'),
+                      emptyMessage: 'No new components yet.',
+                    },
                   ].map((section) => (
                     <fieldset key={section.key} className="border border-gray-300 rounded-md p-4">
                       <legend className="px-2 text-gray-600">{section.legend}</legend>
                       {isViewMode && (
                         <div className="flex items-center justify-end gap-4 mb-2">
-                          <SuccessButton type="button" onClick={section.onAdd} disabled={!section.onAdd || !createComponentRoute || isSemiFgCompleted}>
-                            {section.addLabel}
-                          </SuccessButton>
+                          {section.key === 'existing' ? <SecondaryButton type="button" className="text-green-900" onClick={section.onAdd} disabled={!section.onAdd || !createComponentRoute || isSemiFgCompleted}>{section.addLabel}</SecondaryButton> : <SuccessButton type="button" onClick={section.onAdd} disabled={!section.onAdd || !createComponentRoute || isSemiFgCompleted}>{section.addLabel}</SuccessButton>}
                         </div>
                       )}
                       <div className="bg-white overflow-x-auto shadow-sm sm:rounded-lg">

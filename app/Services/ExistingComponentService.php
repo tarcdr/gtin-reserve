@@ -101,7 +101,7 @@ class ExistingComponentService
         ];
         if (in_array($scope, ['semi1', 'semi2', 'raw4'], true)) {
             $parents = app(BomContextService::class);
-            $l1 = $scope !== 'semi2' ? $parents->level(1, $context['fgBomId'], $input['semiFgLv1BomId'], $lock) : null;
+            $l1 = $scope !== 'semi2' ? $parents->level(1, $context['fgBomId'], $input['semiFgLv1BomId'], $lock, false, $input['semiFgLv2BomId'] ?? null) : null;
             if ($scope !== 'semi2') abort_unless($l1, 404);
             $l2 = $parents->level(2, $context['fgBomId'], $l1 ? $l1['semiFgLv2BomId'] : $input['semiFgLv2BomId'], $lock);
             abort_unless($l2, 404);

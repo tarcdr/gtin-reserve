@@ -22,10 +22,11 @@ class SemiFgLv1BomController extends PackMaterialController
     $fgBomId = trim((string) ($request->fgBomId ?: ($this->resolveFgBomByMaterialId($fgMaterialId)['fgBomId'] ?? '')));
     $levelBomId = trim((string) ($request->semiFgLvBomId ?: $request->semiFgLv1BomId ?: $request->bomId));
     if ($levelBomId === '') {
-      $levelBomId = $this->loadSemiFgLv1BomByMaterialId($request->levelMaterialId ?: $request->materialId)['semiFgLvBomId'] ?? '';
+      $resolved = app(\App\Services\BomContextService::class)->resolveLevel1($fgBomId ?: null, $request->levelMaterialId ?: $request->materialId, null, $request->semiFgLv2BomId ?: null);
+      $levelBomId = $resolved['bomId'];
     }
     return app(ExistingComponentService::class)->context('semi1', [
-      'fgMaterialId' => $fgMaterialId, 'fgBomId' => $fgBomId, 'semiFgLv1BomId' => $levelBomId,
+      'fgMaterialId' => $fgMaterialId, 'fgBomId' => $fgBomId, 'semiFgLv1BomId' => $levelBomId, 'semiFgLv2BomId' => $request->semiFgLv2BomId ?: null,
     ], $lock);
   }
 
@@ -56,7 +57,13 @@ class SemiFgLv1BomController extends PackMaterialController
   {
     $mode = $request->validate(['actionMode' => ['nullable', 'in:create,view,edit,delete']])['actionMode'] ?? 'create';
     $request->merge(['ownerLevel' => 'semiFgLv1']);
-    if ($mode === 'create') return parent::new($request);
+    if ($mode === 'create') {
+      $context = $this->ownerContext($request);
+      app(ExistingComponentService::class)->requireWritable($context);
+      $request->attributes->set('validatedLv1Context', $context);
+      $request->merge($context + ['bomId' => $context['semiFgLv1BomId'], 'semiFgLvBomId' => $context['semiFgLv1BomId'], 'semiFgLvBomDesc' => $context['semiFgLv1BomDesc']]);
+      return parent::new($request);
+    }
 
     $context = $this->ownerContext($request);
     $component = $this->component($context, trim((string) $request->componentId));

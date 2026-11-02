@@ -62,6 +62,14 @@ class SemiFgLv1BomFlowTest extends TestCase
     }
     private function createComponent(): void { $this->patch(route('packmaterial.semi-fg-lv1-bom.save'), $this->input)->assertRedirect($this->detailUrl()); }
 
+    public function test_create_form_uses_explicit_parent_when_fg_has_multiple_lv2_boms(): void
+    {
+        $this->insert('PROJ1_2_DML_SEMI_L2_BOM', ['FG_BOM_ID' => 'BFG1', 'SEMI_FG_LV2_BOM_ID' => 'OTHER-L2']);
+        $this->insert('PROJ1_2_DML_SEMI_L2_ID', ['FG_BOM_ID' => 'BFG1', 'SEMI_FG_LV2_BOM_ID' => 'OTHER-L2', 'SEMI_FG_LV2_ID' => 'OTHER']);
+        $this->get($this->detailUrl('create'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('InputData.levelMaterialId', 'L1')->where('InputData.semiFgLvBomId', 'BL1')->where('InputData.semiFgLv2BomId', 'BL2'));
+    }
+
     public function test_create_redirects_to_its_own_detail_and_refresh_reads_saved_values(): void
     {
         $this->createComponent();
@@ -134,6 +142,41 @@ class SemiFgLv1BomFlowTest extends TestCase
         $this->createComponent();
         $this->patch(route('packmaterial.semi-fg-lv1-bom.save'), array_replace($this->input, ['actionMode' => 'view']))->assertSessionHasErrors('actionMode');
         $this->patch(route('packmaterial.semi-fg-lv1-bom.save'), array_replace($this->input, ['actionMode' => 'edit', 'subMattype' => '1']))->assertSessionHasErrors('productSubCat');
+    }
+
+    public function test_non_prefixed_bom_supports_existing_component_and_new_save_detail_refresh(): void
+    {
+        $bom = 'B30000008_RK_01';
+        DB::connection('oracle')->table('PROJ1_2_DML_SEMI_L1_BOM')->update(['SEMI_FG_LV1_BOM_ID' => $bom]);
+        DB::connection('oracle')->table('PROJ1_2_DML_SEMI_L1_ID')->update(['SEMI_FG_LV1_BOM_ID' => $bom]);
+        $resolved = app(\App\Services\BomContextService::class)->resolveLevel1('BFG1', 'L1', $bom, 'BL2');
+        $this->assertSame($bom, $resolved['bomId']);
+        $service = $this->getMockBuilder(\App\Services\ExistingComponentService::class)->onlyMethods(['requireReady', 'filters'])->getMock();
+        $service->method('filters')->willReturn([]);
+        $this->app->instance(\App\Services\ExistingComponentService::class, $service);
+        $this->get(route('existing-components.index', ['scope' => 'semi1', 'fgMaterialId' => 'FG1', 'fgBomId' => 'BFG1', 'semiFgLv1BomId' => $bom, 'semiFgLv2BomId' => 'BL2']))
+            ->assertOk()->assertInertia(fn (AssertableInertia $p) => $p->where('context.semiFgLv1BomId', $bom));
+        $response = $this->patch(route('packmaterial.semi-fg-lv1-bom.save'), array_replace($this->input, ['semiFgLvBomId' => $bom, 'semiFgLv2BomId' => 'BL2']));
+        $response->assertRedirect();
+        $url = $response->headers->get('Location');
+        for ($i = 0; $i < 2; $i++) {
+            $this->get($url)->assertOk()->assertInertia(fn (AssertableInertia $p) => $p->where('InputData.semiFgLvBomId', $bom)->where('InputData.levelMaterialId', 'L1'));
+        }
+    }
+
+    public function test_ambiguous_material_mapping_is_reported_instead_of_picking_first(): void
+    {
+        $this->insert('PROJ1_2_DML_SEMI_L1_BOM', ['FG_BOM_ID' => 'BFG1', 'SEMI_FG_LV1_BOM_ID' => 'OTHER-BOM', 'SEMI_FG_LV2_BOM_ID' => 'BL2', 'STATUS_ROW' => 'INS']);
+        $this->insert('PROJ1_2_DML_SEMI_L1_ID', ['FG_BOM_ID' => 'BFG1', 'SEMI_FG_LV1_BOM_ID' => 'OTHER-BOM', 'SEMI_FG_LV1_ID' => 'L1']);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        app(\App\Services\BomContextService::class)->resolveLevel1('BFG1', 'L1');
+    }
+
+    public function test_missing_legacy_relationship_is_not_inferred_from_material_name(): void
+    {
+        DB::connection('oracle')->table('PROJ1_2_DML_SEMI_L1_ID')->update(['SEMI_FG_LV1_BOM_ID' => null]);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        app(\App\Services\BomContextService::class)->resolveLevel1('BFG1', 'L1');
     }
 
     public function test_validation_error_stays_on_edit_with_input_and_does_not_write(): void

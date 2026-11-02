@@ -11,10 +11,11 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(import.meta.url);
 const result = await build({
     stdin: {
-        contents: "export { default as Page } from './resources/js/Pages/PackMaterial/SemiFgLv1Bom.jsx'; export { default as Form } from './resources/js/Components/BomMaterialForm.jsx'; export { default as RawPage } from './resources/js/Pages/ExistingComponents/RawNew.jsx'; export { default as ExistingPage } from './resources/js/Pages/ExistingComponents/Select.jsx';",
+        contents: "export { default as Page } from './resources/js/Pages/PackMaterial/SemiFgLv1Bom.jsx'; export { default as Form } from './resources/js/Components/BomMaterialForm.jsx'; export { default as RawPage } from './resources/js/Pages/ExistingComponents/RawNew.jsx'; export { default as ExistingPage } from './resources/js/Pages/ExistingComponents/Select.jsx'; export { default as LevelForm } from './resources/js/Components/MaterialLevelForm.jsx'; export { default as NavLayout } from './resources/js/Layouts/AuthenticatedLayout.jsx';",
         resolveDir: root,
     },
     bundle: true, write: false, platform: 'node', format: 'cjs', packages: 'external', jsx: 'automatic',
+    loader: { '.png': 'dataurl' },
     define: { 'import.meta.env.DEV': 'false' },
     plugins: [{
         name: 'render-without-browser-or-network',
@@ -29,8 +30,9 @@ const result = await build({
                 contents: args.path === 'inertia' ? `
                     import React from 'react';
                     export const Head = () => null;
+                    export const Link = ({ href, children, ...props }) => React.createElement('a', { href, ...props }, children);
                     export const router = { get() {}, delete() {} };
-                    export const usePage = () => ({ props: { auth: { user: { user_login: 'tester' } }, errors: {} } });
+                    export const usePage = () => ({ props: { auth: { user: { user_login: 'tester' } }, errors: {}, features: { exportToSapTabEnabled: globalThis.testExportTabEnabled !== false } } });
                     export const useForm = initial => {
                         const [data] = React.useState(initial);
                         return { data, errors: {}, processing: false, setData() {}, setError() {}, clearErrors() {}, patch() {} };
@@ -42,7 +44,7 @@ const result = await build({
 });
 const module = { exports: {} };
 new Function('require', 'module', 'exports', result.outputFiles[0].text)(require, module, module.exports);
-const { Page, Form, RawPage, ExistingPage } = module.exports;
+const { Page, Form, RawPage, ExistingPage, LevelForm, NavLayout } = module.exports;
 const input = {
     fgMaterialId: 'FG1', fgBomId: 'BFG1', semiFgLv2BomId: 'BL2', semiFgLvBomId: 'BL1', levelMaterialId: 'L1',
     componentId: '400200004', mattype: '4', subMattype: '0', productCat: '40', productSubCat: '4002',
@@ -138,4 +140,36 @@ test('Raw Material Existing View has no Delete; its separate delete process does
     assert.match(remove, />DELETE<\/button>/);
     assert.match(field(remove, 'existingComponentId'), /disabled/);
     assert.match(renderExisting('view', 'fg'), />DELETE<\/button>/);
+});
+
+test('Existing LV1 requires no Brand selector while LV2 retains it', () => {
+    const props = { auth: { user: {} }, mode: 'create', context: { canWrite: true }, filters: { brands: [{value: 'BS', label: 'BS'}], mattypes: [{value: '3', label: '3'}], subMattypes: [{value: '0', label: '0'}] }, backUrl: '/' };
+    const lv1 = renderToStaticMarkup(React.createElement(ExistingPage, { ...props, scope: 'level1' }));
+    const lv2 = renderToStaticMarkup(React.createElement(ExistingPage, { ...props, scope: 'level2' }));
+    assert.doesNotMatch(lv1, /id="brand"/);
+    assert.match(lv2, /id="brand"/);
+});
+
+test('both Semi FG component tables place Existing before New with matching columns', () => {
+    for (const levelKey of ['semiFgLv1', 'semiFgLv2']) {
+        const html = renderToStaticMarkup(React.createElement(LevelForm, {
+            auth: { user: {} }, title: 'Semi FG', levelKey, components: [],
+            InputData: { mode: 'view', fgMaterialId: 'FG', fgBomId: 'BFG', materialId: 'L1', levelBomId: 'B30000008_RK_01', parentLevelBomId: 'BL2', statusRow: 'INS', existingComponentsAvailability: { ready: true } },
+        }));
+        assert.ok(html.indexOf('Components From Existing') < html.indexOf('New Components'));
+        assert.equal((html.match(/<colgroup>/g) || []).length, 2);
+    }
+});
+
+test('the global setting controls both desktop and mobile menus without changing routes', () => {
+    globalThis.route = name => name ? name : { current: () => false };
+    try {
+        globalThis.testExportTabEnabled = true;
+        const enabled = renderToStaticMarkup(React.createElement(NavLayout, { user: { role: 'admin' } }));
+        assert.equal((enabled.match(/href="rm.report"/g) || []).length, 2);
+        globalThis.testExportTabEnabled = false;
+        const disabled = renderToStaticMarkup(React.createElement(NavLayout, { user: { role: 'admin' } }));
+        assert.doesNotMatch(disabled, /href="rm.report"/);
+        assert.match(disabled, /Account Management/);
+    } finally { delete globalThis.testExportTabEnabled; delete globalThis.route; }
 });

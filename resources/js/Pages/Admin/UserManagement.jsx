@@ -14,10 +14,12 @@ import ReactSelect from 'react-select';
 
 const formatRoleLabel = (role) => (role ? role.toUpperCase() : '-');
 
-export default function UserManagement({ auth, users = [], roles = [], employees = [] }) {
+export default function UserManagement({ auth, users = [], roles = [], employees = [], exportToSapTabEnabled = true }) {
     const [editingUser, setEditingUser] = useState(null);
     const [passwordUser, setPasswordUser] = useState(null);
     const [deletingUser, setDeletingUser] = useState(null);
+    const exportTabForm = useForm({ enabled: exportToSapTabEnabled });
+    const setExportTab = (enabled) => exportTabForm.transform(() => ({ enabled })).patch(route('admin.settings.export-to-sap-tab'), { preserveScroll: true });
     const currentLogin = auth?.user?.user_login;
 
     const createForm = useForm({
@@ -148,7 +150,7 @@ export default function UserManagement({ auth, users = [], roles = [], employees
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Account Management</h2>}
+            header={<div className="flex flex-wrap items-center justify-between gap-4"><h2 className="font-semibold text-xl text-gray-800 leading-tight">Account Management</h2><div className="flex flex-wrap items-center gap-3 rounded-lg border border-green-700 p-3"><span className="text-sm text-green-900">Export-to-SAP · {exportToSapTabEnabled ? 'Enabled' : 'Disabled'}</span><SuccessButton type="button" disabled={exportTabForm.processing || exportToSapTabEnabled} onClick={() => setExportTab(true)}>Enable-TAB</SuccessButton><DangerButton type="button" disabled={exportTabForm.processing || !exportToSapTabEnabled} onClick={() => setExportTab(false)}>Disable-TAB</DangerButton><InputError message={exportTabForm.errors.enabled} /></div></div>}
         >
             <Head title="Account Management" />
 

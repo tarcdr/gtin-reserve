@@ -46,7 +46,7 @@ function UserAvatar({ user }) {
 export default function Authenticated({ user, header, pageIdentity = null, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [databaseError, setDatabaseError] = useState('');
-    const { flash, overviewFlow, errors } = usePage().props;
+    const { flash, overviewFlow, errors, features } = usePage().props;
     const isAdmin = user?.role === 'admin';
     const roleLabel = user?.role ? user.role.toUpperCase() : 'USER';
 
@@ -195,13 +195,13 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                         </Dropdown>
                                     </div>
                                 </div>
-                                <NavLink
+                                {features?.exportToSapTabEnabled !== false && <NavLink
                                     href={route('rm.report')}
                                     active={route().current('rm.report')}
                                     className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md px-2"
                                 >
                                     Export-to-SAP
-                                </NavLink>
+                                </NavLink>}
                                 {isAdmin && (
                                     <NavLink
                                         href={route('admin.users.index')}
@@ -335,13 +335,13 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                         >
                             GTIN_Confirm/Report
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink
+                        {features?.exportToSapTabEnabled !== false && <ResponsiveNavLink
                             href={route('rm.report')}
                             active={route().current('rm.report')}
                             className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
                         >
                             Export-to-SAP
-                        </ResponsiveNavLink>
+                        </ResponsiveNavLink>}
                         {isAdmin && (
                             <ResponsiveNavLink
                                 href={route('admin.users.index')}
@@ -395,6 +395,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                 <Link href={overviewFlow.returnUrl} className="inline-flex rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-[#4C5E86] hover:bg-gray-50">กลับ Overview Products</Link>
                 <p className="mt-2 text-xs font-normal text-gray-500">ข้อมูลใหม่จะปรากฏเมื่อกระบวนการเติม INDEX ทำงาน</p>
             </div> : null}
+            {errors?.parent && <p role="alert" className="mx-auto mt-4 max-w-7xl rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">{errors.parent}</p>}
             {errors?.overview && <p role="alert" className="mx-auto mt-4 max-w-7xl rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">{errors.overview}</p>}
             {children}</main>
 

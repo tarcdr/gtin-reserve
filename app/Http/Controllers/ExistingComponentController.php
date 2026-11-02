@@ -87,7 +87,7 @@ class ExistingComponentController extends Controller
         $context = $this->context($scope, $input);
         return response()->json([
             'context' => $context,
-            'options' => $this->isLevel($scope) ? $this->levels->options((int) substr($scope, -1), $input) : $this->components->options($scope, $input),
+            'options' => $this->isLevel($scope) ? $this->levels->options((int) substr($scope, -1), array_merge($input, $context)) : $this->components->options($scope, $input),
             'rows' => $this->rows($scope, $context),
             'newRows' => $scope === 'raw4' ? $this->components->rawNewRows($context) : [],
         ]);

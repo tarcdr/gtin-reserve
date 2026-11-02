@@ -1371,8 +1371,14 @@ class PackMaterialController extends Controller
 
     if ($ownerLevel === 'semiFgLv1') {
       $resolvedSemiFgLv1MaterialId = trim((string) ($request->levelMaterialId ?: $request->materialId ?: $request->fgMaterialId ?: ''));
-      $resolvedSemiFgLv1 = $this->loadSemiFgLv1ByMaterialId($resolvedSemiFgLv1MaterialId);
-      $resolvedSemiFgLv1Bom = $this->loadSemiFgLv1BomByMaterialId($resolvedSemiFgLv1MaterialId);
+      $validatedParent = $request->attributes->get('validatedLv1Context');
+      $resolvedSemiFgLv1 = $validatedParent ? [
+        'id' => $validatedParent['levelMaterialId'], 'fgMaterialId' => $validatedParent['fgMaterialId'],
+        'fgBomId' => $validatedParent['fgBomId'], 'site' => $validatedParent['site'] ?? '',
+      ] : $this->loadSemiFgLv1ByMaterialId($resolvedSemiFgLv1MaterialId);
+      $resolvedSemiFgLv1Bom = $validatedParent ? [
+        'semiFgLvBomId' => $validatedParent['semiFgLv1BomId'], 'semiFgLvBomDesc' => $validatedParent['semiFgLv1BomDesc'],
+      ] : $this->loadSemiFgLv1BomByMaterialId($resolvedSemiFgLv1MaterialId);
 
       if (is_array($resolvedSemiFgLv1)) {
         $resolvedFgMaterialId = trim((string) (
@@ -1587,7 +1593,7 @@ class PackMaterialController extends Controller
         ? ($request->fgBomDesc ?: $resolvedSemiFgLv1FgBomDesc)
         : ($request->fgBomDesc ?: ($loadedComponent['bomDesc'] ?? $request->bomDesc)));
 
-    if ($ownerLevel === 'semiFgLv1' && $actionMode === 'create' && ($resolvedFgBomId === '' || !app(\App\Services\BomContextService::class)->level(2, $resolvedFgBomId))) {
+    if ($ownerLevel === 'semiFgLv1' && $actionMode === 'create' && ($resolvedFgBomId === '' || !app(\App\Services\BomContextService::class)->level(2, $resolvedFgBomId, $request->semiFgLv2BomId ?: null))) {
       throw ValidationException::withMessages([
         'componentId' => 'Create Semi FG Level 2 first.',
       ]);
@@ -1636,7 +1642,7 @@ class PackMaterialController extends Controller
     ];
 
     if ($ownerLevel === 'semiFgLv1' && $resolvedFgBomId !== '') {
-      $ownLevel = app(\App\Services\BomContextService::class)->level(1, $resolvedFgBomId, $resolvedBOMId);
+      $ownLevel = app(\App\Services\BomContextService::class)->level(1, $resolvedFgBomId, $resolvedBOMId, false, false, $request->semiFgLv2BomId ?: null);
       $parent = app(\App\Services\BomContextService::class)->level(2, $resolvedFgBomId, $ownLevel['semiFgLv2BomId'] ?? null);
       $InputData['semiFgLv2BomId'] = $parent['bomId'] ?? '';
       $InputData['semiFgLv2BomDesc'] = $parent['bomDesc'] ?? '';

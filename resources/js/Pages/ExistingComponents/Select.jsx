@@ -15,6 +15,7 @@ export default function SelectExistingComponent({ auth, scope, context, mode, se
   const isDelete = mode === 'delete';
   const isView = mode === 'view' || isDelete;
   const isLevel = scope === 'level1' || scope === 'level2';
+  const requiresBrand = scope === 'level2';
   const hasFilters = scope !== 'raw4';
   const title = `${({ fg: 'FG BOM', semi1: 'Semi FG LV1', semi2: 'Semi FG LV2', level1: 'Semi FG LV1 BOM', level2: 'Semi FG LV2 BOM', raw4: 'Raw Material' })[scope]} - ${isDelete ? 'Delete' : isView ? 'View' : 'Add'} ${isLevel ? 'Existing BOM' : 'Existing Component'}`;
   const [step, setStep] = useState(hasFilters && !isView ? 1 : 2);
@@ -84,7 +85,7 @@ export default function SelectExistingComponent({ auth, scope, context, mode, se
           if (!isView && step === 2 && option && option.selectable !== false && context.canWrite && !loading) post(route('existing-components.save', { scope }));
         }}>
           {hasFilters && !isView && <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {[...(isLevel ? [['brand', 'Brand', filters?.brands]] : []), [ 'mattype', 'Mattype', filters?.mattypes ], [ 'subMattype', 'Sub Mattype', filters?.subMattypes ], ...(scope === 'semi2' ? [['productSubCat', 'Product SUB Category', filters?.productSubCats]] : [])].map(([field, label, choices]) => <div key={field}>
+            {[...(requiresBrand ? [['brand', 'Brand', filters?.brands]] : []), [ 'mattype', 'Mattype', filters?.mattypes ], [ 'subMattype', 'Sub Mattype', filters?.subMattypes ], ...(scope === 'semi2' ? [['productSubCat', 'Product SUB Category', filters?.productSubCats]] : [])].map(([field, label, choices]) => <div key={field}>
               <InputLabel htmlFor={field} value={label} />
               <select id={field} value={data[field]} disabled={step !== 1 || processing || !context.canWrite} onChange={(event) => changeFilter(field, event.target.value)} className="mt-1 block w-full rounded-md border-gray-300">
                 <option value="">---- Select {label} ----</option>
@@ -110,7 +111,7 @@ export default function SelectExistingComponent({ auth, scope, context, mode, se
           <div className="flex flex-wrap justify-center gap-3">
             <SecondaryButton type="button" disabled={processing} onClick={() => router.get(backUrl)}>BACK</SecondaryButton>
             {!isView && <SecondaryButton type="button" disabled={processing} onClick={resetForm}>RESET</SecondaryButton>}
-            {step === 1 ? <PrimaryButton type="button" disabled={!data.mattype || data.subMattype === '' || (isLevel && !data.brand) || (scope === 'semi2' && !data.productSubCat) || !context.canWrite} onClick={() => { setLoading(true); setStep(2); }}>NEXT</PrimaryButton> : !isView && <PrimaryButton disabled={processing || loading || !option || option.selectable === false || !context.canWrite}>SAVE</PrimaryButton>}
+            {step === 1 ? <PrimaryButton type="button" disabled={!data.mattype || data.subMattype === '' || (requiresBrand && !data.brand) || (scope === 'semi2' && !data.productSubCat) || !context.canWrite} onClick={() => { setLoading(true); setStep(2); }}>NEXT</PrimaryButton> : !isView && <PrimaryButton disabled={processing || loading || !option || option.selectable === false || !context.canWrite}>SAVE</PrimaryButton>}
             {isView && (scope !== 'raw4' || isDelete) && <DangerButton type="button" disabled={!canDelete || processing} onClick={() => setConfirmDelete(true)}>DELETE</DangerButton>}
           </div>
         </form>
