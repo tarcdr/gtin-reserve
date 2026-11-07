@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ExportTabHistory from '@/Components/ExportTabHistory';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import DangerButton from '@/Components/DangerButton';
 import InputError from '@/Components/InputError';
@@ -11,12 +12,15 @@ import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import { Head, router, useForm } from '@inertiajs/react';
 import ReactSelect from 'react-select';
+import { Dialog } from '@headlessui/react';
 
 const formatRoleLabel = (role) => (role ? role.toUpperCase() : '-');
 
 export default function UserManagement({ auth, users = [], roles = [], employees = [], exportToSapTabEnabled: initialExportTabEnabled = true }) {
     const [exportToSapTabEnabled, setExportToSapTabEnabled] = useState(initialExportTabEnabled);
     useEffect(() => setExportToSapTabEnabled(initialExportTabEnabled), [initialExportTabEnabled]);
+    const [showHistory, setShowHistory] = useState(false);
+    const [historyRevision, setHistoryRevision] = useState(0);
     const [editingUser, setEditingUser] = useState(null);
     const [passwordUser, setPasswordUser] = useState(null);
     const [deletingUser, setDeletingUser] = useState(null);
@@ -25,7 +29,7 @@ export default function UserManagement({ auth, users = [], roles = [], employees
     const setExportTab = (enabled) => {
         if (!canManageExportTab || exportTabForm.processing) return;
         exportTabForm.transform(() => ({ enabled }));
-        exportTabForm.patch(route('admin.settings.export-to-sap-tab'), { preserveScroll: true });
+        exportTabForm.patch(route('admin.settings.export-to-sap-tab'), { preserveScroll: true, onSuccess: () => setHistoryRevision(value => value + 1) });
     };
     const currentLogin = auth?.user?.user_login;
 
@@ -167,6 +171,7 @@ export default function UserManagement({ auth, users = [], roles = [], employees
                                 <span className="whitespace-nowrap text-sm text-green-900">Export-to-SAP · {exportToSapTabEnabled ? 'Enabled' : 'Disabled'}</span>
                                 <SuccessButton type="button" disabled={exportTabForm.processing || exportToSapTabEnabled} onClick={() => setExportTab(true)}>Enable-TAB</SuccessButton>
                                 <DangerButton type="button" disabled={exportTabForm.processing || !exportToSapTabEnabled} onClick={() => setExportTab(false)}>Disable-TAB</DangerButton>
+                                <SecondaryButton type="button" onClick={() => setShowHistory(true)}>ดูประวัติ</SecondaryButton>
                             </div>
                             <InputError className="mt-2" message={exportTabForm.errors.enabled} />
                         </div>
@@ -365,6 +370,16 @@ export default function UserManagement({ auth, users = [], roles = [], employees
                     </div>
                 </div>
             </div>
+
+            <Modal show={canManageExportTab && showHistory} onClose={() => setShowHistory(false)} maxWidth="2xl">
+                <Dialog.Title className="sr-only">ประวัติการเปิด/ปิด Export-to-SAP</Dialog.Title>
+                <div className="max-h-[70vh] overflow-y-auto">
+                    {canManageExportTab && showHistory && <ExportTabHistory key={historyRevision} />}
+                </div>
+                <div className="flex justify-end border-t border-gray-100 px-6 py-4">
+                    <SecondaryButton type="button" onClick={() => setShowHistory(false)}>ปิด</SecondaryButton>
+                </div>
+            </Modal>
 
             <Modal show={Boolean(editingUser)} onClose={closeEdit}>
                 <form onSubmit={submitEdit} className="p-6 space-y-6">

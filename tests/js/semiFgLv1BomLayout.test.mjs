@@ -11,7 +11,7 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(import.meta.url);
 const result = await build({
     stdin: {
-        contents: "export { default as Page } from './resources/js/Pages/PackMaterial/SemiFgLv1Bom.jsx'; export { default as Form } from './resources/js/Components/BomMaterialForm.jsx'; export { default as RawPage } from './resources/js/Pages/ExistingComponents/RawNew.jsx'; export { default as ExistingPage } from './resources/js/Pages/ExistingComponents/Select.jsx'; export { default as LevelForm } from './resources/js/Components/MaterialLevelForm.jsx'; export { default as UserManagement } from './resources/js/Pages/Admin/UserManagement.jsx'; export { default as NavLayout } from './resources/js/Layouts/AuthenticatedLayout.jsx';",
+        contents: "export { default as Page } from './resources/js/Pages/PackMaterial/SemiFgLv1Bom.jsx'; export { default as Form } from './resources/js/Components/BomMaterialForm.jsx'; export { default as RawPage } from './resources/js/Pages/ExistingComponents/RawNew.jsx'; export { default as ExistingPage } from './resources/js/Pages/ExistingComponents/Select.jsx'; export { default as LevelForm } from './resources/js/Components/MaterialLevelForm.jsx'; export { ExportTabHistoryContent, formatAuditTime } from './resources/js/Components/ExportTabHistory.jsx'; export { default as UserManagement } from './resources/js/Pages/Admin/UserManagement.jsx'; export { default as NavLayout } from './resources/js/Layouts/AuthenticatedLayout.jsx';",
         resolveDir: root,
     },
     bundle: true, write: false, platform: 'node', format: 'cjs', packages: 'external', jsx: 'automatic',
@@ -46,7 +46,7 @@ const result = await build({
 });
 const module = { exports: {} };
 new Function('require', 'module', 'exports', result.outputFiles[0].text)(require, module, module.exports);
-const { Page, Form, RawPage, ExistingPage, LevelForm, NavLayout, UserManagement } = module.exports;
+const { Page, Form, RawPage, ExistingPage, LevelForm, NavLayout, UserManagement, ExportTabHistoryContent, formatAuditTime } = module.exports;
 const input = {
     fgMaterialId: 'FG1', fgBomId: 'BFG1', semiFgLv2BomId: 'BL2', semiFgLvBomId: 'BL1', levelMaterialId: 'L1',
     componentId: '400200004', mattype: '4', subMattype: '0', productCat: '40', productSubCat: '4002',
@@ -194,10 +194,12 @@ test('export controls are absent without backend permission and retain enabled-s
     try {
         for (const role of ['ADMIN', 'RD', 'PUR', 'GTIN', '', null]) {
             const html = renderToStaticMarkup(React.createElement(UserManagement, { auth: { user: { role }, canManageExportTab: false } }));
-            assert.doesNotMatch(html, /Enable-TAB|Disable-TAB|Export-to-SAP ·/);
+            assert.doesNotMatch(html, /Enable-TAB|Disable-TAB|Export-to-SAP ·|ดูประวัติ/);
         }
         for (const enabled of [true, false]) {
             const html = renderToStaticMarkup(React.createElement(UserManagement, { auth: { user: { role: 'ADMIN' }, canManageExportTab: true }, exportToSapTabEnabled: enabled }));
+            assert.match(html, /ดูประวัติ/);
+            assert.doesNotMatch(html, /กำลังโหลดประวัติ/);
             for (const [label, disabled] of [['Enable-TAB', enabled], ['Disable-TAB', !enabled]]) {
                 const button = html.match(new RegExp(`<button[^>]*>${label}</button>`));
                 assert.ok(button);
@@ -226,7 +228,9 @@ test('clicking Disable and Enable sends PATCH with the requested boolean using v
             const action = findAction(globalThis.testRenderedHeader, label);
             assert.ok(action);
             action.props.onClick();
-            assert.deepEqual(globalThis.testFormRequests.at(-1), { url: 'admin.settings.export-to-sap-tab', data: { enabled: requested }, options: { preserveScroll: true } });
+            const request = globalThis.testFormRequests.at(-1);
+            assert.deepEqual({ url: request.url, data: request.data, preserveScroll: request.options.preserveScroll }, { url: 'admin.settings.export-to-sap-tab', data: { enabled: requested }, preserveScroll: true });
+            assert.equal(typeof request.options.onSuccess, 'function');
         }
         assert.equal(globalThis.testFormRequests.length, 2);
     } finally { delete globalThis.route; delete globalThis.testFormRequests; delete globalThis.testRenderedHeader; }
@@ -254,4 +258,21 @@ test('admin retains both export links and receives closure notices, while ordina
         assert.match(openedPanel, /Export-to-SAP · Enabled/);
         assert.doesNotMatch(openedPanel, /ผู้ใช้อื่นไม่เห็นเมนู/);
     } finally { delete globalThis.route; delete globalThis.testExportTabEnabled; delete globalThis.testCanManageExportTab; }
+});
+
+
+test('settings history distinguishes loading, errors, empty data, and renders UTC as Thailand time', () => {
+    const renderHistory = props => renderToStaticMarkup(React.createElement(ExportTabHistoryContent, props));
+    assert.match(renderHistory({ loading: true }), /กำลังโหลดประวัติ/);
+    assert.match(renderHistory({ error: 'ติดตั้ง SQL ก่อน' }), /role="alert"/);
+    assert.match(renderHistory({ error: 'ติดตั้ง SQL ก่อน' }), /ลองใหม่/);
+    assert.match(renderHistory({ result: { data: [], current_page: 1, last_page: 1, total: 0 } }), /ยังไม่มีประวัติ/);
+    const html = renderHistory({ result: { data: [{ id: '27', changed_at: '2026-11-07T08:00:00+00:00', changed_by: 'admin-a', previous_value: null, value: '0' }], current_page: 1, last_page: 2, total: 27 } });
+    assert.match(html, /15:00:00/);
+    assert.match(html, /admin-a/);
+    assert.match(html, /ข้อมูลเดิมก่อนเริ่มเก็บประวัติ/);
+    assert.match(html, /Disabled/);
+    assert.match(html, /27 รายการ/);
+    assert.equal(formatAuditTime(null), '—');
+    assert.equal(formatAuditTime('invalid'), '—');
 });

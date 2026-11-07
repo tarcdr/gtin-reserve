@@ -115,4 +115,51 @@ Reproduction helper: `scripts/verify-parent-lock-oracle.php`. It requires explic
 
 Authenticated `GET /export-to-sap/access` returns `{ enabled, canAccess }` with `Cache-Control: no-store`. It remains available while the feature is closed. Layouts poll this small endpoint every 15 seconds while visible and immediately on focus/visibility return, without fetching report data. Requests time out after 10 seconds; failures retry next interval and unmount aborts pending work. Account Management also updates its status when another administrator changes the setting.
 
-Non-admin report requests made while closed redirect to Dashboard with an access notice. Other protected operations return JSON 403 / `EXPORT_TAB_DISABLED` before reaching the controller. A non-admin with the report already open is redirected through the guarded report route on the next successful status check. Requests/procedures already started before closure are not cancelled. Material and component creation routes are not guarded by this feature setting. No new migration is required beyond the existing app-settings table.
+Non-admin report requests made while closed redirect to Dashboard with an access notice. Other protected operations return JSON 403 / `EXPORT_TAB_DISABLED` before reaching the controller. A non-admin with the report already open is redirected through the guarded report route on the next successful status check. Requests/procedures already started before closure are not cancelled. Material and component creation routes are not guarded by this feature setting. Access gating uses the existing app-settings table; the history schema upgrade described below is required before saving new setting changes.
+
+### Settings history in the same table
+
+`PROJ1_2_APP_SETTINGS` now stores append-only events. `ID` is the primary key;
+`SETTING_KEY` is no longer unique. `PREVIOUS_VALUE` records the preceding state;
+`SETTING_VALUE`, `UPDATED_BY`, and `UPDATED_AT` record the resulting state, login,
+and UTC time. The current value is the largest ID for the setting, not the newest
+timestamp. Legacy rows retain their values, actors and times with a NULL previous
+value; no earlier history is invented. A same-value request does not insert or
+replace the last editor. Direct SQL UPDATE/DELETE is outside the audit coverage.
+
+Oracle writes acquire an EXCLUSIVE table lock inside a short transaction before
+reading the latest value and allocating `PROJ1_2_APP_SETTINGS_SEQ.NEXTVAL`.
+The sequence is NOCACHE ORDER NOCYCLE. A failed insert leaves the previous event
+current. No second audit table or audit trigger is used. All application reads,
+including access polling and middleware, use the same latest-ID service. The
+pre-upgrade schema is readable but writes are rejected until it is upgraded.
+
+ADMIN can read `GET /admin/settings/export-to-sap-tab/audit?page=1`. It returns
+25 rows per page, ordered by ID descending, with string IDs and UTC ISO timestamps.
+The ADMIN-only ดูประวัติ button beside Enable/Disable opens a modal. History loads only while the modal is open and pending requests abort on close. Reopening starts at page 1 with fresh data. The history displays Asia/Bangkok time, supports
+Previous/Next and retry, and resets to page 1 after a successful setting save.
+Access polling does not reload history. There is no edit/delete/history export UI.
+
+Deployment (do not leave the old UPDATE-based application running after upgrade):
+
+1. Export a backup of the table and its definition, then pause application requests
+   and scheduled writers / old workers. Oracle DDL commits implicitly.
+2. Existing installations: run the new migration only:
+   `php artisan migrate --path=database/migrations/2026_11_07_000001_append_app_settings_history.php --force`
+   or run `database/sql/upgrade_app_settings_history.sql` as the owning schema.
+   The SQL detects the existing PK name, preserves rows and repeats safely.
+3. New installations: use `database/sql/create_app_settings.sql`, or run migrations
+   in order. The original migration also supports seeding an empty upgraded table.
+   `existing_lv1_and_export_tab.sql` now manages only the BOM procedure; settings
+   installation is separate so rerunning BOM SQL cannot reset settings/history.
+4. Deploy the new application/assets and verify the current value is unchanged,
+   history contains the legacy row, the PK is ID and the sequence is NOCACHE ORDER.
+   Reopen application access only after all workers use the new code.
+5. Downgrades refuse to flatten/drop history. Use a reviewed backup/forward fix;
+   never roll back only the PHP code to the old UPDATE implementation.
+
+Isolated Oracle verification:
+`docker compose exec -T laravel.test php scripts/verify-app-settings-history.php`.
+It creates random `GTIN_SET_QA_*` objects, verifies repeatable upgrade, legacy data
+preservation, concurrent writers, duplicate clicks, fresh-install SQL and UTC
+history, then removes its own objects. It never changes the real settings table.

@@ -6,11 +6,14 @@ use App\Http\Controllers\RmController;
 use App\Http\Middleware\EnsureExportToSapAccess;
 use App\Models\User;
 use App\Services\AppSettingsService;
+use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Inertia\Testing\AssertableInertia;
@@ -21,6 +24,7 @@ class ExportToSapTabTest extends TestCase
     private function install(): void
     {
         (require database_path('migrations/2026_11_02_000001_create_app_settings_table.php'))->up();
+        (require database_path('migrations/2026_11_07_000001_append_app_settings_history.php'))->up();
     }
 
     private function user(?string $role): void
@@ -37,7 +41,7 @@ class ExportToSapTabTest extends TestCase
         app(AppSettingsService::class)->setExportTabEnabled(false, 'admin');
         $this->install();
         $this->assertFalse(app(AppSettingsService::class)->exportTabEnabled());
-        $this->assertSame(1, DB::table(AppSettingsService::TABLE)->count());
+        $this->assertSame(2, DB::table(AppSettingsService::TABLE)->count());
     }
 
     public function test_admin_can_toggle_permanently_and_audit_is_recorded(): void
@@ -46,7 +50,7 @@ class ExportToSapTabTest extends TestCase
         $this->user('admin');
         $this->patch(route('admin.settings.export-to-sap-tab'), ['enabled' => false])->assertRedirect(route('admin.users.index'));
         $this->assertFalse((new AppSettingsService)->exportTabEnabled());
-        $row = DB::table(AppSettingsService::TABLE)->first();
+        $row = DB::table(AppSettingsService::TABLE)->orderByDesc('ID')->first();
         $this->assertSame('tester', $row->UPDATED_BY);
         $this->assertNotNull($row->UPDATED_AT);
         $this->patch(route('admin.settings.export-to-sap-tab'), ['enabled' => true])->assertRedirect();
@@ -218,5 +222,105 @@ class ExportToSapTabTest extends TestCase
         foreach (['rm.material_create', 'rm.component_request'] as $name) {
             $this->assertNotContains(EnsureExportToSapAccess::class, app('router')->getRoutes()->getByName($name)->gatherMiddleware());
         }
+    }
+
+    public function test_history_keeps_transitions_and_duplicate_click_does_not_change_last_editor(): void
+    {
+        $this->install();
+        $settings = app(AppSettingsService::class);
+        $settings->setExportTabEnabled(false, 'admin-a');
+        $first = (array) DB::table(AppSettingsService::TABLE)->orderByDesc('ID')->first();
+        $settings->setExportTabEnabled(false, 'admin-b');
+        $this->assertSame($first, (array) DB::table(AppSettingsService::TABLE)->orderByDesc('ID')->first());
+        $settings->setExportTabEnabled(true, 'admin-b');
+        $rows = DB::table(AppSettingsService::TABLE)->orderBy('ID')->get();
+        $this->assertSame(['1', '0', '1'], $rows->pluck('SETTING_VALUE')->all());
+        $this->assertSame([null, '1', '0'], $rows->pluck('PREVIOUS_VALUE')->all());
+        $this->assertSame(['migration', 'admin-a', 'admin-b'], $rows->pluck('UPDATED_BY')->all());
+        $this->assertTrue($settings->exportTabEnabled());
+    }
+
+    public function test_history_migration_preserves_legacy_values_actors_and_times(): void
+    {
+        (require database_path('migrations/2026_11_02_000001_create_app_settings_table.php'))->up();
+        DB::table(AppSettingsService::TABLE)->update(['SETTING_VALUE' => '0', 'UPDATED_BY' => 'legacy-admin', 'UPDATED_AT' => '2026-11-02 15:44:10']);
+        $this->assertFalse(app(AppSettingsService::class)->exportTabEnabled());
+        try {
+            app(AppSettingsService::class)->setExportTabEnabled(true, 'new-admin');
+            $this->fail('Legacy schema was written without history');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('enabled', $exception->errors());
+        }
+        $this->install();
+        $row = DB::table(AppSettingsService::TABLE)->first();
+        $this->assertSame('0', $row->SETTING_VALUE);
+        $this->assertSame('legacy-admin', $row->UPDATED_BY);
+        $this->assertSame('2026-11-02 15:44:10', $row->UPDATED_AT);
+        $this->assertNull($row->PREVIOUS_VALUE);
+        $this->install();
+        $this->assertSame(1, DB::table(AppSettingsService::TABLE)->count());
+        $this->assertFalse(app(AppSettingsService::class)->exportTabEnabled());
+    }
+
+    public function test_failed_insert_rolls_back_and_empty_table_uses_enabled_baseline(): void
+    {
+        $this->install();
+        DB::statement("CREATE TRIGGER reject_setting BEFORE INSERT ON PROJ1_2_APP_SETTINGS BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END");
+        try {
+            app(AppSettingsService::class)->setExportTabEnabled(false, 'admin');
+            $this->fail('Insert should fail');
+        } catch (QueryException $exception) {
+            $this->assertStringContainsString('audit unavailable', $exception->getMessage());
+        }
+        $this->assertTrue(app(AppSettingsService::class)->exportTabEnabled());
+        $this->assertSame(1, DB::table(AppSettingsService::TABLE)->count());
+        DB::statement('DROP TRIGGER reject_setting');
+        DB::table(AppSettingsService::TABLE)->delete();
+        app(AppSettingsService::class)->setExportTabEnabled(false, 'admin');
+        $row = DB::table(AppSettingsService::TABLE)->first();
+        $this->assertSame('1', $row->PREVIOUS_VALUE);
+        $this->assertSame('0', $row->SETTING_VALUE);
+        $this->assertFalse(app(AppSettingsService::class)->exportTabEnabled());
+    }
+
+    public function test_history_api_is_admin_only_paginated_and_orders_by_id_when_times_match(): void
+    {
+        $this->install();
+        $this->get(route('admin.settings.export-to-sap-tab.audit'))->assertRedirect(route('login'));
+        foreach (['RD', '', null] as $role) {
+            $this->user($role);
+            $this->getJson(route('admin.settings.export-to-sap-tab.audit'))->assertForbidden();
+        }
+        $this->travelTo(Carbon::parse('2026-11-07 08:00:00', 'UTC'));
+        try {
+            for ($i = 0; $i < 26; $i++) {
+                app(AppSettingsService::class)->setExportTabEnabled($i % 2 === 1, 'admin-'.$i);
+            }
+            foreach (['ADMIN', 'admin', ' Admin '] as $role) {
+                $this->user($role);
+                $response = $this->getJson(route('admin.settings.export-to-sap-tab.audit'))->assertOk()->assertJsonCount(25, 'data')->assertJsonPath('total', 27)->assertJsonPath('data.0.id', '27')->assertJsonPath('data.0.changed_at', '2026-11-07T08:00:00+00:00');
+                $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+            }
+            $this->getJson(route('admin.settings.export-to-sap-tab.audit', ['page' => 2]))->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('data.1.previous_value', null);
+            $this->getJson(route('admin.settings.export-to-sap-tab.audit', ['page' => 0]))->assertStatus(422);
+            $this->getJson(route('admin.settings.export-to-sap-tab.audit', ['page' => 'abc']))->assertStatus(422);
+        } finally {
+            $this->travelBack();
+        }
+        $this->assertTrue(app(AppSettingsService::class)->exportTabEnabled());
+    }
+
+    public function test_history_missing_schema_returns_separate_error_and_rollback_is_refused(): void
+    {
+        $this->user('ADMIN');
+        $this->getJson(route('admin.settings.export-to-sap-tab.audit'))->assertStatus(503)->assertJsonStructure(['message']);
+        $this->install();
+        try {
+            (require database_path('migrations/2026_11_07_000001_append_app_settings_history.php'))->down();
+            $this->fail('History downgrade should not discard records');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('cannot be collapsed', $exception->getMessage());
+        }
+        $this->assertSame(1, DB::table(AppSettingsService::TABLE)->count());
     }
 }

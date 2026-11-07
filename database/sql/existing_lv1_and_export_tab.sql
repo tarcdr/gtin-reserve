@@ -1,19 +1,5 @@
--- Additive, repeatable deployment. Back up the procedure with scripts/apply-bom-sql.php --refinements before applying.
-DECLARE n NUMBER;
-BEGIN
- SELECT COUNT(*) INTO n FROM USER_TABLES WHERE TABLE_NAME='PROJ1_2_APP_SETTINGS';
- IF n=0 THEN
-  EXECUTE IMMEDIATE 'CREATE TABLE PROJ1_2_APP_SETTINGS (SETTING_KEY VARCHAR2(100) PRIMARY KEY, SETTING_VALUE VARCHAR2(1) NOT NULL, UPDATED_BY VARCHAR2(255), UPDATED_AT TIMESTAMP)';
- END IF;
-END;
-/
-MERGE INTO PROJ1_2_APP_SETTINGS t
-USING (SELECT 'export_to_sap_tab_enabled' AS k FROM DUAL) s
-ON (t.SETTING_KEY=s.k)
-WHEN NOT MATCHED THEN INSERT (SETTING_KEY,SETTING_VALUE,UPDATED_BY,UPDATED_AT) VALUES (s.k,'1','migration',CURRENT_TIMESTAMP)
-/
-COMMIT
-/
+-- BOM procedure only. Install settings separately using create_app_settings.sql (new)
+-- or upgrade_app_settings_history.sql (existing). This script never resets settings.
 CREATE OR REPLACE PROCEDURE PROJ1_2_SAVE_BOM_SEMI_L1_EXIST(
  P_MATTYPE VARCHAR2,
  P_SUB_MATTYPE VARCHAR2,
