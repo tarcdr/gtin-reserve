@@ -11,7 +11,7 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(import.meta.url);
 const result = await build({
     stdin: {
-        contents: "export { default as Page } from './resources/js/Pages/PackMaterial/SemiFgLv1Bom.jsx'; export { default as Form } from './resources/js/Components/BomMaterialForm.jsx'; export { default as RawPage } from './resources/js/Pages/ExistingComponents/RawNew.jsx'; export { default as ExistingPage } from './resources/js/Pages/ExistingComponents/Select.jsx'; export { default as LevelForm } from './resources/js/Components/MaterialLevelForm.jsx'; export { default as NavLayout } from './resources/js/Layouts/AuthenticatedLayout.jsx';",
+        contents: "export { default as Page } from './resources/js/Pages/PackMaterial/SemiFgLv1Bom.jsx'; export { default as Form } from './resources/js/Components/BomMaterialForm.jsx'; export { default as RawPage } from './resources/js/Pages/ExistingComponents/RawNew.jsx'; export { default as ExistingPage } from './resources/js/Pages/ExistingComponents/Select.jsx'; export { default as LevelForm } from './resources/js/Components/MaterialLevelForm.jsx'; export { default as UserManagement } from './resources/js/Pages/Admin/UserManagement.jsx'; export { default as NavLayout } from './resources/js/Layouts/AuthenticatedLayout.jsx';",
         resolveDir: root,
     },
     bundle: true, write: false, platform: 'node', format: 'cjs', packages: 'external', jsx: 'automatic',
@@ -21,30 +21,32 @@ const result = await build({
         name: 'render-without-browser-or-network',
         setup(builder) {
             builder.onResolve({ filter: /^react(\/.*)?$/ }, args => ({ path: args.path, external: true }));
+            builder.onResolve({ filter: /^react-select$/ }, () => ({ path: 'select', namespace: 'fixture' }));
             builder.onResolve({ filter: /^@inertiajs\/react$/ }, () => ({ path: 'inertia', namespace: 'fixture' }));
             builder.onResolve({ filter: /^@\/Layouts\/AuthenticatedLayout$/ }, () => ({ path: 'layout', namespace: 'fixture' }));
             builder.onResolve({ filter: /^@\/Components\/Modal$/ }, () => ({ path: 'modal', namespace: 'fixture' }));
             builder.onResolve({ filter: /^@\// }, args => builder.resolve(path.join(root, 'resources/js', args.path.slice(2)), { kind: args.kind, resolveDir: root }));
             builder.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({
                 loader: 'jsx',
-                contents: args.path === 'inertia' ? `
+                contents: args.path === 'select' ? `import React from 'react'; export default function Select() { return <select />; }` : args.path === 'inertia' ? `
                     import React from 'react';
                     export const Head = () => null;
                     export const Link = ({ href, children, ...props }) => React.createElement('a', { href, ...props }, children);
                     export const router = { get() {}, delete() {} };
-                    export const usePage = () => ({ props: { auth: { user: { user_login: 'tester' } }, errors: {}, features: { exportToSapTabEnabled: globalThis.testExportTabEnabled !== false } } });
+                    export const usePage = () => ({ props: { auth: { user: { user_login: 'tester' }, canManageExportTab: globalThis.testCanManageExportTab === true }, errors: {}, features: { exportToSapTabEnabled: globalThis.testExportTabEnabled !== false } } });
                     export const useForm = initial => {
                         const [data] = React.useState(initial);
-                        return { data, errors: {}, processing: false, setData() {}, setError() {}, clearErrors() {}, patch() {} };
+                        const transform = React.useRef(data => data);
+                        return { data, errors: {}, processing: false, setData() {}, setError() {}, clearErrors() {}, transform(callback) { transform.current = callback; }, patch(url, options) { globalThis.testFormRequests?.push({ url, data: transform.current(data), options }); } };
                     };
-                ` : args.path === 'layout' ? `import React from 'react'; export default function Layout({ header, children }) { return <main>{header}{children}</main>; }` : 'export default function Modal() { return null; }',
+                ` : args.path === 'layout' ? `import React from 'react'; export default function Layout({ header, children }) { globalThis.testRenderedHeader = header; return <main>{header}{children}</main>; }` : 'export default function Modal() { return null; }',
             }));
         },
     }],
 });
 const module = { exports: {} };
 new Function('require', 'module', 'exports', result.outputFiles[0].text)(require, module, module.exports);
-const { Page, Form, RawPage, ExistingPage, LevelForm, NavLayout } = module.exports;
+const { Page, Form, RawPage, ExistingPage, LevelForm, NavLayout, UserManagement } = module.exports;
 const input = {
     fgMaterialId: 'FG1', fgBomId: 'BFG1', semiFgLv2BomId: 'BL2', semiFgLvBomId: 'BL1', levelMaterialId: 'L1',
     componentId: '400200004', mattype: '4', subMattype: '0', productCat: '40', productSubCat: '4002',
@@ -164,12 +166,92 @@ test('both Semi FG component tables place Existing before New with matching colu
 test('the global setting controls both desktop and mobile menus without changing routes', () => {
     globalThis.route = name => name ? name : { current: () => false };
     try {
+        globalThis.testCanManageExportTab = false;
         globalThis.testExportTabEnabled = true;
         const enabled = renderToStaticMarkup(React.createElement(NavLayout, { user: { role: 'admin' } }));
         assert.equal((enabled.match(/href="rm.report"/g) || []).length, 2);
         globalThis.testExportTabEnabled = false;
         const disabled = renderToStaticMarkup(React.createElement(NavLayout, { user: { role: 'admin' } }));
         assert.doesNotMatch(disabled, /href="rm.report"/);
-        assert.match(disabled, /Account Management/);
-    } finally { delete globalThis.testExportTabEnabled; delete globalThis.route; }
+        assert.doesNotMatch(disabled, /Account Management/);
+    } finally { delete globalThis.testCanManageExportTab; delete globalThis.testExportTabEnabled; delete globalThis.route; }
+});
+
+
+test('admin permission controls account links in both desktop and mobile navigation', () => {
+    globalThis.route = name => name ? name : { current: () => false };
+    try {
+        for (const permission of [true, false, undefined]) {
+            globalThis.testCanManageExportTab = permission;
+            const html = renderToStaticMarkup(React.createElement(NavLayout, { user: { role: 'ADMIN' } }));
+            assert.equal((html.match(/href="admin.users.index"/g) || []).length, permission === true ? 2 : 0);
+        }
+    } finally { delete globalThis.testCanManageExportTab; delete globalThis.route; }
+});
+
+test('export controls are absent without backend permission and retain enabled-state rules', () => {
+    globalThis.route = name => name;
+    try {
+        for (const role of ['ADMIN', 'RD', 'PUR', 'GTIN', '', null]) {
+            const html = renderToStaticMarkup(React.createElement(UserManagement, { auth: { user: { role }, canManageExportTab: false } }));
+            assert.doesNotMatch(html, /Enable-TAB|Disable-TAB|Export-to-SAP ·/);
+        }
+        for (const enabled of [true, false]) {
+            const html = renderToStaticMarkup(React.createElement(UserManagement, { auth: { user: { role: 'ADMIN' }, canManageExportTab: true }, exportToSapTabEnabled: enabled }));
+            for (const [label, disabled] of [['Enable-TAB', enabled], ['Disable-TAB', !enabled]]) {
+                const button = html.match(new RegExp(`<button[^>]*>${label}</button>`));
+                assert.ok(button);
+                assert.equal(button[0].includes('disabled'), disabled);
+            }
+        }
+    } finally { delete globalThis.route; }
+});
+
+
+test('clicking Disable and Enable sends PATCH with the requested boolean using void-returning transform', () => {
+    globalThis.route = name => name;
+    globalThis.testFormRequests = [];
+    const findAction = (node, label) => {
+        if (!node || typeof node !== 'object') return null;
+        if (node.props?.children === label && typeof node.props?.onClick === 'function') return node;
+        for (const child of React.Children.toArray(node.props?.children)) {
+            const found = findAction(child, label);
+            if (found) return found;
+        }
+        return null;
+    };
+    try {
+        for (const [enabled, label, requested] of [[true, 'Disable-TAB', false], [false, 'Enable-TAB', true]]) {
+            renderToStaticMarkup(React.createElement(UserManagement, { auth: { user: { role: 'ADMIN' }, canManageExportTab: true }, exportToSapTabEnabled: enabled }));
+            const action = findAction(globalThis.testRenderedHeader, label);
+            assert.ok(action);
+            action.props.onClick();
+            assert.deepEqual(globalThis.testFormRequests.at(-1), { url: 'admin.settings.export-to-sap-tab', data: { enabled: requested }, options: { preserveScroll: true } });
+        }
+        assert.equal(globalThis.testFormRequests.length, 2);
+    } finally { delete globalThis.route; delete globalThis.testFormRequests; delete globalThis.testRenderedHeader; }
+});
+
+
+test('admin retains both export links and receives closure notices, while ordinary users lose them', () => {
+    globalThis.route = name => name ? name : { current: () => true };
+    try {
+        globalThis.testExportTabEnabled = false;
+        globalThis.testCanManageExportTab = true;
+        const admin = renderToStaticMarkup(React.createElement(NavLayout, { user: { role: 'ADMIN' } }));
+        assert.equal((admin.match(/href="rm.report"/g) || []).length, 2);
+        assert.equal((admin.match(/ผู้ใช้อื่นไม่เห็นเมนู Export-to-SAP และไม่สามารถเข้าใช้งานได้/g) || []).length, 2);
+        const panel = renderToStaticMarkup(React.createElement(UserManagement, { auth: { user: { role: 'ADMIN' }, canManageExportTab: true }, exportToSapTabEnabled: false }));
+        assert.doesNotMatch(panel, /ผู้ใช้อื่นไม่เห็นเมนู/);
+        globalThis.route = name => name ? name : { current: () => false };
+        const otherPage = renderToStaticMarkup(React.createElement(NavLayout, { user: { role: 'ADMIN' } }));
+        assert.doesNotMatch(otherPage, /ผู้ใช้อื่นไม่เห็นเมนู/);
+        assert.equal((otherPage.match(/href="rm.report"/g) || []).length, 2);
+        globalThis.testCanManageExportTab = false;
+        const user = renderToStaticMarkup(React.createElement(NavLayout, { user: { role: 'RD' } }));
+        assert.doesNotMatch(user, /href="rm.report"|ผู้ใช้อื่นไม่เห็นเมนู/);
+        const openedPanel = renderToStaticMarkup(React.createElement(UserManagement, { auth: { user: { role: 'ADMIN' }, canManageExportTab: true }, exportToSapTabEnabled: true }));
+        assert.match(openedPanel, /Export-to-SAP · Enabled/);
+        assert.doesNotMatch(openedPanel, /ผู้ใช้อื่นไม่เห็นเมนู/);
+    } finally { delete globalThis.route; delete globalThis.testExportTabEnabled; delete globalThis.testCanManageExportTab; }
 });

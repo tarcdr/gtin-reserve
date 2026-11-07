@@ -28,7 +28,7 @@ export default function Report({ auth, activeTab, columns = [], datas = [], labe
 
   // ฟังก์ชัน toggle sidebar
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  const isAdmin = auth?.user?.role === 'admin';
+  const isAdmin = auth?.canManageExportTab === true;
 
   const { data, setData, processing, errors, patch, delete: actionDelete } = useForm({});
 

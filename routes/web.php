@@ -116,11 +116,14 @@ Route::middleware(['auth', \App\Http\Middleware\OverviewFlow::class])->group(fun
     Route::get('/business-supply/generate-component-id', [BusinessSupplyController::class, 'generateComponentId'])->name('business-supply.generate-component-id');
     Route::get('/rm/material_create', [RmController::class, 'view'])->name('rm.material_create');
     Route::get('/rm/component_request', [RmController::class, 'viewComponentRequest'])->name('rm.component_request');
-    Route::get('/rm/report/{tab?}', [RmController::class, 'report'])->name('rm.report');
-    Route::patch('/rm/confirm', [RmController::class, 'update'])->name('rm.confirm');
-    Route::delete('/rm/delete', [RmController::class, 'delete'])->name('rm.delete');
-    Route::get('/rm/export', [RmController::class, 'export'])->name('rm.export');
-    Route::middleware('admin')->post('/rm/export-to-sap', [RmController::class, 'exportToSap'])->name('rm.export-sap');
+    Route::get('/export-to-sap/access', [\App\Http\Controllers\ExportToSapTabController::class, 'access'])->name('export-to-sap.access');
+    Route::middleware(\App\Http\Middleware\EnsureExportToSapAccess::class)->group(function () {
+        Route::get('/rm/report/{tab?}', [RmController::class, 'report'])->name('rm.report');
+        Route::patch('/rm/confirm', [RmController::class, 'update'])->name('rm.confirm');
+        Route::delete('/rm/delete', [RmController::class, 'delete'])->name('rm.delete');
+        Route::get('/rm/export', [RmController::class, 'export'])->name('rm.export');
+        Route::middleware('admin')->post('/rm/export-to-sap', [RmController::class, 'exportToSap'])->name('rm.export-sap');
+    });
 
     Route::get('/packmaterial/fg-bom', [FgBomController::class, 'new'])->name('packmaterial.fg-bom.new');
     Route::get('/packmaterial/semi-fg-lv1-bom', [SemiFgLv1BomController::class, 'new'])->name('packmaterial.semi-fg-lv1-bom.new');

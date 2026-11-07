@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import DangerButton from '@/Components/DangerButton';
 import InputError from '@/Components/InputError';
@@ -14,12 +14,19 @@ import ReactSelect from 'react-select';
 
 const formatRoleLabel = (role) => (role ? role.toUpperCase() : '-');
 
-export default function UserManagement({ auth, users = [], roles = [], employees = [], exportToSapTabEnabled = true }) {
+export default function UserManagement({ auth, users = [], roles = [], employees = [], exportToSapTabEnabled: initialExportTabEnabled = true }) {
+    const [exportToSapTabEnabled, setExportToSapTabEnabled] = useState(initialExportTabEnabled);
+    useEffect(() => setExportToSapTabEnabled(initialExportTabEnabled), [initialExportTabEnabled]);
     const [editingUser, setEditingUser] = useState(null);
     const [passwordUser, setPasswordUser] = useState(null);
     const [deletingUser, setDeletingUser] = useState(null);
     const exportTabForm = useForm({ enabled: exportToSapTabEnabled });
-    const setExportTab = (enabled) => exportTabForm.transform(() => ({ enabled })).patch(route('admin.settings.export-to-sap-tab'), { preserveScroll: true });
+    const canManageExportTab = auth?.canManageExportTab === true;
+    const setExportTab = (enabled) => {
+        if (!canManageExportTab || exportTabForm.processing) return;
+        exportTabForm.transform(() => ({ enabled }));
+        exportTabForm.patch(route('admin.settings.export-to-sap-tab'), { preserveScroll: true });
+    };
     const currentLogin = auth?.user?.user_login;
 
     const createForm = useForm({
@@ -150,7 +157,22 @@ export default function UserManagement({ auth, users = [], roles = [], employees
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<div className="flex flex-wrap items-center justify-between gap-4"><h2 className="font-semibold text-xl text-gray-800 leading-tight">Account Management</h2><div className="flex flex-wrap items-center gap-3 rounded-lg border border-green-700 p-3"><span className="text-sm text-green-900">Export-to-SAP · {exportToSapTabEnabled ? 'Enabled' : 'Disabled'}</span><SuccessButton type="button" disabled={exportTabForm.processing || exportToSapTabEnabled} onClick={() => setExportTab(true)}>Enable-TAB</SuccessButton><DangerButton type="button" disabled={exportTabForm.processing || !exportToSapTabEnabled} onClick={() => setExportTab(false)}>Disable-TAB</DangerButton><InputError message={exportTabForm.errors.enabled} /></div></div>}
+            onExportTabAccessChange={setExportToSapTabEnabled}
+            header={
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <h2 className="text-xl font-semibold leading-tight text-gray-800">Account Management</h2>
+                    {canManageExportTab && (
+                        <div className="w-fit max-w-full self-start rounded-lg border border-green-700 p-3 lg:shrink-0">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <span className="whitespace-nowrap text-sm text-green-900">Export-to-SAP · {exportToSapTabEnabled ? 'Enabled' : 'Disabled'}</span>
+                                <SuccessButton type="button" disabled={exportTabForm.processing || exportToSapTabEnabled} onClick={() => setExportTab(true)}>Enable-TAB</SuccessButton>
+                                <DangerButton type="button" disabled={exportTabForm.processing || !exportToSapTabEnabled} onClick={() => setExportTab(false)}>Disable-TAB</DangerButton>
+                            </div>
+                            <InputError className="mt-2" message={exportTabForm.errors.enabled} />
+                        </div>
+                    )}
+                </div>
+            }
         >
             <Head title="Account Management" />
 

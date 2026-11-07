@@ -12,6 +12,11 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    public function isAdmin(): bool
+    {
+        return strtolower(trim((string) $this->role)) === 'admin';
+    }
+
     protected $table = 'proj1_user';
     protected $primaryKey = 'user_login';
 

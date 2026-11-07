@@ -6,7 +6,8 @@ import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import PageIdentity from '@/Components/PageIdentity';
 import SecondaryButton from '@/Components/SecondaryButton';
-import { Link, usePage } from '@inertiajs/react';
+import { EXPORT_TAB_CLOSED_NOTICE, watchExportTabAccess } from '@/Utils/watchExportTabAccess';
+import { Link, router, usePage } from '@inertiajs/react';
 
 function UserAvatar({ user }) {
     return (
@@ -43,11 +44,32 @@ function UserAvatar({ user }) {
     );
 }
 
-export default function Authenticated({ user, header, pageIdentity = null, children }) {
+export default function Authenticated({ user, header, pageIdentity = null, onExportTabAccessChange, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     const [databaseError, setDatabaseError] = useState('');
-    const { flash, overviewFlow, errors, features } = usePage().props;
-    const isAdmin = user?.role === 'admin';
+    const { flash, overviewFlow, errors, features, auth } = usePage().props;
+    const isAdmin = auth?.canManageExportTab === true;
+    const initialExportEnabled = features?.exportToSapTabEnabled !== false;
+    const [exportEnabled, setExportEnabled] = useState(initialExportEnabled);
+    const showExportClosedNotice = isAdmin && !exportEnabled && route().current('rm.report');
+    useEffect(() => setExportEnabled(initialExportEnabled), [initialExportEnabled]);
+    useEffect(() => {
+        if (!auth?.user) return;
+        let leaving = false;
+        return watchExportTabAccess({
+            url: route('export-to-sap.access'),
+            onUnauthorized: () => { if (!leaving) { leaving = true; router.visit(route('login')); } },
+            onAccess: ({ enabled, canAccess }) => {
+                setExportEnabled(enabled);
+                onExportTabAccessChange?.(enabled);
+                if (!canAccess && route().current('rm.report') && !leaving) {
+                    leaving = true;
+                    // The guarded report route supplies the redirect and a server-side notice.
+                    router.visit(route('rm.report'), { replace: true, onFinish: () => { leaving = false; } });
+                }
+            },
+        });
+    }, [auth?.user?.user_login, isAdmin, initialExportEnabled, onExportTabAccessChange]);
     const roleLabel = user?.role ? user.role.toUpperCase() : 'USER';
 
     useEffect(() => {
@@ -69,7 +91,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                 </Link>
                             </div>
 
-                            <div className="hidden space-x-8 sm:-my-px sm:ml-4 sm:flex">
+                            <div className="hidden whitespace-nowrap space-x-8 sm:-my-px sm:ml-4 sm:flex">
                                 <NavLink
                                     href={route('dashboard')}
                                     active={route().current('dashboard')}
@@ -195,7 +217,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                                         </Dropdown>
                                     </div>
                                 </div>
-                                {features?.exportToSapTabEnabled !== false && <NavLink
+                                {(exportEnabled || isAdmin) && <NavLink
                                     href={route('rm.report')}
                                     active={route().current('rm.report')}
                                     className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md px-2"
@@ -282,6 +304,12 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                     </div>
                 </div>
 
+                {showExportClosedNotice && (
+                    <div className="hidden border-t border-amber-100 bg-amber-50 sm:block">
+                        <p role="status" className="mx-auto max-w-7xl px-6 py-2 text-xs font-normal text-amber-900 lg:px-8">{EXPORT_TAB_CLOSED_NOTICE}</p>
+                    </div>
+                )}
+
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden'}>
                     <div className="pt-2 pb-3 space-y-1">
                         <ResponsiveNavLink
@@ -335,13 +363,13 @@ export default function Authenticated({ user, header, pageIdentity = null, child
                         >
                             GTIN_Confirm/Report
                         </ResponsiveNavLink>
-                        {features?.exportToSapTabEnabled !== false && <ResponsiveNavLink
+                        {(exportEnabled || isAdmin) && <div><ResponsiveNavLink
                             href={route('rm.report')}
                             active={route().current('rm.report')}
                             className="text-green-900 font-extrabold hover:text-green-800 hover:bg-green-50 focus:text-green-800 focus:bg-green-50 rounded-md"
                         >
                             Export-to-SAP
-                        </ResponsiveNavLink>}
+                        </ResponsiveNavLink>{showExportClosedNotice && <p className="px-3 pb-2 text-xs font-normal text-amber-800">{EXPORT_TAB_CLOSED_NOTICE}</p>}</div>}
                         {isAdmin && (
                             <ResponsiveNavLink
                                 href={route('admin.users.index')}
@@ -397,6 +425,7 @@ export default function Authenticated({ user, header, pageIdentity = null, child
             </div> : null}
             {errors?.parent && <p role="alert" className="mx-auto mt-4 max-w-7xl rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">{errors.parent}</p>}
             {errors?.overview && <p role="alert" className="mx-auto mt-4 max-w-7xl rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">{errors.overview}</p>}
+            {flash?.exportAccessNotice && <p role="status" className="mx-auto mt-4 max-w-7xl rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-normal text-amber-900">{flash.exportAccessNotice}</p>}
             {children}</main>
 
             <Modal

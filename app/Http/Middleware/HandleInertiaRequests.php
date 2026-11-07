@@ -36,8 +36,10 @@ class HandleInertiaRequests extends Middleware
             'overviewFlow' => fn () => $request->attributes->get('overviewFlow'),
             'auth' => [
                 'user' => $request->user(),
+                'canManageExportTab' => $request->user()?->isAdmin() ?? false,
             ],
             'flash' => [
+                'exportAccessNotice' => fn () => $request->session()->get('exportAccessNotice'),
                 'message' => fn () => $request->session()->get('message'),
                 'error' => fn () => $request->session()->get('error'),
                 'deleteDebug' => fn () => $request->session()->get('deleteDebug'),
